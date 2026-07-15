@@ -3,7 +3,7 @@
 > **Never lose proof of your loan repayments.**
 
 [![Organization](https://img.shields.io/badge/Organization-Sanatan%20Labs-1a3a5c?style=flat-square)](https://github.com/sanatan-labs)
-[![Status](https://img.shields.io/badge/Status-Day%201%20Foundation-10b981?style=flat-square)](#)
+[![Status](https://img.shields.io/badge/Status-Day%202%20Full%20Management-10b981?style=flat-square)](#)
 [![Blockchain](https://img.shields.io/badge/Blockchain-Monad%20Testnet-7c3aed?style=flat-square)](https://monad.xyz)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
@@ -44,22 +44,24 @@ DebtProof solves this with a **three-layer approach**:
 
 ---
 
-## Features Planned
+## Features Implemented
 
-### Day 1 (Current)
+### Day 1 & 2 (Current)
 - [x] User authentication (JWT)
 - [x] Custom user model (email-based)
 - [x] Landing page with all sections
 - [x] Auth pages (Login, Register, Forgot Password)
-- [x] Dashboard skeleton with overview cards
+- [x] Dashboard with real aggregated stats (Total outstanding, EMIs, recent payments)
+- [x] Full Loan CRUD API and UI (Add, Edit, View, Delete)
+- [x] Payment recording with receipt upload
+- [x] Auto-calculations of balances and EMI status via backend signals
+- [x] SHA-256 receipt hashing service
+- [x] Analytics dashboard with SVG charts
 - [x] Profile and Settings pages
 - [x] Full API response standardization
 - [x] Database models for Loan, Payment, Receipt, AuditLog
 
-### Day 2+
-- [ ] Loan CRUD API and UI
-- [ ] Payment recording with receipt upload
-- [ ] SHA-256 hashing service
+### Future Roadmap
 - [ ] Monad Testnet wallet integration
 - [ ] Blockchain hash anchoring
 - [ ] Verification portal (public hash lookup)

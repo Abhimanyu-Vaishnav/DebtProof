@@ -14,6 +14,9 @@ urlpatterns = [
     # API v1
     path("api/v1/", include("apps.core.api.urls")),
     path("api/v1/auth/", include("apps.users.api.urls")),
+    path("api/v1/loans/", include("apps.loans.api.urls")),
+    path("api/v1/loans/<uuid:loan_id>/payments/", include("apps.payments.api.loan_payment_urls")),
+    path("api/v1/payments/", include("apps.payments.api.urls")),
 ]
 
 # Serve media files in development only

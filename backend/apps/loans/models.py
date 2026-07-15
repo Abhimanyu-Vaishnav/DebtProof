@@ -128,6 +128,11 @@ class Loan(BaseModel):
         return self.principal_amount - self.outstanding_amount
 
     @property
+    def interest_paid(self) -> Decimal:
+        """Sum of interest components for all confirmed payments."""
+        return self.payments.filter(status="confirmed").aggregate(total=models.Sum("interest_component"))["total"] or Decimal("0.00")
+
+    @property
     def repayment_progress_percent(self) -> float:
         """Percentage of the loan that has been repaid."""
         if self.principal_amount == 0:

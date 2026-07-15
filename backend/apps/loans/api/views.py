@@ -1,0 +1,263 @@
+"""
+DebtProof — Loan API Views
+Full CRUD for loans + dashboard aggregations.
+"""
+import logging
+from decimal import Decimal
+from datetime import date
+from django.db.models import Sum, Count, Q, QuerySet
+from rest_framework import generics, status, filters
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.loans.models import Loan, LoanStatus
+from apps.core.pagination import StandardResultsSetPagination
+from .serializers import LoanSerializer, LoanListSerializer
+
+logger = logging.getLogger(__name__)
+
+
+class LoanListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/v1/loans/        — List authenticated user's loans (search, filter, sort)
+    POST /api/v1/loans/        — Create a new loan
+    """
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["name", "lender_name", "account_number"]
+    ordering_fields = ["created_at", "principal_amount", "outstanding_amount", "start_date", "name"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self) -> QuerySet:
+        qs = Loan.objects.filter(user=self.request.user)
+
+        # Status filter
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        # Loan type filter
+        loan_type = self.request.query_params.get("loan_type")
+        if loan_type:
+            qs = qs.filter(loan_type=loan_type)
+
+        # Overdue filter
+        overdue = self.request.query_params.get("overdue")
+        if overdue == "true":
+            qs = qs.filter(
+                status=LoanStatus.ACTIVE,
+                next_emi_date__lt=date.today(),
+            )
+
+        return qs
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return LoanListSerializer
+        return LoanSerializer
+
+    def create(self, request: Request, *args, **kwargs) -> Response:
+        serializer = LoanSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        loan = serializer.save()
+        logger.info("Loan created: %s by %s", loan.name, request.user.email)
+        return Response(
+            {"success": True, "message": "Loan created successfully.", "loan": LoanSerializer(loan, context={"request": request}).data},
+            status=status.HTTP_201_CREATED,
+        )
+
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"success": True, "results": serializer.data})
+
+
+class LoanRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /api/v1/loans/{id}/  — Retrieve loan detail
+    PATCH  /api/v1/loans/{id}/  — Update loan
+    DELETE /api/v1/loans/{id}/  — Delete loan (only if no payments)
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = LoanSerializer
+    http_method_names = ["get", "patch", "delete", "head", "options"]
+
+    def get_queryset(self) -> QuerySet:
+        return Loan.objects.filter(user=self.request.user)
+
+    def retrieve(self, request: Request, *args, **kwargs) -> Response:
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({"success": True, "loan": serializer.data})
+
+    def partial_update(self, request: Request, *args, **kwargs) -> Response:
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        loan = serializer.save()
+        logger.info("Loan updated: %s by %s", loan.name, request.user.email)
+        return Response(
+            {"success": True, "message": "Loan updated successfully.", "loan": serializer.data}
+        )
+
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
+        instance = self.get_object()
+        if instance.payments.exists():
+            return Response(
+                {
+                    "success": False,
+                    "error": {
+                        "code": "LOAN_HAS_PAYMENTS",
+                        "message": "Cannot delete a loan that has payment records. Delete the payments first.",
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        loan_name = instance.name
+        instance.delete()
+        logger.info("Loan deleted: %s by %s", loan_name, request.user.email)
+        return Response(
+            {"success": True, "message": "Loan deleted successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class LoanDashboardView(APIView):
+    """
+    GET /api/v1/loans/dashboard/
+    Returns aggregated statistics for the authenticated user's dashboard.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        user = request.user
+        loans = Loan.objects.filter(user=user)
+
+        # Basic counts
+        total_loans = loans.count()
+        active_loans = loans.filter(status=LoanStatus.ACTIVE).count()
+        closed_loans = loans.filter(status=LoanStatus.CLOSED).count()
+        defaulted_loans = loans.filter(status=LoanStatus.DEFAULTED).count()
+
+        # Financial totals
+        agg = loans.filter(status=LoanStatus.ACTIVE).aggregate(
+            total_outstanding=Sum("outstanding_amount"),
+            total_principal_active=Sum("principal_amount"),
+        )
+        total_outstanding = float(agg["total_outstanding"] or 0)
+        total_principal_active = float(agg["total_principal_active"] or 0)
+        total_paid_active = total_principal_active - total_outstanding
+
+        # Total interest paid across all loans
+        total_interest_paid = float(
+            Payment.objects.filter(
+                loan__user=user,
+                status="confirmed",
+            ).aggregate(total=Sum("interest_component"))["total"] or 0
+        )
+
+        all_agg = loans.aggregate(
+            total_principal_all=Sum("principal_amount"),
+        )
+        total_principal_all = float(all_agg["total_principal_all"] or 0)
+
+        # Upcoming EMI
+        upcoming_loan = (
+            loans.filter(
+                status=LoanStatus.ACTIVE,
+                next_emi_date__gte=date.today(),
+            )
+            .order_by("next_emi_date")
+            .first()
+        )
+        upcoming_emi_amount = float(upcoming_loan.monthly_emi) if upcoming_loan else 0
+        upcoming_emi_date = str(upcoming_loan.next_emi_date) if upcoming_loan else None
+
+        # Overdue loans
+        overdue_count = loans.filter(
+            status=LoanStatus.ACTIVE,
+            next_emi_date__lt=date.today(),
+        ).count()
+
+        # Recent payments (last 10 across all loans)
+        from apps.payments.models import Payment
+        from apps.payments.api.serializers import PaymentListSerializer
+
+        recent_payments = Payment.objects.filter(
+            loan__user=user
+        ).select_related("loan", "receipt").order_by("-payment_date", "-created_at")[:10]
+
+        # Loan type distribution (for chart)
+        type_distribution = list(
+            loans.values("loan_type").annotate(count=Count("id")).order_by("-count")
+        )
+
+        # Monthly payment trend (last 6 months)
+        from django.db.models.functions import TruncMonth
+        from datetime import timedelta
+
+        six_months_ago = date.today().replace(day=1)
+        # Go back 6 months
+        for _ in range(5):
+            first_of_month = six_months_ago.replace(day=1)
+            # Go back one month
+            if first_of_month.month == 1:
+                six_months_ago = first_of_month.replace(year=first_of_month.year - 1, month=12)
+            else:
+                six_months_ago = first_of_month.replace(month=first_of_month.month - 1)
+
+        monthly_trend = list(
+            Payment.objects.filter(
+                loan__user=user,
+                status="confirmed",
+                payment_date__gte=six_months_ago,
+            )
+            .annotate(month=TruncMonth("payment_date"))
+            .values("month")
+            .annotate(total=Sum("amount"), count=Count("id"))
+            .order_by("month")
+        )
+
+        monthly_trend_serialized = [
+            {
+                "month": str(item["month"])[:7],  # YYYY-MM
+                "total": float(item["total"]),
+                "count": item["count"],
+            }
+            for item in monthly_trend
+        ]
+
+        return Response(
+            {
+                "success": True,
+                "dashboard": {
+                    "total_loans": total_loans,
+                    "active_loans": active_loans,
+                    "closed_loans": closed_loans,
+                    "defaulted_loans": defaulted_loans,
+                    "total_outstanding": total_outstanding,
+                    "total_principal_active": total_principal_active,
+                    "total_paid_active": total_paid_active,
+                    "total_interest_paid": total_interest_paid,
+                    "total_principal_all": total_principal_all,
+                    "upcoming_emi_amount": upcoming_emi_amount,
+                    "upcoming_emi_date": upcoming_emi_date,
+                    "overdue_count": overdue_count,
+                    "type_distribution": type_distribution,
+                    "monthly_trend": monthly_trend_serialized,
+                    "recent_payments": PaymentListSerializer(
+                        recent_payments, many=True, context={"request": request}
+                    ).data,
+                },
+            }
+        )

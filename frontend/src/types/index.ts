@@ -101,10 +101,28 @@ export interface Loan {
   status: LoanStatus;
   notes: string;
   paid_amount: string;
+  interest_paid: string;
   repayment_progress_percent: number;
   is_active: boolean;
+  is_overdue: boolean;
+  total_payments: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface LoanFormData {
+  name: string;
+  loan_type: LoanType;
+  lender_name: string;
+  account_number?: string;
+  principal_amount: string;
+  interest_rate: string;
+  monthly_emi: string;
+  start_date: string;
+  end_date: string;
+  next_emi_date?: string;
+  status?: LoanStatus;
+  notes?: string;
 }
 
 // ── Payment Types ────────────────────────────────────────────
@@ -123,6 +141,7 @@ export type PaymentStatus = "pending" | "confirmed" | "failed" | "refunded";
 export interface Payment {
   id: string;
   loan: string;
+  loan_name: string;
   amount: string;
   payment_date: string;
   payment_method: PaymentMethod;
@@ -132,8 +151,20 @@ export interface Payment {
   interest_component: string;
   notes: string;
   receipt?: Receipt;
+  has_receipt: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface PaymentFormData {
+  amount: string;
+  payment_date: string;
+  payment_method: PaymentMethod;
+  reference_number?: string;
+  status?: PaymentStatus;
+  principal_component?: string;
+  interest_component?: string;
+  notes?: string;
 }
 
 // ── Receipt Types ────────────────────────────────────────────
@@ -146,23 +177,37 @@ export interface Receipt {
   mime_type: string;
   document_hash: string;
   hash_algorithm: string;
-  // Blockchain fields — available in future sprints
-  // blockchain_tx_hash?: string;
-  // blockchain_block_number?: number;
-  // is_blockchain_verified?: boolean;
+  file_url: string | null;
   created_at: string;
-  updated_at: string;
 }
 
-// ── Dashboard Summary Types ───────────────────────────────────
-export interface DashboardSummary {
+// ── Dashboard Types ───────────────────────────────────────────
+export interface LoanTypeDistribution {
+  loan_type: LoanType;
+  count: number;
+}
+
+export interface MonthlyTrendPoint {
+  month: string; // YYYY-MM
+  total: number;
+  count: number;
+}
+
+export interface DashboardData {
   total_loans: number;
   active_loans: number;
   closed_loans: number;
+  defaulted_loans: number;
   total_outstanding: number;
-  total_principal: number;
+  total_principal_active: number;
+  total_paid_active: number;
+  total_interest_paid: number;
+  total_principal_all: number;
   upcoming_emi_amount: number;
   upcoming_emi_date: string | null;
+  overdue_count: number;
+  type_distribution: LoanTypeDistribution[];
+  monthly_trend: MonthlyTrendPoint[];
   recent_payments: Payment[];
 }
 
@@ -173,4 +218,26 @@ export type AsyncState<T> = {
   data: T | null;
   loading: boolean;
   error: string | null;
+};
+
+// ── Label Maps ───────────────────────────────────────────────
+export const LOAN_TYPE_LABELS: Record<LoanType, string> = {
+  home: "Home Loan",
+  personal: "Personal Loan",
+  vehicle: "Vehicle Loan",
+  education: "Education Loan",
+  business: "Business Loan",
+  credit_card: "Credit Card",
+  other: "Other",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  bank_transfer: "Bank Transfer",
+  upi: "UPI",
+  neft: "NEFT",
+  rtgs: "RTGS",
+  cheque: "Cheque",
+  auto_debit: "Auto Debit",
+  cash: "Cash",
+  other: "Other",
 };
