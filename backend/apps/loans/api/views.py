@@ -140,6 +140,9 @@ class LoanDashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
+        from apps.payments.models import Payment
+        from apps.payments.api.serializers import PaymentListSerializer
+
         user = request.user
         loans = Loan.objects.filter(user=user)
 
@@ -190,9 +193,6 @@ class LoanDashboardView(APIView):
         ).count()
 
         # Recent payments (last 10 across all loans)
-        from apps.payments.models import Payment
-        from apps.payments.api.serializers import PaymentListSerializer
-
         recent_payments = Payment.objects.filter(
             loan__user=user
         ).select_related("loan", "receipt").order_by("-payment_date", "-created_at")[:10]
