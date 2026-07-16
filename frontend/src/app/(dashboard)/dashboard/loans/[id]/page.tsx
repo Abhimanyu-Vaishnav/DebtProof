@@ -5,7 +5,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Topbar } from "@/components/layout/Topbar";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -24,6 +24,7 @@ import type { Loan, Payment } from "@/types";
 export default function LoanDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const pathname = usePathname();
   const { showToast } = useToast();
 
   const [loan, setLoan] = useState<Loan | null>(null);
@@ -61,7 +62,7 @@ export default function LoanDetailPage() {
   useEffect(() => {
     fetchLoan();
     fetchPayments();
-  }, [fetchLoan, fetchPayments]);
+  }, [fetchLoan, fetchPayments, pathname]);
 
   const handleDeletePayment = async () => {
     if (!deletePaymentId) return;
