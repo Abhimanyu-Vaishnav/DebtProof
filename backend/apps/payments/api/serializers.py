@@ -43,6 +43,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
 class PaymentListSerializer(serializers.ModelSerializer):
     """Lightweight payment serializer for lists."""
 
+    receipt = ReceiptSerializer(read_only=True)
     loan_name = serializers.CharField(source="loan.name", read_only=True)
     has_receipt = serializers.SerializerMethodField()
 
@@ -57,6 +58,7 @@ class PaymentListSerializer(serializers.ModelSerializer):
             "payment_method",
             "reference_number",
             "status",
+            "receipt",
             "has_receipt",
             "created_at",
         ]
