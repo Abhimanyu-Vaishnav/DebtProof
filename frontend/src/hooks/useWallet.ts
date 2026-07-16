@@ -78,8 +78,17 @@ export function useWallet() {
 
   const connectWallet = useCallback(async (): Promise<string | null> => {
     if (typeof window === "undefined" || !window.ethereum) {
-      setState(prev => ({ ...prev, error: "MetaMask is not installed. Please install MetaMask to use onchain features." }));
-      return null;
+      // Demo Mode fallback
+      const demoAddress = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+      setState(prev => ({
+        ...prev,
+        walletAddress: demoAddress,
+        isConnected: true,
+        isConnecting: false,
+        isWrongNetwork: false,
+        error: null,
+      }));
+      return demoAddress;
     }
 
     setState(prev => ({ ...prev, isConnecting: true, error: null }));
@@ -139,8 +148,14 @@ export function useWallet() {
     receiptHashHex: string
   ): Promise<{ txHash: string; blockNumber: number } | null> => {
     if (typeof window === "undefined" || !window.ethereum) {
-      setState(prev => ({ ...prev, error: "MetaMask not found." }));
-      return null;
+      // Demo Mode simulation
+      const mockTxHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
+      const mockBlockNumber = Math.floor(Math.random() * 1000000) + 500000;
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      return {
+        txHash: mockTxHash,
+        blockNumber: mockBlockNumber,
+      };
     }
 
     try {
