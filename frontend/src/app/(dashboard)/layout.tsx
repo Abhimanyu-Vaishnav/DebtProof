@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomTabBar } from "@/components/layout/BottomTabBar";
 
 export const metadata: Metadata = {
   title: {
@@ -18,6 +19,7 @@ export default function DashboardLayout({
     <div className="dashboard-layout">
       <Sidebar />
       <div className="main-content">{children}</div>
+      <BottomTabBar />
     </div>
   );
 }

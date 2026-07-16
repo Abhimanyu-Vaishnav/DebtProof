@@ -71,6 +71,16 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    label: "Verify Proof",
+    href: "/verify-proof",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+    ),
+  },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -144,7 +154,7 @@ export function Sidebar() {
         {/* Blockchain Badge */}
         <div className="mt-6 mx-1 p-3 rounded-[10px] bg-gradient-to-br from-[#0f2340] to-[#1a3a5c] text-white">
           <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-5 h-5 rounded-md bg-[var(--color-accent)] bg-opacity-20 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-md bg-[var(--color-accent)] bg-opacity-20 flex items-center justify-center text-[var(--color-accent)]">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
@@ -152,7 +162,7 @@ export function Sidebar() {
             <span className="text-[11px] font-semibold text-white">Monad Ready</span>
           </div>
           <p className="text-[10px] text-blue-200 leading-relaxed">
-            Blockchain anchoring on Monad Testnet — coming soon.
+            Tamper-proof anchoring active on Monad Testnet.
           </p>
         </div>
       </nav>

@@ -323,6 +323,68 @@ npm run dev
 
 ---
 
+## Blockchain & Monad Testnet Integration
+
+### Privacy Model
+DebtProof enforces a strict privacy boundary: **no financial or personally identifiable information (PII) is ever written to the blockchain.**
+- **Stored Onchain:** Cryptographic Hash (SHA-256), Proof ID (UUID), Timestamp, and Wallet Address.
+- **Stored Locally:** Loan amounts, interest rates, customer names, monthly EMIs, and receipt documents.
+
+### Blockchain Architecture
+```
+User Uploads Receipt
+         │
+         ▼
+Backend computes SHA-256 hash & generates UUID Proof ID
+         │
+         ▼
+Frontend prompts MetaMask to sign transaction on Monad Testnet
+         │
+         ▼
+Smart Contract (DebtProofRegistry) records [Proof ID, Hash, Timestamp, Wallet]
+         │
+         ▼
+Transaction confirmed -> Backend saves Tx Hash and block metadata
+```
+
+### Smart Contract Overview (`DebtProofRegistry`)
+The registry contract compiles under Solidity `0.8.20` and exposes:
+1. `storeProof(string proofId, bytes32 receiptHash)`: Registers a new proof. Reverts with `ProofAlreadyExists` or `ProofIdAlreadyExists` if duplicates are detected.
+2. `verifyProof(bytes32 receiptHash)`: Verifies a receipt hash onchain, emitting a `ProofVerified` event.
+3. `getProof(string proofId)`: View function to query proof details by its UUID string.
+4. `getProofByHash(bytes32 receiptHash)`: View function to query proof details by its receipt hash.
+
+### Monad Testnet Configuration
+- **Network Name:** Monad Testnet
+- **Chain ID:** `10143` (Hex: `0x279f`)
+- **RPC URL:** `https://testnet-rpc.monad.xyz/`
+- **Native Currency:** `MON`
+- **Block Explorer:** `https://testnet.monadsv.com/`
+
+### Smart Contract Deployment Instructions
+Deploy to Monad Testnet using Hardhat:
+```bash
+# 1. Navigate to blockchain directory
+cd blockchain
+
+# 2. Install dependencies
+npm install @nomicfoundation/hardhat-toolbox --save-dev
+
+# 3. Create .env file with your private key
+echo "PRIVATE_KEY=your_private_key_here" > .env
+
+# 4. Compile the smart contract
+npx hardhat compile
+
+# 5. Run local test suite
+npx hardhat test
+
+# 6. Deploy to Monad Testnet
+npx hardhat run scripts/deploy.js --network monadTestnet
+```
+
+---
+
 ## How to Run
 
 ### Development (Both Servers)
@@ -342,7 +404,7 @@ npm run dev
 # App available at http://localhost:3000
 ```
 
-### API Endpoints (Day 1)
+### API Endpoints
 
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
@@ -354,6 +416,10 @@ npm run dev
 | `GET` | `/api/v1/auth/profile/` | Get user profile | Bearer |
 | `PATCH` | `/api/v1/auth/profile/` | Update profile | Bearer |
 | `POST` | `/api/v1/auth/logout/` | Blacklist refresh token | Bearer |
+| `POST` | `/api/v1/payments/{payment_id}/proof/generate/` | Generate UUID Proof ID & return SHA-256 hash | Bearer |
+| `POST` | `/api/v1/payments/{payment_id}/proof/store/` | Record transaction metadata & mark as verified | Bearer |
+| `GET` | `/api/v1/payments/{payment_id}/proof/status/` | Fetch current blockchain proof status | Bearer |
+| `POST` | `/api/v1/payments/verify/` | Public portal to verify uploaded receipt hash | Public |
 
 ---
 

@@ -4,6 +4,8 @@ Handles payment CRUD and receipt file uploads with SHA-256 hashing.
 """
 import hashlib
 import logging
+import uuid
+from django.utils import timezone
 from rest_framework import generics, status, filters
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -234,6 +236,7 @@ class ReceiptUploadView(APIView):
             mime_type=mime_type,
             document_hash=document_hash,
             hash_algorithm="sha256",
+            blockchain_proof_id=str(uuid.uuid4()),
         )
 
         logger.info("Receipt uploaded for payment %s. Hash: %s...", payment_id, document_hash[:16])
@@ -274,3 +277,172 @@ class ReceiptUploadView(APIView):
             )
 
         return Response({"success": True, "message": "Receipt deleted successfully."})
+
+
+class GenerateProofView(APIView):
+    """
+    POST /api/v1/payments/{payment_id}/proof/generate/
+    Retrieve or generate the blockchain proof UUID and get the SHA-256 receipt hash.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, payment_id: str) -> Response:
+        try:
+            payment = Payment.objects.get(id=payment_id, loan__user=request.user)
+        except Payment.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"code": "NOT_FOUND", "message": "Payment not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not hasattr(payment, "receipt") or not payment.receipt:
+            return Response(
+                {"success": False, "error": {"code": "NO_RECEIPT", "message": "No receipt uploaded for this payment. Please upload a receipt first."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        receipt = payment.receipt
+        if not receipt.blockchain_proof_id:
+            receipt.blockchain_proof_id = str(uuid.uuid4())
+            receipt.save()
+
+        return Response({
+            "success": True,
+            "proof_id": receipt.blockchain_proof_id,
+            "receipt_hash": receipt.document_hash,
+        })
+
+
+class StoreProofMetadataView(APIView):
+    """
+    POST /api/v1/payments/{payment_id}/proof/store/
+    Save blockchain metadata after transaction has been successfully confirmed.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, payment_id: str) -> Response:
+        try:
+            payment = Payment.objects.get(id=payment_id, loan__user=request.user)
+        except Payment.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"code": "NOT_FOUND", "message": "Payment not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not hasattr(payment, "receipt") or not payment.receipt:
+            return Response(
+                {"success": False, "error": {"code": "NO_RECEIPT", "message": "No receipt exists for this payment."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        receipt = payment.receipt
+        
+        tx_hash = request.data.get("blockchain_tx_hash")
+        wallet_address = request.data.get("blockchain_wallet_address")
+        block_number = request.data.get("blockchain_block_number")
+        proof_id = request.data.get("blockchain_proof_id")
+
+        if not tx_hash or not wallet_address:
+            return Response(
+                {"success": False, "error": {"code": "INVALID_PARAMS", "message": "blockchain_tx_hash and blockchain_wallet_address are required."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        receipt.blockchain_tx_hash = tx_hash
+        receipt.blockchain_wallet_address = wallet_address
+        if block_number:
+            receipt.blockchain_block_number = int(block_number)
+        if proof_id:
+            receipt.blockchain_proof_id = proof_id
+        
+        receipt.is_blockchain_verified = True
+        receipt.blockchain_anchored_at = timezone.now()
+        receipt.save()
+
+        logger.info("Blockchain metadata stored for receipt %s. Tx: %s", receipt.id, tx_hash)
+
+        return Response({
+            "success": True,
+            "message": "Blockchain metadata saved successfully.",
+            "receipt": ReceiptSerializer(receipt, context={"request": request}).data
+        })
+
+
+class GetProofStatusView(APIView):
+    """
+    GET /api/v1/payments/{payment_id}/proof/status/
+    Retrieve the current blockchain proof status.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, payment_id: str) -> Response:
+        try:
+            payment = Payment.objects.get(id=payment_id, loan__user=request.user)
+        except Payment.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"code": "NOT_FOUND", "message": "Payment not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not hasattr(payment, "receipt") or not payment.receipt:
+            return Response(
+                {"success": False, "error": {"code": "NO_RECEIPT", "message": "No receipt exists for this payment."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        receipt = payment.receipt
+        return Response({
+            "success": True,
+            "is_blockchain_verified": receipt.is_blockchain_verified,
+            "blockchain_proof_id": receipt.blockchain_proof_id,
+            "blockchain_tx_hash": receipt.blockchain_tx_hash,
+            "blockchain_wallet_address": receipt.blockchain_wallet_address,
+            "blockchain_network": receipt.blockchain_network,
+            "blockchain_anchored_at": receipt.blockchain_anchored_at
+        })
+
+
+class VerifyProofView(APIView):
+    """
+    POST /api/v1/proofs/verify/
+    Public portal to verify any receipt's authenticity against on-chain database proofs.
+    """
+    permission_classes = []  # Publicly accessible
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request: Request) -> Response:
+        uploaded_file = request.FILES.get("file")
+        if not uploaded_file:
+            return Response(
+                {"success": False, "error": {"code": "FILE_MISSING", "message": "Receipt file is required."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Compute SHA-256 hash of the uploaded file
+        sha256 = hashlib.sha256()
+        for chunk in uploaded_file.chunks():
+            sha256.update(chunk)
+        document_hash = sha256.hexdigest()
+
+        # Find verified receipt in database with this hash
+        try:
+            receipt = Receipt.objects.get(document_hash=document_hash, is_blockchain_verified=True)
+            return Response({
+                "success": True,
+                "verified": True,
+                "document_hash": document_hash,
+                "proof_id": receipt.blockchain_proof_id,
+                "tx_hash": receipt.blockchain_tx_hash,
+                "anchored_at": receipt.blockchain_anchored_at,
+                "wallet_address": receipt.blockchain_wallet_address,
+                "network": receipt.blockchain_network,
+                "block_number": receipt.blockchain_block_number
+            })
+        except Receipt.DoesNotExist:
+            return Response({
+                "success": True,
+                "verified": False,
+                "document_hash": document_hash,
+                "message": "No verified on-chain proof found for this receipt. Verify file integrity or ensure proof has been anchored."
+            })
+

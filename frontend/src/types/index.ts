@@ -177,7 +177,14 @@ export interface Receipt {
   mime_type: string;
   document_hash: string;
   hash_algorithm: string;
+  blockchain_proof_id?: string;
+  blockchain_tx_hash?: string;
+  blockchain_block_number?: number;
+  blockchain_network?: string;
+  blockchain_anchored_at?: string;
+  blockchain_wallet_address?: string;
   file_url: string | null;
+  is_blockchain_verified?: boolean;
   created_at: string;
 }
 

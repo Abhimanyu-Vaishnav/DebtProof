@@ -22,6 +22,13 @@ class ReceiptSerializer(serializers.ModelSerializer):
             "document_hash",
             "hash_algorithm",
             "file_url",
+            "blockchain_proof_id",
+            "blockchain_tx_hash",
+            "blockchain_block_number",
+            "blockchain_network",
+            "blockchain_anchored_at",
+            "blockchain_wallet_address",
+            "is_blockchain_verified",
             "created_at",
         ]
         read_only_fields = fields

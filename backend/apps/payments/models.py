@@ -149,12 +149,14 @@ class Receipt(BaseModel):
         help_text="Algorithm used to generate document_hash",
     )
 
-    # ── Blockchain (Future — Day 2+) ──────────────────────────
-    # blockchain_tx_hash = models.CharField(max_length=66, blank=True)
-    # blockchain_block_number = models.PositiveBigIntegerField(null=True)
-    # blockchain_network = models.CharField(max_length=50, default="monad-testnet")
-    # blockchain_anchored_at = models.DateTimeField(null=True)
-    # is_blockchain_verified = models.BooleanField(default=False)
+    # ── Blockchain (Day 3 Monad Integration) ───────────────────
+    blockchain_proof_id = models.CharField(max_length=36, blank=True, help_text="UUID Proof ID stored on blockchain")
+    blockchain_tx_hash = models.CharField(max_length=66, blank=True, help_text="Blockchain transaction hash")
+    blockchain_block_number = models.PositiveBigIntegerField(null=True, blank=True, help_text="Blockchain block number")
+    blockchain_network = models.CharField(max_length=50, default="monad-testnet", help_text="Target blockchain network")
+    blockchain_anchored_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp of blockchain confirmation")
+    blockchain_wallet_address = models.CharField(max_length=42, blank=True, help_text="Wallet address that signed/stored the proof")
+    is_blockchain_verified = models.BooleanField(default=False, help_text="Status indicating whether proof is successfully stored on-chain")
 
     class Meta:
         db_table = "receipts"
