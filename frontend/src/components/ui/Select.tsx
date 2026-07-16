@@ -30,7 +30,8 @@ export function Select({
   id,
   ...props
 }: SelectProps) {
-  const inputId = id || `select-${Math.random().toString(36).slice(2)}`;
+  const reactId = React.useId();
+  const inputId = id || reactId;
 
   return (
     <div className="form-group">

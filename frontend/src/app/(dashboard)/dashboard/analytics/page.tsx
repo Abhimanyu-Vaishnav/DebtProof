@@ -297,15 +297,15 @@ export default function AnalyticsPage() {
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-[14px] font-bold text-white mb-1">Monad Blockchain Integration — Coming Day 3</h3>
+              <h3 className="text-[14px] font-bold text-white mb-1">Monad Blockchain Integration Active</h3>
               <p className="text-xs text-blue-200 leading-relaxed">
-                Every payment receipt is SHA-256 hashed and stored. When Monad integration launches, 
-                each hash will be anchored on-chain, creating immutable, tamper-proof proof of repayment 
-                that anyone can verify without trusting a centralized server.
+                Every payment receipt is SHA-256 hashed and anchored on the Monad Blockchain. 
+                This creates immutable, tamper-proof proof of repayment that anyone can verify 
+                publicly without compromising your privacy or relying on centralized servers.
               </p>
               <div className="mt-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse" />
-                <span className="text-xs text-[var(--color-accent)] font-semibold">Monad Testnet Ready</span>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs text-emerald-400 font-semibold">Tamper-Proof Anchoring Live</span>
               </div>
             </div>
           </div>

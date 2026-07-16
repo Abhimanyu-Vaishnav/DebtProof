@@ -11,7 +11,8 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 }
 
 export function Textarea({ label, error, hint, className, id, ...props }: TextareaProps) {
-  const inputId = id || `textarea-${Math.random().toString(36).slice(2)}`;
+  const reactId = React.useId();
+  const inputId = id || reactId;
 
   return (
     <div className="form-group">
