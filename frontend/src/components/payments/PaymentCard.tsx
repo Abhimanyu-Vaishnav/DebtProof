@@ -99,60 +99,53 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
 
   return (
     <div className="p-4 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] hover:shadow-sm hover:border-[var(--color-border)] hover:bg-[var(--color-surface-secondary)] transition-all mb-3 last:mb-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
+        {/* Left Side: Icon + Details */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-[var(--color-accent)] bg-opacity-10 flex items-center justify-center text-[var(--color-accent)] shrink-0 shadow-inner">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
             </svg>
           </div>
           <div className="min-w-0">
-            {showLoan && (
-              <p className="text-[11px] font-bold text-[var(--color-primary)] uppercase tracking-wider truncate">{localPayment.loan_name}</p>
-            )}
-            <p className="text-[15px] font-extrabold text-[var(--color-text-primary)] mt-0.5">
+            <p className="text-[13px] font-semibold text-[var(--color-text-primary)] truncate">
+              {showLoan ? localPayment.loan_name : "Repayment"}
+            </p>
+            <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+              {formatDate(localPayment.payment_date)} · {PAYMENT_METHOD_LABELS[localPayment.payment_method]}
+            </p>
+          </div>
+        </div>
+
+        {/* Right Side: Amount + Status Badge */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right">
+            <p className="text-[15px] font-bold text-[var(--color-text-primary)]">
               {formatCurrency(parseFloat(localPayment.amount))}
             </p>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-xs text-[var(--color-text-secondary)] font-medium">
-                {formatDate(localPayment.payment_date)}
+            <div className="flex items-center gap-1.5 justify-end mt-1">
+              <span className={`${className} text-[9px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-md`}>
+                {label}
               </span>
-              <span className="text-[10px] text-[var(--color-text-tertiary)]">·</span>
-              <span className="text-xs text-[var(--color-text-secondary)] font-medium">
-                {PAYMENT_METHOD_LABELS[localPayment.payment_method]}
-              </span>
-              {localPayment.reference_number && (
-                <>
-                  <span className="text-[10px] text-[var(--color-text-tertiary)]">·</span>
-                  <span className="text-xs text-[var(--color-text-tertiary)] font-mono truncate max-w-[120px] font-medium" title={localPayment.reference_number}>
-                    Ref: {localPayment.reference_number}
-                  </span>
-                </>
+              {receipt && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className={`p-1 rounded-md transition-all ${isVerifiedOnchain ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 border border-[var(--color-border-light)]'} cursor-pointer`}
+                  title={isVerifiedOnchain ? "Verified On-chain" : "Has Receipt"}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    {isVerifiedOnchain && <path d="m9 15 2 2 4-4" stroke="currentColor" strokeWidth="2.5" />}
+                  </svg>
+                </button>
               )}
             </div>
           </div>
-        </div>
-        
-        <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--color-border-light)]">
-          {receipt && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className={`btn btn-xs sm:btn-sm rounded-lg ${isVerifiedOnchain ? 'btn-success bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'btn-secondary'} flex items-center gap-1.5 font-bold cursor-pointer`}
-              title={isVerifiedOnchain ? "Verified Onchain" : "Has Receipt"}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                {isVerifiedOnchain && <path d="m9 15 2 2 4-4" stroke="currentColor" strokeWidth="2.5" />}
-              </svg>
-              <span>{isVerifiedOnchain ? "Onchain" : "Receipt"}</span>
-            </button>
-          )}
-          <span className={`${className} text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-md`}>{label}</span>
           {onDelete && (
             <button
               onClick={() => onDelete(localPayment.id)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-red-50/50 border border-transparent hover:border-[var(--color-border-light)] transition-all cursor-pointer"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-red-50/50 border border-transparent hover:border-[var(--color-border-light)] transition-all cursor-pointer shrink-0"
               aria-label="Delete payment"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
