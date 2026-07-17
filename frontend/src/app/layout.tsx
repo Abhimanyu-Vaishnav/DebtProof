@@ -32,6 +32,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { ToastProvider } from "@/components/ui/Toast";
+
 export default function RootLayout({
   children,
 }: {
@@ -43,7 +45,11 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable}`}
       data-scroll-behavior="smooth"
     >
-      <body>{children}</body>
+      <body>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }
