@@ -201,9 +201,9 @@ export function DashboardClient() {
       </section>
 
       {/* Bottom Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
         {/* Loan type distribution — mini chart */}
-        <section className="lg:col-span-2">
+        <section className="lg:col-span-2 flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
               Loan Portfolio
@@ -212,7 +212,7 @@ export function DashboardClient() {
               View all →
             </Link>
           </div>
-          <div className="card p-5">
+          <div className="card p-5 flex-1 flex flex-col justify-between">
             {data.total_loans === 0 ? (
               <div className="text-center py-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">

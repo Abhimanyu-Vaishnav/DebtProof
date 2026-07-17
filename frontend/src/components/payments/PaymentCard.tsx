@@ -97,8 +97,81 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
     }
   };
 
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!receipt) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    if (receipt) {
+      showToast("This payment already has a receipt.", "warning");
+      return;
+    }
+
+    const files = e.dataTransfer.files;
+    if (files.length === 0) return;
+
+    const file = files[0];
+    
+    // Validate file size and type
+    const validTypes = ["application/pdf", "image/jpeg", "image/png"];
+    if (!validTypes.includes(file.type)) {
+      showToast("Only PDF, JPG, and PNG files are supported.", "error");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("File size must be under 5MB.", "error");
+      return;
+    }
+
+    showToast(`Uploading receipt: ${file.name}...`, "info");
+    try {
+      const newReceipt = await paymentsService.uploadReceipt(localPayment.id, file);
+      setLocalPayment(prev => ({
+        ...prev,
+        receipt: newReceipt
+      }));
+      showToast("Receipt uploaded successfully! Drag-and-drop complete.", "success");
+      setIsExpanded(true); // Automatically expand to show options (like anchor proof)
+      if (onUpdate) onUpdate();
+    } catch (err: any) {
+      showToast(err.message || "Failed to upload receipt.", "error");
+    }
+  };
+
   return (
-    <div className="p-4 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] hover:shadow-sm hover:border-[var(--color-border)] hover:bg-[var(--color-surface-secondary)] transition-all mb-3 last:mb-0">
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`p-4 rounded-xl border transition-all mb-3 last:mb-0 relative ${
+        isDragging
+          ? "border-[var(--color-accent)] bg-[var(--color-surface-secondary)] scale-[1.01] shadow-md"
+          : "border-[var(--color-border-light)] bg-[var(--color-surface)] hover:shadow-sm hover:border-[var(--color-border)] hover:bg-[var(--color-surface-secondary)]"
+      }`}
+    >
+      {isDragging && (
+        <div className="absolute inset-0 bg-[var(--color-accent)]/5 rounded-xl flex items-center justify-center pointer-events-none border-2 border-dashed border-[var(--color-accent)] z-10 animate-pulse">
+          <p className="text-xs font-bold text-[var(--color-accent)] flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Drop Receipt File Here
+          </p>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3">
         {/* Left Side: Icon + Details */}
         <div className="flex items-center gap-3 min-w-0">
