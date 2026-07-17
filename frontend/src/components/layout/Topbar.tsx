@@ -13,6 +13,35 @@ interface TopbarProps {
 
 export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    {
+      id: "notif-1",
+      title: "Anchor Pending",
+      description: "You have recorded payments with unanchored receipts. Secure them on Monad Testnet.",
+      time: "Just now",
+      read: false,
+      type: "warning"
+    },
+    {
+      id: "notif-2",
+      title: "Wallet Connected",
+      description: "Successfully connected MetaMask with Monad Testnet provider.",
+      time: "5m ago",
+      read: false,
+      type: "success"
+    },
+    {
+      id: "notif-3",
+      title: "System Update",
+      description: "DebtProof v1.0.0 is production-ready for Monad Blockchain Hackathon.",
+      time: "1h ago",
+      read: true,
+      type: "info"
+    }
+  ]);
+  
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { logout } = useAuth();
@@ -23,11 +52,25 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
     router.push("/login");
   };
 
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const handleDismissNotification = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -48,19 +91,91 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-3 shrink-0">
-        {/* Notification Bell */}
-        <button
-          className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors relative"
-          aria-label="Notifications"
-          id="topbar-notifications-btn"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          {/* Unread dot */}
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--color-accent)] rounded-full" aria-label="3 unread notifications" />
-        </button>
+        {/* Notification Bell Dropdown */}
+        <div className="relative" ref={notificationsRef}>
+          <button
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors relative cursor-pointer"
+            aria-label="Notifications"
+            id="topbar-notifications-btn"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {/* Unread dot */}
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" aria-label={`${unreadCount} unread notifications`} />
+            )}
+          </button>
+
+          {/* Notifications Panel */}
+          {notificationsOpen && (
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg py-2.5 z-50 animate-fade-in-up">
+              <div className="flex items-center justify-between px-4 pb-2 border-b border-[var(--color-border-light)]">
+                <span className="text-xs font-bold text-[var(--color-text-primary)]">Notifications ({unreadCount})</span>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-[10px] font-bold text-[var(--color-accent)] hover:underline cursor-pointer"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+              <div className="max-h-64 overflow-y-auto mt-1">
+                {notifications.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-[var(--color-text-tertiary)]">
+                    No new notifications
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => {
+                        setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
+                        setNotificationsOpen(false);
+                      }}
+                      className={`px-4 py-3 flex gap-2.5 items-start hover:bg-[var(--color-surface-secondary)] cursor-pointer transition-colors border-b border-[var(--color-border-light)] last:border-0 ${
+                        !n.read ? "bg-[var(--color-surface-secondary)]/50" : ""
+                      }`}
+                    >
+                      <div className="mt-0.5 shrink-0">
+                        {n.type === "success" && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                        )}
+                        {n.type === "warning" && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)]" />
+                        )}
+                        {n.type === "info" && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-xs text-[var(--color-text-primary)] leading-tight ${!n.read ? "font-bold" : "font-semibold"}`}>
+                          {n.title}
+                        </p>
+                        <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed">
+                          {n.description}
+                        </p>
+                        <span className="text-[9px] text-[var(--color-text-tertiary)] mt-1 inline-block">{n.time}</span>
+                      </div>
+                      <button
+                        onClick={(e) => handleDismissNotification(n.id, e)}
+                        className="text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] transition-colors p-0.5 cursor-pointer"
+                        title="Dismiss"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Divider */}
         <div className="w-px h-5 bg-[var(--color-border)]" />
