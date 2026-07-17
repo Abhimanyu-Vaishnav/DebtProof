@@ -119,70 +119,100 @@ export default function LoansPage() {
     <>
       <Topbar title="My Loans" subtitle={`${totalCount} total loan${totalCount !== 1 ? "s" : ""}`} />
       <main className="page-content">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3 mb-5">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
-              width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="search"
-              placeholder="Search loans, lenders..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="form-input pl-9 py-2 text-sm"
-            />
+        {/* Modern Filter Toolbar */}
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border-light)] p-4 rounded-2xl shadow-sm mb-6 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-6 rounded-full bg-[var(--color-primary)]" />
+              <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Filter Portfolio</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {(search || statusFilter || typeFilter || ordering !== "-created_at") && (
+                <button
+                  onClick={resetFilters}
+                  className="btn btn-secondary btn-sm font-semibold shrink-0 cursor-pointer transition-all hover:bg-[var(--color-surface-secondary)]"
+                >
+                  Clear Filters
+                </button>
+              )}
+              <Link href="/dashboard/loans/new" className="btn btn-primary btn-sm shrink-0 font-bold shadow-sm shadow-[var(--color-primary)]/10 hover:shadow-md transition-all">
+                + New Loan
+              </Link>
+            </div>
           </div>
 
-          {/* Status filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="form-input py-2 text-sm appearance-none min-w-[130px]"
-          >
-            {STATUS_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Search Input */}
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+              >
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="search"
+                placeholder="Search loans, lenders..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="form-input pl-10 py-2.5 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] focus:bg-[var(--color-surface)] transition-all"
+              />
+            </div>
 
-          {/* Type filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="form-input py-2 text-sm appearance-none min-w-[130px]"
-          >
-            {TYPE_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
+            {/* Status Filter */}
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="form-input py-2.5 px-3 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] transition-all cursor-pointer appearance-none"
+              >
+                {STATUS_FILTERS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
 
-          {/* Sort */}
-          <select
-            value={ordering}
-            onChange={(e) => setOrdering(e.target.value)}
-            className="form-input py-2 text-sm appearance-none min-w-[160px]"
-          >
-            {SORT_OPTIONS.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+            {/* Type Filter */}
+            <div className="relative">
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="form-input py-2.5 px-3 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] transition-all cursor-pointer appearance-none"
+              >
+                {TYPE_FILTERS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
 
-          {(search || statusFilter || typeFilter || ordering !== "-created_at") && (
-            <button
-              onClick={resetFilters}
-              className="btn btn-secondary btn-sm shrink-0 font-bold"
-            >
-              Reset
-            </button>
-          )}
-
-          <Link href="/dashboard/loans/new" className="btn btn-primary btn-sm shrink-0">
-            + New Loan
-          </Link>
+            {/* Sort Options */}
+            <div className="relative">
+              <select
+                value={ordering}
+                onChange={(e) => setOrdering(e.target.value)}
+                className="form-input py-2.5 px-3 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] transition-all cursor-pointer appearance-none"
+              >
+                {SORT_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Loan Grid */}
