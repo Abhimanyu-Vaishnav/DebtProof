@@ -155,7 +155,7 @@ export default function LoansPage() {
                 placeholder="Search loans, lenders..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="form-input pl-10 py-2.5 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] focus:bg-[var(--color-surface)] transition-all"
+                className="form-input !pl-10 py-2.5 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] focus:bg-[var(--color-surface)] transition-all"
               />
             </div>
 
