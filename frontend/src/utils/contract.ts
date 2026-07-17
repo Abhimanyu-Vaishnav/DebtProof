@@ -10,7 +10,7 @@ export const MONAD_TESTNET_PARAMS = {
   blockExplorerUrls: ['https://testnet.monadscan.com/'],
 };
 
-export const DEBT_PROOF_REGISTRY_ADDRESS = '';
+export const DEBT_PROOF_REGISTRY_ADDRESS = '0x316dF00a399d655734CeaeFfEE0A7DD432e1DB5f';
 
 export const DEBT_PROOF_REGISTRY_ABI = [
   {
