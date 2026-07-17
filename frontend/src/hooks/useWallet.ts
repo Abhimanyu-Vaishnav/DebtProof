@@ -78,17 +78,8 @@ export function useWallet() {
 
   const connectWallet = useCallback(async (): Promise<string | null> => {
     if (typeof window === "undefined" || !window.ethereum) {
-      // Demo Mode fallback
-      const demoAddress = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
-      setState(prev => ({
-        ...prev,
-        walletAddress: demoAddress,
-        isConnected: true,
-        isConnecting: false,
-        isWrongNetwork: false,
-        error: null,
-      }));
-      return demoAddress;
+      setState(prev => ({ ...prev, error: "MetaMask is not installed." }));
+      return null;
     }
 
     setState(prev => ({ ...prev, isConnecting: true, error: null }));
@@ -148,14 +139,7 @@ export function useWallet() {
     receiptHashHex: string
   ): Promise<{ txHash: string; blockNumber: number } | null> => {
     if (typeof window === "undefined" || !window.ethereum) {
-      // Demo Mode simulation
-      const mockTxHash = "0x" + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join("");
-      const mockBlockNumber = Math.floor(Math.random() * 1000000) + 500000;
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      return {
-        txHash: mockTxHash,
-        blockNumber: mockBlockNumber,
-      };
+      throw new Error("MetaMask is not installed.");
     }
 
     try {
@@ -167,6 +151,10 @@ export function useWallet() {
         if (!switched) {
           throw new Error("Please switch to Monad Testnet before proceeding.");
         }
+      }
+
+      if (!DEBT_PROOF_REGISTRY_ADDRESS) {
+        throw new Error("Contract Not Yet Deployed.");
       }
 
       const signer = await provider.getSigner();

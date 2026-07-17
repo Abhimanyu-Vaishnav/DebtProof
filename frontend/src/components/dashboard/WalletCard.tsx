@@ -35,14 +35,6 @@ export function WalletCard() {
           .finally(() => {
             if (active) setLoadingBalance(false);
           });
-      } else {
-        // Simulated Demo Mode balance
-        setTimeout(() => {
-          if (active) {
-            setBalance("2.5401");
-            setLoadingBalance(false);
-          }
-        }, 600);
       }
     } else {
       setBalance("0.0000");
@@ -143,7 +135,7 @@ export function WalletCard() {
           ) : (
             <div className="flex items-center justify-between gap-2 pt-2">
               <a
-                href={`https://testnet.monadsv.com/address/${wallet.walletAddress}`}
+                href={`https://testnet.monadscan.com/address/${wallet.walletAddress}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-[var(--color-primary-light)] hover:underline inline-flex items-center gap-1 font-semibold"

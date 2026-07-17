@@ -7,10 +7,10 @@ export const MONAD_TESTNET_PARAMS = {
     decimals: 18,
   },
   rpcUrls: ['https://testnet-rpc.monad.xyz/'],
-  blockExplorerUrls: ['https://testnet.monadsv.com/'],
+  blockExplorerUrls: ['https://testnet.monadscan.com/'],
 };
 
-export const DEBT_PROOF_REGISTRY_ADDRESS = '0x6f91666eD9C3Ed82e14CEb912a76f2f9A1979A09';
+export const DEBT_PROOF_REGISTRY_ADDRESS = '';
 
 export const DEBT_PROOF_REGISTRY_ABI = [
   {
