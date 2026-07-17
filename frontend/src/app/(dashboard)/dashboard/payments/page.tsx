@@ -78,39 +78,63 @@ export default function PaymentsPage() {
     <>
       <Topbar title="Payment History" subtitle={`${totalCount} total payment${totalCount !== 1 ? "s" : ""}`} />
       <main className="page-content">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3 mb-5">
-          <div className="relative flex-1 min-w-[200px]">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="search"
-              placeholder="Search payments, loans..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="form-input pl-9 py-2 text-sm"
-            />
+        {/* Modern Filter Toolbar */}
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border-light)] p-4 rounded-2xl shadow-sm mb-6 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-6 rounded-full bg-[var(--color-primary)]" />
+              <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Filter Payments</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              {(search || statusFilter) && (
+                <button
+                  onClick={resetFilters}
+                  className="btn btn-secondary btn-sm font-semibold shrink-0 cursor-pointer transition-all hover:bg-[var(--color-surface-secondary)]"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="form-input py-2 text-sm appearance-none min-w-[130px]"
-          >
-            <option value="">All Status</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
-          </select>
-          {(search || statusFilter) && (
-            <button
-              onClick={resetFilters}
-              className="btn btn-secondary btn-sm shrink-0 font-bold"
-            >
-              Reset
-            </button>
-          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Search Input */}
+            <div className="relative">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+              >
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="search"
+                placeholder="Search payments, loans..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="form-input !pl-10 py-2.5 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] focus:bg-[var(--color-surface)] transition-all"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="form-input py-2.5 px-3 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] transition-all cursor-pointer appearance-none"
+              >
+                <option value="">All Status</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Summary card */}
@@ -139,7 +163,7 @@ export default function PaymentsPage() {
           />
         ) : (
           <>
-            <div className="card p-5">
+            <div className="space-y-3">
               {payments.map((p) => (
                 <PaymentCard key={p.id} payment={p} showLoan onDelete={setDeleteId} />
               ))}
