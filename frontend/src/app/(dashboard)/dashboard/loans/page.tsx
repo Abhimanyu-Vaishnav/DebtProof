@@ -13,6 +13,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { useDebounce } from "@/hooks/useDebounce";
 import { loansService } from "@/services/loans.service";
 import type { Loan } from "@/types";
 
@@ -55,6 +56,7 @@ export default function LoansPage() {
   const [deleting, setDeleting] = useState(false);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [ordering, setOrdering] = useState("-created_at");
@@ -65,7 +67,7 @@ export default function LoansPage() {
       const res = await loansService.getLoans({
         page,
         page_size: 12,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         status: statusFilter || undefined,
         loan_type: typeFilter || undefined,
         ordering,
@@ -78,7 +80,7 @@ export default function LoansPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, typeFilter, ordering, showToast]);
+  }, [page, debouncedSearch, statusFilter, typeFilter, ordering, showToast]);
 
   useEffect(() => {
     fetchLoans();
@@ -87,7 +89,14 @@ export default function LoansPage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, typeFilter, ordering]);
+  }, [debouncedSearch, statusFilter, typeFilter, ordering]);
+
+  const resetFilters = () => {
+    setSearch("");
+    setStatusFilter("");
+    setTypeFilter("");
+    setOrdering("-created_at");
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -162,6 +171,15 @@ export default function LoansPage() {
             ))}
           </select>
 
+          {(search || statusFilter || typeFilter || ordering !== "-created_at") && (
+            <button
+              onClick={resetFilters}
+              className="btn btn-secondary btn-sm shrink-0 font-bold"
+            >
+              Reset
+            </button>
+          )}
+
           <Link href="/dashboard/loans/new" className="btn btn-primary btn-sm shrink-0">
             + New Loan
           </Link>
@@ -190,7 +208,7 @@ export default function LoansPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
               {loans.map((loan) => (
-                <LoanCard key={loan.id} loan={loan} onDelete={setDeleteId} />
+                <LoanCard key={loan.id} loan={loan} onDelete={setDeleteId} searchQuery={debouncedSearch} />
               ))}
             </div>
 

@@ -11,6 +11,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { useDebounce } from "@/hooks/useDebounce";
 import { paymentsService } from "@/services/payments.service";
 import { formatCurrency } from "@/utils/formatters";
 import type { Payment } from "@/types";
@@ -23,6 +24,7 @@ export default function PaymentsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -33,7 +35,7 @@ export default function PaymentsPage() {
       const res = await paymentsService.getAllPayments({
         page,
         page_size: 20,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         status: statusFilter || undefined,
         ordering: "-payment_date",
       });
@@ -45,10 +47,15 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, showToast]);
+  }, [page, debouncedSearch, statusFilter, showToast]);
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
-  useEffect(() => { setPage(1); }, [search, statusFilter]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, statusFilter]);
+
+  const resetFilters = () => {
+    setSearch("");
+    setStatusFilter("");
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -96,6 +103,14 @@ export default function PaymentsPage() {
             <option value="failed">Failed</option>
             <option value="refunded">Refunded</option>
           </select>
+          {(search || statusFilter) && (
+            <button
+              onClick={resetFilters}
+              className="btn btn-secondary btn-sm shrink-0 font-bold"
+            >
+              Reset
+            </button>
+          )}
         </div>
 
         {/* Summary card */}

@@ -72,7 +72,7 @@ class LoanPaymentListCreateView(generics.ListCreateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         payment = serializer.save()
-        logger.info("Payment created: ₹%s for loan %s", payment.amount, loan.name)
+        logger.info("Payment created: INR %s for loan %s", payment.amount, loan.name)
         return Response(
             {
                 "success": True,

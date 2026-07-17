@@ -4,13 +4,14 @@
 import React from "react";
 import Link from "next/link";
 import { Loan, LOAN_TYPE_LABELS } from "@/types";
-import { formatCurrency, formatDate } from "@/utils/formatters";
+import { formatCurrency, formatDate, highlightMatch } from "@/utils/formatters";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LoanStatusBadge } from "./LoanStatusBadge";
 
 interface LoanCardProps {
   loan: Loan;
   onDelete?: (id: string) => void;
+  searchQuery?: string;
 }
 
 const LOAN_TYPE_ICONS: Record<string, string> = {
@@ -23,7 +24,7 @@ const LOAN_TYPE_ICONS: Record<string, string> = {
   other: "📄",
 };
 
-export function LoanCard({ loan, onDelete }: LoanCardProps) {
+export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
   const progress = loan.repayment_progress_percent;
 
   return (
@@ -38,10 +39,10 @@ export function LoanCard({ loan, onDelete }: LoanCardProps) {
               href={`/dashboard/loans/${loan.id}`}
               className="text-[14px] font-semibold text-[var(--color-text-primary)] hover:text-[var(--color-primary-light)] transition-colors truncate block"
             >
-              {loan.name}
+              {searchQuery ? highlightMatch(loan.name, searchQuery) : loan.name}
             </Link>
             <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5 truncate">
-              {loan.lender_name} · {LOAN_TYPE_LABELS[loan.loan_type]}
+              {searchQuery ? highlightMatch(loan.lender_name, searchQuery) : loan.lender_name} · {LOAN_TYPE_LABELS[loan.loan_type]}
             </p>
           </div>
         </div>
