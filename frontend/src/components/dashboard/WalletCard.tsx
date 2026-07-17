@@ -46,6 +46,12 @@ export function WalletCard() {
     };
   }, [wallet.isConnected, wallet.walletAddress, wallet.isWrongNetwork]);
 
+  useEffect(() => {
+    if (wallet.error) {
+      showToast(wallet.error, "error");
+    }
+  }, [wallet.error, showToast]);
+
   const handleCopy = () => {
     if (!wallet.walletAddress) return;
     navigator.clipboard.writeText(wallet.walletAddress);
