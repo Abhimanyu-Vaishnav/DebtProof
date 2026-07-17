@@ -98,34 +98,34 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
   };
 
   return (
-    <div className="py-4 border-b border-[var(--color-border-light)] last:border-0">
-      <div className="flex items-start justify-between gap-4">
+    <div className="p-4 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] hover:shadow-sm hover:border-[var(--color-border)] hover:bg-[var(--color-surface-secondary)] transition-all mb-3 last:mb-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-[var(--color-accent)] bg-opacity-10 flex items-center justify-center text-[var(--color-accent)] shrink-0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-accent)] bg-opacity-10 flex items-center justify-center text-[var(--color-accent)] shrink-0 shadow-inner">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
             </svg>
           </div>
           <div className="min-w-0">
             {showLoan && (
-              <p className="text-xs font-medium text-[var(--color-primary)] truncate">{localPayment.loan_name}</p>
+              <p className="text-[11px] font-bold text-[var(--color-primary)] uppercase tracking-wider truncate">{localPayment.loan_name}</p>
             )}
-            <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">
+            <p className="text-[15px] font-extrabold text-[var(--color-text-primary)] mt-0.5">
               {formatCurrency(parseFloat(localPayment.amount))}
             </p>
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              <span className="text-xs text-[var(--color-text-tertiary)]">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-xs text-[var(--color-text-secondary)] font-medium">
                 {formatDate(localPayment.payment_date)}
               </span>
               <span className="text-[10px] text-[var(--color-text-tertiary)]">·</span>
-              <span className="text-xs text-[var(--color-text-tertiary)]">
+              <span className="text-xs text-[var(--color-text-secondary)] font-medium">
                 {PAYMENT_METHOD_LABELS[localPayment.payment_method]}
               </span>
               {localPayment.reference_number && (
                 <>
                   <span className="text-[10px] text-[var(--color-text-tertiary)]">·</span>
-                  <span className="text-xs text-[var(--color-text-tertiary)] font-mono truncate max-w-[120px]" title={localPayment.reference_number}>
-                    {localPayment.reference_number}
+                  <span className="text-xs text-[var(--color-text-tertiary)] font-mono truncate max-w-[120px] font-medium" title={localPayment.reference_number}>
+                    Ref: {localPayment.reference_number}
                   </span>
                 </>
               )}
@@ -133,29 +133,29 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
           </div>
         </div>
         
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--color-border-light)]">
           {receipt && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className={`btn btn-sm ${isVerifiedOnchain ? 'btn-success bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'btn-secondary'} flex items-center gap-1.5`}
+              className={`btn btn-xs sm:btn-sm rounded-lg ${isVerifiedOnchain ? 'btn-success bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'btn-secondary'} flex items-center gap-1.5 font-bold cursor-pointer`}
               title={isVerifiedOnchain ? "Verified Onchain" : "Has Receipt"}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
-                {isVerifiedOnchain && <path d="m9 15 2 2 4-4" stroke="currentColor" strokeWidth="2" />}
+                {isVerifiedOnchain && <path d="m9 15 2 2 4-4" stroke="currentColor" strokeWidth="2.5" />}
               </svg>
-              <span className="text-xs">{isVerifiedOnchain ? "Onchain" : "Receipt"}</span>
+              <span>{isVerifiedOnchain ? "Onchain" : "Receipt"}</span>
             </button>
           )}
-          <span className={className}>{label}</span>
+          <span className={`${className} text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-md`}>{label}</span>
           {onDelete && (
             <button
               onClick={() => onDelete(localPayment.id)}
-              className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-red-50 transition-colors"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-red-50/50 border border-transparent hover:border-[var(--color-border-light)] transition-all cursor-pointer"
               aria-label="Delete payment"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
             </button>
@@ -165,19 +165,19 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
 
       {/* Expandable Blockchain / Receipt Details Section */}
       {isExpanded && receipt && (
-        <div className="mt-3 p-4 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] space-y-3 animation-fade-in">
+        <div className="mt-3.5 p-4 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] space-y-3.5 animate-fade-in">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-xs font-semibold text-[var(--color-text-primary)]">Receipt Document</p>
+              <p className="text-xs font-bold text-[var(--color-text-primary)]">Receipt Document</p>
               <a
                 href={receipt.file_url || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-[var(--color-accent)] hover:underline truncate max-w-[250px] inline-block mt-0.5"
+                className="text-xs text-[var(--color-accent)] hover:underline truncate max-w-[250px] inline-block mt-1 font-semibold"
               >
                 {receipt.original_filename}
               </a>
-              <p className="text-[10px] text-[var(--color-text-tertiary)]">
+              <p className="text-[10px] text-[var(--color-text-tertiary)] font-medium">
                 {(receipt.file_size_bytes / 1024).toFixed(1)} KB · SHA-256: <span className="font-mono">{receipt.document_hash.slice(0, 12)}...</span>
               </p>
             </div>
@@ -186,7 +186,7 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
               <button
                 onClick={handleStoreProof}
                 disabled={isStoring}
-                className="btn btn-accent btn-sm text-xs flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0 shadow-lg shadow-indigo-500/10"
+                className="btn btn-accent btn-sm text-xs flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0 shadow-lg shadow-indigo-500/10 font-bold cursor-pointer"
               >
                 {isStoring ? (
                   <>
@@ -198,7 +198,7 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
                   </>
                 ) : (
                   <>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                       <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
                       <line x1="12" y1="22.08" x2="12" y2="12"/>
@@ -213,40 +213,40 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
           {isVerifiedOnchain ? (
             <div className="pt-3 border-t border-[var(--color-border-light)] grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
               <div className="space-y-1">
-                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Blockchain Verification</span>
-                <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)] font-bold">Blockchain Verification</span>
+                <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                   </svg>
                   <span>Verified Onchain (Monad Testnet)</span>
                 </div>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Proof ID (UUID)</span>
-                <p className="font-mono text-[var(--color-text-secondary)] select-all truncate" title={receipt.blockchain_proof_id}>
+                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)] font-bold">Proof ID (UUID)</span>
+                <p className="font-mono text-[var(--color-text-secondary)] select-all truncate font-medium" title={receipt.blockchain_proof_id}>
                   {receipt.blockchain_proof_id}
                 </p>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Anchored Wallet</span>
-                <p className="font-mono text-[var(--color-text-secondary)] select-all truncate" title={receipt.blockchain_wallet_address}>
+                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)] font-bold">Anchored Wallet</span>
+                <p className="font-mono text-[var(--color-text-secondary)] select-all truncate font-medium" title={receipt.blockchain_wallet_address}>
                   {receipt.blockchain_wallet_address}
                 </p>
               </div>
               <div className="space-y-1">
-                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Transaction Hash</span>
+                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)] font-bold">Transaction Hash</span>
                 <div className="flex items-center gap-1">
-                  <p className="font-mono text-[var(--color-text-secondary)] select-all truncate max-w-[150px]" title={receipt.blockchain_tx_hash}>
+                  <p className="font-mono text-[var(--color-text-secondary)] select-all truncate max-w-[150px] font-medium" title={receipt.blockchain_tx_hash}>
                     {receipt.blockchain_tx_hash}
                   </p>
                   <a
-                    href={`https://testnet.monadsv.com/tx/${receipt.blockchain_tx_hash}`}
+                    href={`https://testnet.monadscan.com/tx/${receipt.blockchain_tx_hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[var(--color-accent)] hover:underline inline-flex items-center gap-0.5"
                     title="View on Block Explorer"
                   >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
                     </svg>
                   </a>
@@ -254,14 +254,14 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
               </div>
               {receipt.blockchain_block_number && (
                 <div className="space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Block Number</span>
-                  <p className="font-mono text-[var(--color-text-secondary)]">#{receipt.blockchain_block_number}</p>
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)] font-bold">Block Number</span>
+                  <p className="font-mono text-[var(--color-text-secondary)] font-semibold">#{receipt.blockchain_block_number}</p>
                 </div>
               )}
               {receipt.blockchain_anchored_at && (
                 <div className="space-y-1">
-                  <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)]">Timestamp</span>
-                  <p className="text-[var(--color-text-secondary)]">{new Date(receipt.blockchain_anchored_at).toLocaleString()}</p>
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-tertiary)] font-bold">Timestamp</span>
+                  <p className="text-[var(--color-text-secondary)] font-medium">{new Date(receipt.blockchain_anchored_at).toLocaleString()}</p>
                 </div>
               )}
             </div>

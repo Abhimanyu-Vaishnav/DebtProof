@@ -293,9 +293,9 @@ export function DashboardClient() {
                 View all →
               </Link>
             </div>
-            <div className="card p-4">
+            <div className="space-y-3">
               {data.recent_payments.length === 0 ? (
-                <div className="text-center py-8">
+                <div className="card p-8 text-center">
                   <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
@@ -304,11 +304,9 @@ export function DashboardClient() {
                   <p className="text-sm text-[var(--color-text-secondary)]">No payments yet</p>
                 </div>
               ) : (
-                <div>
-                  {data.recent_payments.slice(0, 6).map((payment) => (
-                    <PaymentCard key={payment.id} payment={payment} showLoan />
-                  ))}
-                </div>
+                data.recent_payments.slice(0, 6).map((payment) => (
+                  <PaymentCard key={payment.id} payment={payment} showLoan />
+                ))
               )}
             </div>
           </section>
