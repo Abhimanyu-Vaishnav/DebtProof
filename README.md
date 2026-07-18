@@ -1,316 +1,204 @@
-# DebtProof
+# 📑 DebtProof — Secure, Track & Verify Loan Repayments on Monad Blockchain 🚀
 
-> **Never lose proof of your loan repayments.**
+> **Never lose proof of your loan repayments again.** Safeguard your financial transactions with cryptographic trust.
 
 [![Organization](https://img.shields.io/badge/Organization-Sanatan%20Labs-1a3a5c?style=flat-square)](https://github.com/sanatan-labs)
-[![Status](https://img.shields.io/badge/Status-Day%204%20Production%20Ready-10b981?style=flat-square)](#)
+[![Status](https://img.shields.io/badge/Status-Day%205%20Production%20Ready-10b981?style=flat-square)](#)
 [![Blockchain](https://img.shields.io/badge/Blockchain-Monad%20Testnet-7c3aed?style=flat-square)](https://monad.xyz)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
 ---
 
-## Project Overview
+## 🌟 Project Overview
 
-**DebtProof** is a blockchain-powered debt management application that helps users track multiple loans while creating **immutable proof of every repayment**.
+**DebtProof** is a modern, blockchain-powered debt management platform that allows borrowers to track their loans and create **permanent, tamper-proof proof of every repayment**. 
 
-Instead of storing sensitive payment documents on-chain, DebtProof stores only the **SHA-256 cryptographic hash** of repayment receipts on the **Monad Blockchain**, allowing users to verify payment authenticity without exposing personal information.
-
-Built for the **Monad Blockchain Hackathon** by **Sanatan Labs**.
+By anchoring cryptographic hashes of payment receipts onto the high-performance **Monad Blockchain**, DebtProof guarantees receipt authenticity without storing personal financial information on a public ledger.
 
 ---
 
-## Problem Statement
+## ⚠️ The Problem We Solve
 
-Borrowers frequently face disputes with lenders over repayments they've already made:
+Lenders and borrowers frequently clash over payments due to:
+- **Lost Receipts 📄**: Digital receipts get deleted; physical papers get lost.
+- **Tampered Records ✏️**: Backdated or photoshopped PDFs and screenshots can easily be forged.
+- **No Shared Trust 🤝**: There is no permanent, neutral third-party log that both borrowers and lenders can reference years later.
 
-- **Lost receipts** — physical or digital receipts get deleted, misplaced, or corrupted
-- **Tampered records** — screenshots and PDFs can be forged or backdated
-- **No trusted authority** — no neutral, permanent record exists that both parties can trust
-- **No single view** — managing multiple loans across multiple lenders is fragmented
-
-These problems cost borrowers time, money, and stress — especially in legal disputes.
-
----
-
-## Solution
-
-DebtProof solves this with a **three-layer approach**:
-
-1. **Management Layer** — Track all loans, EMIs, and payment history in one clean dashboard.
-2. **Proof Layer** — Hash every receipt document with SHA-256 before storage.
-3. **Blockchain Layer** — Anchor the hash on Monad Blockchain for permanent, tamper-proof verification.
-
-**Result:** Anyone with the original receipt can verify its authenticity against the blockchain hash — independently, forever.
+### 💡 The Solution
+DebtProof creates a **trustless verification system** using:
+1. **Management Layer**: A beautiful React/Next.js and Flutter client dashboard to manage all liabilities.
+2. **Cryptographic Proofs**: Generate SHA-256 hashes of all receipt documents locally.
+3. **Immutable Anchors**: Write receipt hashes directly to the Monad Testnet blockchain.
 
 ---
 
-## Architecture Diagram
+## ⛓️ Monad Integration & Privacy Model
+
+We prioritize **absolute user privacy**. No personal names, loan amounts, or payment methods are ever published on the blockchain.
+
+### 🛡️ On-chain vs Off-chain boundary:
+- **On-chain (Public)**: Unique `proof_id` (UUID), cryptographic `receiptHash` (SHA-256), anchoring wallet address, and block timestamp.
+- **Off-chain (Private)**: Personal accounts, payment methods, bank reference details, and actual uploaded receipt documents.
+
+### ⚙️ Monad Network Config:
+- **Network Name:** Monad Testnet
+- **Chain ID:** `10143` (Hex: `0x279f`)
+- **RPC URL:** `https://testnet-rpc.monad.xyz/`
+- **Block Explorer:** `https://testnet.monadscan.com/`
+- **Smart Contract Address:** `0x316dF00a399d655734CeaeFfEE0A7DD432e1DB5f`
+
+---
+
+## 🗺️ Visual Architecture Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as Borrower / User
-    participant FE as Next.js Frontend
-    participant BE as Django REST API
-    participant DB as SQLite / PostgreSQL
-    participant Wallet as MetaMask (Wallet)
-    participant BC as Monad Testnet (Smart Contract)
+    actor User as Borrower
+    participant FE as Next.js/Flutter App
+    participant BE as Django API
+    participant DB as Database
+    participant BC as Monad Smart Contract
 
     User->>FE: Log Payment & Upload Receipt File
-    FE->>BE: POST /api/v1/payments/ (Multipart)
+    FE->>BE: POST /api/v1/payments/ (with receipt file)
     BE->>BE: Compute SHA-256 Hash of Receipt File
-    BE->>DB: Store Payment & Receipt Hash
+    BE->>DB: Save Payment & Receipt Hash
     BE-->>FE: Return Payment Details & Hash
     User->>FE: Click "Anchor Proof on Monad"
-    FE->>Wallet: Request Signature & Gas Payment
-    Wallet->>BC: storeProof(proofId, receiptHash)
-    BC-->>Wallet: Confirm Transaction (Block #, Tx Hash)
-    Wallet-->>FE: Return Tx Metadata
-    FE->>BE: POST /api/v1/payments/{id}/proof/store/ (Tx Hash)
-    BE->>DB: Update Receipt status as Verified Onchain
-    BE-->>FE: Return Success Response
-    FE-->>User: Display Onchain Verified Badge
+    FE->>BC: call storeProof(proofId, receiptHash) via Web3 Wallet
+    BC-->>FE: Confirm Transaction (Block #, Tx Hash)
+    FE->>BE: POST /api/v1/payments/{id}/proof/store/ (Tx Hash details)
+    BE->>DB: Mark Receipt as Verified Onchain
+    BE-->>FE: Return Status Confirmed
+    FE-->>User: Display Green "ON-CHAIN VERIFIED" badge
 ```
 
 ---
 
-## Application Workflow
+## 🚀 Step-by-Step Environment Setup & Installation
 
-DebtProof operates with a secure event-driven lifecycle:
-1. **User Authentication**: Secure email login using JWT. Tokens are rotated automatically.
-2. **Loan Management**: Loans are registered with principal, interest rates, and EMI details.
-3. **Payment Logging**: Repayments are logged against a specific loan.
-4. **Calculations via Signals**: A Django post-save signal listens for payments. If the principal and interest components are unspecified, it calculates the interest component (`running_outstanding * interest_rate / 1200`) and principal component (`amount - interest`), deducts the principal component from the loan outstanding, and auto-closes the loan if the balance hits 0.
-5. **Receipt Hashing**: On receipt upload, the backend computes the SHA-256 checksum and stores it.
-6. **Wallet Verification & Anchoring**: The frontend prompts the user's wallet to anchor the proof to the Monad smart contract and reports the transaction hash to the backend to lock the verification state.
+If you are cloning this repository from GitHub, follow this complete configuration manual.
 
----
-
-## User Journey
-
-```
-[Register/Login] ➔ [Add active Loan] ➔ [Submit Payment & Upload Receipt] ➔ [Compute SHA-256 Hash] ➔ [Connect Wallet] ➔ [Anchor Hash on Monad] ➔ [Public Verification Portal]
-```
-
-1. **Onboarding**: A borrower signs up with their email and creates a secure account.
-2. **Loan Intake**: The borrower adds their home loan details (e.g. Principal: ₹10,00,000, Interest: 8.5%).
-3. **Payment Event**: When the borrower pays their EMI, they upload the bank receipt PDF/image.
-4. **Cryptographic Sign-off**: The system processes the receipt and computes a SHA-256 hash (e.g., `3f786850e387...`).
-5. **On-chain Anchor**: The borrower connects MetaMask, switches to Monad Testnet, and pays nominal gas to record the proof.
-6. **Independent Audits**: Years later, if the lender disputes the payment, the borrower uploads the original PDF to the DebtProof Verification Portal. The portal matches the local hash against the Monad blockchain record, proving the payment's date, amount, and integrity.
+### 📋 Prerequisites
+- **Python** (version 3.10+)
+- **Node.js** (version 18+)
+- **Git**
+- **MetaMask** wallet extension in your web browser (configured for Monad Testnet)
 
 ---
 
-## Blockchain & Monad Testnet Integration
+### 🐍 1. Django Backend Setup
 
-### Privacy Model
-DebtProof enforces a strict privacy boundary: **no financial or personally identifiable information (PII) is ever written to the blockchain.**
-- **Stored Onchain:** Cryptographic Hash (SHA-256), Proof ID (UUID), Timestamp, and Wallet Address.
-- **Stored Locally:** Loan amounts, interest rates, customer names, monthly EMIs, and receipt documents.
-
-### Smart Contract Overview (`DebtProofRegistry`)
-The registry contract compiles under Solidity `0.8.20` and exposes:
-1. `storeProof(string proofId, bytes32 receiptHash)`: Registers a new proof. Reverts with `ProofAlreadyExists` or `ProofIdAlreadyExists` if duplicates are detected.
-2. `verifyProof(bytes32 receiptHash)`: Verifies a receipt hash onchain, emitting a `ProofVerified` event.
-3. `getProof(string proofId)`: View function to query proof details by its UUID string.
-4. `getProofByHash(bytes32 receiptHash)`: View function to query proof details by its receipt hash.
-
-### Monad Testnet Configuration
-- **Network Name:** Monad Testnet
-- **Chain ID:** `10143` (Hex: `0x279f`)
-- **RPC URL:** `https://testnet-rpc.monad.xyz/`
-- **Native Currency:** `MON`
-- **Block Explorer:** `https://testnet.monadsv.com/`
-
----
-
-## Security Model
-
-DebtProof is built with a FinTech-grade security architecture:
-
-1. **Zero-Knowledge Document Hashing**: Sensitive receipt PDFs/images are never read or stored on public ledgers. Only their SHA-256 hashes are anchored, ensuring complete privacy.
-2. **Django Rate Limiting**: All API endpoints are protected using DRF rate throttling (`AnonRateThrottle` at 30 req/min, `UserRateThrottle` at 120 req/min, and a strict `AuthRateThrottle` at 10 req/min).
-3. **JWT Session Isolation**: SimpleJWT provides short-lived access tokens (60 minutes) and secure refresh tokens with automatic blacklisting upon logout.
-4. **Input Sanitization & Type Enforcement**: Robust serializer validators enforce file sizes (<5MB) and mime-types (PDF, JPG, PNG) and ensure payment amounts never exceed outstanding loan balances.
-
----
-
-## Technology Stack
-
-### Frontend
-- **Next.js 16.x (App Router)** - React Framework with optimized server-side rendering
-- **TypeScript 5.x** - Code safety and robust interfaces
-- **Tailwind CSS v4** - Premium styling engine
-- **Ethers.js v6** - Direct smart contract and MetaMask interactions
-
-### Backend
-- **Django 6.x** - High-performance Web Framework
-- **Django REST Framework 3.17** - Web APIs
-- **SimpleJWT 5.x** - Secure JSON Web Tokens
-- **Pillow 12.x** - Image handling and validation
-
-### Database
-- **PostgreSQL** (Production standard)
-- **SQLite** (Development & testing database)
-
----
-
-## Folder Structure
-
-```
-DebtProof/
-├── frontend/          ← Next.js App (TypeScript + Tailwind)
-│   ├── src/
-│   │   ├── app/               ← App Router pages
-│   │   ├── components/        ← Reusable base & dashboard elements
-│   │   ├── hooks/             ← useWallet, useAuth, useDebounce
-│   │   ├── services/          ← API client + auth service
-│   │   ├── utils/             ← cn(), formatters, contract helpers
-│   │   └── styles/            ← Global CSS design system
-│
-└── backend/           ← Django + DRF (Python)
-    ├── manage.py
-    ├── config/                ← Core settings (Base, Dev, Prod)
-    └── apps/
-        ├── core/              ← Exceptions, Base Models, Pagination
-        ├── users/             ← Custom User model + auth APIs
-        ├── loans/             ← Loan model and views
-        └── payments/          ← Payment, Receipt, and AuditLog models
-```
-
----
-
-## Installation & Setup
-
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- MetaMask extension installed in browser
-
-### Backend Setup
-1. Navigate to directory:
+1. **Clone and navigate to backend**:
    ```bash
-   cd backend
+   git clone https://github.com/sanatan-labs/DebtProof.git
+   cd DebtProof/backend
    ```
-2. Set up virtual environment:
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate   # Windows
-   source .venv/bin/activate # macOS/Linux
-   ```
-3. Install packages:
+
+2. **Initialize virtual environment**:
+   - **Windows**:
+     ```bash
+     python -m venv .venv
+     .venv\Scripts\activate
+     ```
+   - **macOS/Linux**:
+     ```bash
+     python -m venv .venv
+     source .venv/bin/activate
+     ```
+
+3. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
-4. Configure environment variables:
-   ```bash
-   cp .env.example .env
-   # Update secret key and database settings
-   ```
-5. Apply database migrations:
-   ```bash
-   python manage.py migrate
-   ```
-6. Run unit tests:
-   ```bash
-   python manage.py test
-   ```
-7. Start server:
-   ```bash
-   python manage.py runserver
+
+4. **Setup environment variables**:
+   Create a `.env` file in the `backend/` folder:
+   ```properties
+   SECRET_KEY=dev-secret-key-debtproof-app-1234567890
+   DEBUG=True
+   ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.223,*
+   CORS_ALLOWED_ORIGINS=http://localhost:3000,http://192.168.1.223:3000
    ```
 
-### Frontend Setup
-1. Navigate to directory:
+5. **Run migrations and start backend server**:
+   ```bash
+   python manage.py migrate
+   python manage.py runserver 0.0.0.0:8000
+   ```
+
+---
+
+### ⚛️ 2. React/Next.js Web Setup
+
+1. **Navigate to the frontend**:
    ```bash
    cd ../frontend
    ```
-2. Install npm packages:
+
+2. **Install dependencies**:
    ```bash
    npm install
    ```
-3. Set up environment:
-   ```bash
-   cp .env.example .env.local
+
+3. **Setup environment variables**:
+   Create a `.env.local` file in the `frontend/` folder:
+   ```properties
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+   NEXT_PUBLIC_APP_NAME=DebtProof
+   NEXT_PUBLIC_APP_VERSION=1.0.0
    ```
-4. Start Next.js development server:
+
+4. **Launch Web application**:
    ```bash
-   npm run dev
+   npm run dev -- --hostname 0.0.0.0
    ```
 
 ---
 
-## Smart Contract Deployment Guide
+### 📱 3. Flutter Mobile Setup
 
-Deploy to Monad Testnet using Hardhat:
+1. **Navigate to the Flutter directory**:
+   ```bash
+   cd "../DebtProof Android/DebtProof"
+   ```
 
-1. Navigate to blockchain directory:
+2. **Install packages**:
    ```bash
-   cd blockchain
+   flutter pub get
    ```
-2. Install dependencies:
+
+3. **Configure environment variables**:
+   Modify `.env` file in the Flutter root directory:
+   ```properties
+   API_BASE_URL_DEV=http://192.168.1.223:8000
+   MONAD_RPC_URL=https://testnet-rpc.monad.xyz/
+   MONAD_CHAIN_ID=10143
+   REGISTRY_CONTRACT_ADDRESS=0x316dF00a399d655734CeaeFfEE0A7DD432e1DB5f
+   APP_ENV=development
+   ```
+
+4. **Run mobile app**:
    ```bash
-   npm install
-   ```
-3. Configure your private key in `.env`:
-   ```env
-   PRIVATE_KEY=your_private_key_here
-   ```
-4. Compile the contract:
-   ```bash
-   npx hardhat compile
-   ```
-5. Run Hardhat test suite:
-   ```bash
-   npx hardhat test
-   ```
-6. Deploy to Monad Testnet:
-   ```bash
-   npx hardhat run scripts/deploy.js --network monadTestnet
+   flutter run
    ```
 
 ---
 
-## Screenshots Section
+## 📈 Future Vision: Building the Complete Financial Cycle
 
-> 📸 Screens updated for Day 4 polish.
+We plan to expand DebtProof from a simple tracking system into a fully autonomous, circular **Financial cycle platform**:
 
-| Page | Description | Status |
-|---|---|---|
-| Landing Page | High-conversion hero layout with dynamic feature list | [Ready] |
-| Authentication | Register/Login screens with split branding layout | [Ready] |
-| Dashboard Overview | Summary cards, Quick Actions, Loan Portfolio, and Wallet Card | [Polished] |
-| Loan Details | Balance tracker, repayment progress bar, and payment timeline | [Polished] |
-| Proof Verification | Drag-and-drop portal showing on-chain verification results | [Polished] |
+1. **Decentralized Escrow Clearing (P2P Lending) 🛡️**:
+   - Integrate automated smart contracts that act as trustees. 
+   - Borrowers and lenders deposit and receive repayments directly through on-chain escrow accounts, clearing the outstanding balance automatically without manual bank slip uploads.
 
----
+2. **Zero-Knowledge Proofs (ZKP) for Credit Scoring 🕵️**:
+   - Implement zero-knowledge proofs (such as zk-SNARKs) allowing borrowers to prove to third-party lenders that they have paid 100% of their EMIs on time *without* revealing their monthly incomes, loan types, or lender identities.
 
-## Future Improvements
-
-- **EMI Reminders**: Setup celery-beat workers to email upcoming dues 3 days in advance.
-- **Advanced Analytics**: Generate downloadable repayment summaries (PDF / Excel formats).
-- **Multi-Wallet Support**: Integrate WalletConnect to support Coinbase Wallet, Rabby, and other EVM wallets.
-- **Gas Abstracted Anchoring**: Implement ERC-2771 meta-transactions to allow users to anchor proofs gaslessly, sponsored by the application.
-
----
-
-## Contribution Guide
-
-We welcome contributions to DebtProof! To contribute:
-
-1. **Fork the Repository** and create a feature branch (`git checkout -b feature/amazing-feature`).
-2. **Adhere to Code Quality**:
-   - Python: Follow PEP 8 guidelines. Keep docstrings updated.
-   - Frontend: Use strict TypeScript typing. Avoid any `any` types.
-3. **Write Unit Tests**: Every API change must have corresponding tests. Run `python manage.py test` locally before proposing changes.
-4. **Build Verification**: Run `npm run build` in the frontend directory to ensure TypeScript compiles correctly.
-5. **Open a Pull Request** describing your changes.
-
----
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+3. **DeFi Collateralized Refinancing 🔄**:
+   - Allow users to tokenize their repayment histories as reputation NFTs. These reputation scores can serve as collateral multiplier metrics for securing cheaper, interest-adjusted loans across decentralised credit protocols on Monad.
 
 ---
 
