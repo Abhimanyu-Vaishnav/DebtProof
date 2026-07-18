@@ -6,8 +6,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+
+def api_root(request):
+    return JsonResponse({
+        "status": "active",
+        "message": "Welcome to the DebtProof API platform",
+        "version": "v1"
+    })
 
 urlpatterns = [
+    # API Root Welcome
+    path("", api_root),
+
     # Django Admin
     path("admin/", admin.site.urls),
 
@@ -22,3 +33,4 @@ urlpatterns = [
 # Serve media files in development only
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
