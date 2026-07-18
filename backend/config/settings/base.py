@@ -189,6 +189,9 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB
 ALLOWED_UPLOAD_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"]
 
 # ── Logging ──────────────────────────────────────────────────
+import os
+IS_VERCEL = os.environ.get("VERCEL") == "1"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -209,7 +212,7 @@ LOGGING = {
         },
         "file": {
             "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "debtproof.log",
+            "filename": "/tmp/debtproof.log" if IS_VERCEL else BASE_DIR / "logs" / "debtproof.log",
             "formatter": "verbose",
         },
     },
@@ -224,7 +227,7 @@ LOGGING = {
             "propagate": False,
         },
         "apps": {
-            "handlers": ["console", "file"],
+            "handlers": ["console"] if IS_VERCEL else ["console", "file"],
             "level": "DEBUG",
             "propagate": False,
         },
