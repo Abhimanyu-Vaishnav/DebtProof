@@ -7,14 +7,18 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosE
 import { ApiError } from "@/types";
 
 const getApiBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
     return `http://${hostname}:8000/api/v1`;
   }
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  return "http://localhost:8000/api/v1";
 };
 
 const API_BASE_URL = getApiBaseUrl();
+
 
 
 // ── Token Management ────────────────────────────────────────
