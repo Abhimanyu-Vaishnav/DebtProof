@@ -15,6 +15,13 @@ import { WalletCard } from "@/components/dashboard/WalletCard";
 import type { DashboardData, LOAN_TYPE_LABELS } from "@/types";
 import { LOAN_TYPE_LABELS as LABELS } from "@/types";
 
+function formatDebtFreeDate(dateStr: string | null) {
+  if (!dateStr) return "No active debts!";
+  const [year, month] = dateStr.split("-");
+  const dateObj = new Date(parseInt(year), parseInt(month) - 1);
+  return dateObj.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
 const QUICK_ACTIONS = [
   {
     id: "add-loan",
@@ -199,6 +206,117 @@ export function DashboardClient() {
           ))}
         </div>
       </section>
+
+      {/* Projections & Simulations Section */}
+      {data.active_loans > 0 && (
+        <section aria-labelledby="projections-heading" className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Financial Freedom Widget */}
+          <div className="card p-5 flex flex-col justify-between border-l-4 border-[var(--color-primary)] bg-gradient-to-r from-[var(--color-surface-secondary)] to-[var(--color-surface)]">
+            <div>
+              <div className="flex items-center gap-2 text-[var(--color-primary-light)] mb-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <h3 className="text-xs font-semibold uppercase tracking-wider">Financial Freedom</h3>
+              </div>
+              <p className="text-[11px] text-[var(--color-text-secondary)] font-medium">Projected Debt-Free Date</p>
+              <h4 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1 mb-3">
+                {formatDebtFreeDate(data.projected_debt_free_date)}
+              </h4>
+              <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                Paying your current EMIs on time will make you debt-free in{" "}
+                <span className="font-semibold text-[var(--color-text-primary)]">
+                  {data.simulations.baseline.months} months
+                </span>.
+              </p>
+            </div>
+            
+            <div className="mt-5 pt-4 border-t border-[var(--color-border-light)] flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-wider font-semibold">Interest Burn Rate</p>
+                <p className="text-lg font-bold text-[var(--color-error)] mt-0.5">
+                  {formatCurrency(data.monthly_interest_burn)}
+                  <span className="text-[10px] font-normal text-[var(--color-text-secondary)] ml-1">/mo</span>
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-[var(--color-error)]/10 flex items-center justify-center text-[var(--color-error)]">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Payoff Strategy Simulator */}
+          <div className="lg:col-span-2 card p-5 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-accent)]">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                    <polyline points="2 17 12 22 22 17" />
+                    <polyline points="2 12 12 17 22 12" />
+                  </svg>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-secondary)]">
+                    Payoff Accelerator Simulator
+                  </h3>
+                </div>
+                <span className="bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-[10px] font-semibold py-0.5 px-2 rounded-full">
+                  + {formatCurrency(5000)} / mo extra
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Snowball Strategy */}
+                <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] hover:border-[var(--color-primary-light)] transition-all group">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-[var(--color-text-primary)]">Debt Snowball</span>
+                    <span className="text-[10px] text-[var(--color-text-tertiary)]">Lowest Balance First</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] text-[var(--color-text-secondary)]">
+                      Debt-Free: <span className="font-semibold text-[var(--color-text-primary)]">{formatDebtFreeDate(data.simulations.snowball.debt_free_date)}</span>
+                    </p>
+                    <p className="text-[11px] text-[var(--color-text-secondary)]">
+                      Months Saved: <span className="font-semibold text-emerald-500">{data.simulations.snowball.months_saved} months</span>
+                    </p>
+                    <p className="text-[11px] text-[var(--color-text-secondary)]">
+                      Interest Saved: <span className="font-semibold text-emerald-500">{formatCurrency(data.simulations.snowball.interest_saved)}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Avalanche Strategy */}
+                <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] hover:border-[var(--color-accent)] transition-all group relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-[var(--color-accent)] text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg">
+                    Recommended
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-[var(--color-text-primary)]">Debt Avalanche</span>
+                    <span className="text-[10px] text-[var(--color-text-tertiary)]">Highest Interest First</span>
+                  </div>
+                  <div className="space-y-1 animate-pulse-subtle">
+                    <p className="text-[11px] text-[var(--color-text-secondary)]">
+                      Debt-Free: <span className="font-semibold text-[var(--color-text-primary)]">{formatDebtFreeDate(data.simulations.avalanche.debt_free_date)}</span>
+                    </p>
+                    <p className="text-[11px] text-[var(--color-text-secondary)]">
+                      Months Saved: <span className="font-semibold text-emerald-500">{data.simulations.avalanche.months_saved} months</span>
+                    </p>
+                    <p className="text-[11px] text-[var(--color-text-secondary)]">
+                      Interest Saved: <span className="font-semibold text-emerald-500">{formatCurrency(data.simulations.avalanche.interest_saved)}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-[var(--color-text-tertiary)] mt-4">
+              * Calculations are estimates based on active loans and current interest rates. Extra payments are simulated at a baseline rate of {formatCurrency(5000)}/month.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Bottom Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">

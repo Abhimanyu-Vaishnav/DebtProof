@@ -216,6 +216,27 @@ export interface DashboardData {
   type_distribution: LoanTypeDistribution[];
   monthly_trend: MonthlyTrendPoint[];
   recent_payments: Payment[];
+  projected_debt_free_date: string | null;
+  monthly_interest_burn: number;
+  simulations: {
+    baseline: {
+      debt_free_date: string | null;
+      total_interest: number;
+      months: number;
+    };
+    snowball: {
+      debt_free_date: string | null;
+      total_interest: number;
+      interest_saved: number;
+      months_saved: number;
+    };
+    avalanche: {
+      debt_free_date: string | null;
+      total_interest: number;
+      interest_saved: number;
+      months_saved: number;
+    };
+  };
 }
 
 // ── Utility Types ────────────────────────────────────────────

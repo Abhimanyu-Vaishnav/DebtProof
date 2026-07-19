@@ -237,6 +237,110 @@ class LoanDashboardView(APIView):
             for item in monthly_trend
         ]
 
+        # ── Dashboard V2 Projections & Simulations ───────────────────
+        # Define simulation helper inside get
+        def simulate_payoff(active_loans_list, extra_monthly=0.0, sorting_key=None):
+            loans_state = []
+            for l in active_loans_list:
+                balance = float(l.outstanding_amount)
+                rate = (float(l.interest_rate) / 12.0 / 100.0)
+                emi = float(l.monthly_emi)
+                
+                # Prevent division by zero or infinite loop: EMI must cover interest
+                min_emi = balance * rate + 10.0
+                if emi < min_emi:
+                    emi = max(emi, min_emi + (balance * 0.01))
+                
+                loans_state.append({
+                    'id': str(l.id),
+                    'balance': balance,
+                    'rate': rate,
+                    'emi': emi
+                })
+                
+            months = 0
+            total_interest = 0.0
+            max_months = 360  # 30 years cap
+            
+            while any(l['balance'] > 0.01 for l in loans_state) and months < max_months:
+                months += 1
+                
+                # Accrue interest first
+                for l in loans_state:
+                    if l['balance'] > 0:
+                        interest = l['balance'] * l['rate']
+                        l['balance'] += interest
+                        total_interest += interest
+                
+                # Pay minimums
+                available_budget = extra_monthly
+                for l in loans_state:
+                    if l['balance'] <= 0:
+                        continue
+                    payment = min(l['emi'], l['balance'])
+                    l['balance'] -= payment
+                    if payment < l['emi']:
+                        available_budget += (l['emi'] - payment)
+                
+                # Apply extra payment
+                if available_budget > 0:
+                    if sorting_key == "snowball":
+                        target_loans = sorted([l for l in loans_state if l['balance'] > 0], key=lambda x: x['balance'])
+                    elif sorting_key == "avalanche":
+                        target_loans = sorted([l for l in loans_state if l['balance'] > 0], key=lambda x: -x['rate'])
+                    else:
+                        target_loans = [l for l in loans_state if l['balance'] > 0]
+                        
+                    for target in target_loans:
+                        if target['balance'] <= 0:
+                            continue
+                        payment = min(available_budget, target['balance'])
+                        target['balance'] -= payment
+                        available_budget -= payment
+                        if available_budget <= 0:
+                            break
+                            
+            return months, total_interest
+
+        def months_to_date_string(months_count):
+            if months_count == 0:
+                return None
+            today = date.today()
+            future_year = today.year + (today.month + months_count - 1) // 12
+            future_month = (today.month + months_count - 1) % 12 + 1
+            return f"{future_year}-{future_month:02d}"
+
+        # Calculate metrics
+        active_loans_qs = loans.filter(status=LoanStatus.ACTIVE)
+        monthly_interest_burn = 0.0
+        for loan in active_loans_qs:
+            monthly_interest_burn += float(loan.outstanding_amount) * (float(loan.interest_rate) / 12.0 / 100.0)
+
+        active_loans_list = list(active_loans_qs)
+        
+        # 1. Baseline simulation (extra = 0)
+        baseline_months, baseline_interest = simulate_payoff(active_loans_list, extra_monthly=0.0)
+        baseline_date = months_to_date_string(baseline_months)
+        
+        # 2. Snowball simulation (extra = 5000)
+        extra_amount = 5000.0
+        snowball_months, snowball_interest = simulate_payoff(active_loans_list, extra_monthly=extra_amount, sorting_key="snowball")
+        snowball_date = months_to_date_string(snowball_months)
+        
+        # 3. Avalanche simulation (extra = 5000)
+        avalanche_months, avalanche_interest = simulate_payoff(active_loans_list, extra_monthly=extra_amount, sorting_key="avalanche")
+        avalanche_date = months_to_date_string(avalanche_months)
+        
+        # Projected debt-free date is baseline
+        projected_debt_free_date = baseline_date
+        
+        # Calculate savings
+        snowball_interest_saved = max(0.0, baseline_interest - snowball_interest)
+        snowball_months_saved = max(0, baseline_months - snowball_months)
+        
+        avalanche_interest_saved = max(0.0, baseline_interest - avalanche_interest)
+        avalanche_months_saved = max(0, baseline_months - avalanche_months)
+
         return Response(
             {
                 "success": True,
@@ -258,6 +362,27 @@ class LoanDashboardView(APIView):
                     "recent_payments": PaymentListSerializer(
                         recent_payments, many=True, context={"request": request}
                     ).data,
+                    "projected_debt_free_date": projected_debt_free_date,
+                    "monthly_interest_burn": monthly_interest_burn,
+                    "simulations": {
+                        "baseline": {
+                            "debt_free_date": baseline_date,
+                            "total_interest": baseline_interest,
+                            "months": baseline_months
+                        },
+                        "snowball": {
+                            "debt_free_date": snowball_date,
+                            "total_interest": snowball_interest,
+                            "interest_saved": snowball_interest_saved,
+                            "months_saved": snowball_months_saved
+                        },
+                        "avalanche": {
+                            "debt_free_date": avalanche_date,
+                            "total_interest": avalanche_interest,
+                            "interest_saved": avalanche_interest_saved,
+                            "months_saved": avalanche_months_saved
+                        }
+                    }
                 },
             }
         )

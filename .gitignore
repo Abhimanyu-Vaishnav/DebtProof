@@ -23,8 +23,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
-docs/
+
+
 
 # Virtual environments
 .venv/
