@@ -82,9 +82,6 @@ DATABASES = {
         "PASSWORD": config("POSTGRES_PASSWORD", default=config("DB_PASSWORD", default="")),
         "HOST": config("POSTGRES_HOST", default=config("DB_HOST", default="")),
         "PORT": config("POSTGRES_PORT", default=config("DB_PORT", default="5432")),
-        "OPTIONS": {
-            "connect_timeout": 10,
-        } if config("POSTGRES_HOST", default=config("DB_HOST", default="")) else {},
     }
 }
 
