@@ -269,3 +269,47 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   cash: "Cash",
   other: "Other",
 };
+
+// ── Asset & Net Worth Types ───────────────────────────────────
+export type AssetType =
+  | "cash"
+  | "bank"
+  | "investment"
+  | "real_estate"
+  | "gold"
+  | "vehicle"
+  | "other";
+
+export interface Asset {
+  id: string;
+  name: string;
+  asset_type: AssetType;
+  value: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetTypeDistribution {
+  asset_type: AssetType;
+  label: string;
+  value: number;
+  count: number;
+}
+
+export interface NetWorthSummary {
+  total_assets: number;
+  total_liabilities: number;
+  net_worth: number;
+  type_distribution: AssetTypeDistribution[];
+}
+
+export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
+  cash: "Cash",
+  bank: "Bank Account",
+  investment: "Investment",
+  real_estate: "Real Estate",
+  gold: "Gold",
+  vehicle: "Vehicle",
+  other: "Other",
+};
+

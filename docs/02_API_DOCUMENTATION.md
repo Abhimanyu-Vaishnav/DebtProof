@@ -252,3 +252,76 @@ This document contains full endpoint specifications, expected payload payloads, 
   }
 }
 ```
+
+---
+
+## 4. Asset & Net Worth APIs
+
+### List Assets
+- **URL**: `/api/v1/assets/`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Response Body (200 OK)**:
+```json
+[
+  {
+    "id": "a9a88bc3-7a91-4cf1-8bc4-9d11a8b9e111",
+    "name": "HDFC Savings Account",
+    "asset_type": "bank",
+    "value": "25000.00",
+    "created_at": "2026-07-19T10:00:00Z",
+    "updated_at": "2026-07-19T10:00:00Z"
+  }
+]
+```
+
+### Create Asset
+- **URL**: `/api/v1/assets/`
+- **Method**: `POST`
+- **Auth Required**: Yes
+- **Request Body**:
+```json
+{
+  "name": "Gold Coins",
+  "asset_type": "gold",
+  "value": "150000.00"
+}
+```
+- **Response Body (201 Created)**: Returns the newly created Asset object.
+
+### Delete Asset
+- **URL**: `/api/v1/assets/<uuid:asset_id>/`
+- **Method**: `DELETE`
+- **Auth Required**: Yes
+- **Response (204 No Content)**: Empty body.
+
+### Get Net Worth Summary
+- **URL**: `/api/v1/assets/net-worth/`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Response Body (200 OK)**:
+```json
+{
+  "success": true,
+  "net_worth_summary": {
+    "total_assets": 175000.00,
+    "total_liabilities": 12000.00,
+    "net_worth": 163000.00,
+    "type_distribution": [
+      {
+        "asset_type": "bank",
+        "label": "Bank Account",
+        "value": 25000.00,
+        "count": 1
+      },
+      {
+        "asset_type": "gold",
+        "label": "Gold",
+        "value": 150000.00,
+        "count": 1
+      }
+    ]
+  }
+}
+```
+
