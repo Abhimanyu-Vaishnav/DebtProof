@@ -12,8 +12,8 @@ export const assetsService = {
    * Get all assets for the authenticated user.
    */
   getAssets: async (): Promise<Asset[]> => {
-    const { data } = await apiClient.get<Asset[]>("/assets/");
-    return data;
+    const { data } = await apiClient.get<{ success: boolean; results: Asset[] }>("/assets/");
+    return data.results || [];
   },
 
   /**
