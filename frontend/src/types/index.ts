@@ -271,12 +271,18 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 };
 
 // ── Asset & Net Worth Types ───────────────────────────────────
+export type AssetClass = "current" | "fixed";
+
 export type AssetType =
   | "cash"
   | "bank"
+  | "fd"
+  | "rd"
   | "investment"
+  | "receivable"
   | "real_estate"
   | "gold"
+  | "business"
   | "vehicle"
   | "other";
 
@@ -284,13 +290,40 @@ export interface Asset {
   id: string;
   name: string;
   asset_type: AssetType;
+  asset_class: AssetClass;
   value: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface AssetTypeDistribution {
-  asset_type: AssetType;
+export type LiabilityClass = "short_term" | "long_term";
+
+export type LiabilityType =
+  | "bill"
+  | "rent"
+  | "tax"
+  | "personal_debt"
+  | "other";
+
+export interface Liability {
+  id: string;
+  name: string;
+  liability_type: LiabilityType;
+  liability_class: LiabilityClass;
+  value: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetDistributionItem {
+  asset_type: string;
+  label: string;
+  value: number;
+  count: number;
+}
+
+export interface LiabilityDistributionItem {
+  liability_type: string;
   label: string;
   value: number;
   count: number;
@@ -298,18 +331,44 @@ export interface AssetTypeDistribution {
 
 export interface NetWorthSummary {
   total_assets: number;
+  current_assets: number;
+  fixed_assets: number;
   total_liabilities: number;
+  short_term_liabilities: number;
+  long_term_liabilities: number;
   net_worth: number;
-  type_distribution: AssetTypeDistribution[];
+  asset_distribution: AssetDistributionItem[];
+  liability_distribution: LiabilityDistributionItem[];
 }
 
 export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   cash: "Cash",
   bank: "Bank Account",
+  fd: "Fixed Deposit (FD)",
+  rd: "Recurring Deposit (RD)",
   investment: "Investment",
+  receivable: "Receivable / Money Due",
   real_estate: "Real Estate",
   gold: "Gold",
+  business: "Business Equity",
   vehicle: "Vehicle",
   other: "Other",
 };
 
+export const ASSET_CLASS_LABELS: Record<AssetClass, string> = {
+  current: "Current Asset",
+  fixed: "Fixed Asset",
+};
+
+export const LIABILITY_TYPE_LABELS: Record<LiabilityType, string> = {
+  bill: "Unpaid Bill",
+  rent: "Rent Due",
+  tax: "Tax Due",
+  personal_debt: "Personal Debt",
+  other: "Other Liability",
+};
+
+export const LIABILITY_CLASS_LABELS: Record<LiabilityClass, string> = {
+  short_term: "Short-term",
+  long_term: "Long-term",
+};
