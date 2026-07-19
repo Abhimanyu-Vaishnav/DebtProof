@@ -5,9 +5,13 @@ Shared configuration for all environments.
 from pathlib import Path
 from datetime import timedelta
 from decouple import config, Csv
+import os
+
 
 # ── Paths ────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+IS_VERCEL = "VERCEL" in os.environ or os.path.exists("/var/task")
+
 
 # ── Security ────────────────────────────────────────────────
 SECRET_KEY = config("SECRET_KEY", default="insecure-dev-key-replace-in-production")
@@ -208,9 +212,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB
 ALLOWED_UPLOAD_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"]
 
 # ── Logging ──────────────────────────────────────────────────
-import os
-IS_VERCEL = "VERCEL" in os.environ or os.path.exists("/var/task")
-
 LOGGING = {
 
     "version": 1,
