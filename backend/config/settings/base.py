@@ -74,16 +74,35 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 # ── Database ─────────────────────────────────────────────────
-DATABASES = {
-    "default": {
-        "ENGINE": config("DB_ENGINE", default="django.db.backends.postgresql" if config("POSTGRES_HOST", default="") else "django.db.backends.sqlite3"),
-        "NAME": config("POSTGRES_DATABASE", default=config("DB_NAME", default=str(BASE_DIR / "db.sqlite3"))),
-        "USER": config("POSTGRES_USER", default=config("DB_USER", default="")),
-        "PASSWORD": config("POSTGRES_PASSWORD", default=config("DB_PASSWORD", default="")),
-        "HOST": config("POSTGRES_HOST", default=config("DB_HOST", default="")),
-        "PORT": config("POSTGRES_PORT", default=config("DB_PORT", default="5432")),
+import os
+from urllib.parse import urlparse
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    url = urlparse(DATABASE_URL)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": url.path[1:],
+            "USER": url.username,
+            "PASSWORD": url.password,
+            "HOST": url.hostname,
+            "PORT": url.port or 5432,
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": config("DB_ENGINE", default="django.db.backends.sqlite3"),
+            "NAME": config("DB_NAME", default=str(BASE_DIR / "db.sqlite3")),
+            "USER": config("DB_USER", default=""),
+            "PASSWORD": config("DB_PASSWORD", default=""),
+            "HOST": config("DB_HOST", default=""),
+            "PORT": config("DB_PORT", default=""),
+        }
+    }
+
 
 # ── Custom User Model ────────────────────────────────────────
 AUTH_USER_MODEL = "users.User"
