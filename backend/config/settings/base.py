@@ -76,15 +76,15 @@ ASGI_APPLICATION = "config.asgi.application"
 # ── Database ─────────────────────────────────────────────────
 DATABASES = {
     "default": {
-        "ENGINE": config("DB_ENGINE", default="django.db.backends.sqlite3"),
-        "NAME": config("DB_NAME", default=str(BASE_DIR / "db.sqlite3")),
-        "USER": config("DB_USER", default=""),
-        "PASSWORD": config("DB_PASSWORD", default=""),
-        "HOST": config("DB_HOST", default=""),
-        "PORT": config("DB_PORT", default=""),
+        "ENGINE": config("DB_ENGINE", default="django.db.backends.postgresql" if config("POSTGRES_HOST", default="") else "django.db.backends.sqlite3"),
+        "NAME": config("POSTGRES_DATABASE", default=config("DB_NAME", default=str(BASE_DIR / "db.sqlite3"))),
+        "USER": config("POSTGRES_USER", default=config("DB_USER", default="")),
+        "PASSWORD": config("POSTGRES_PASSWORD", default=config("DB_PASSWORD", default="")),
+        "HOST": config("POSTGRES_HOST", default=config("DB_HOST", default="")),
+        "PORT": config("POSTGRES_PORT", default=config("DB_PORT", default="5432")),
         "OPTIONS": {
             "connect_timeout": 10,
-        } if config("DB_ENGINE", default="django.db.backends.sqlite3") != "django.db.backends.sqlite3" else {},
+        } if config("POSTGRES_HOST", default=config("DB_HOST", default="")) else {},
     }
 }
 
