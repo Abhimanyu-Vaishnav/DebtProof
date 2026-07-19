@@ -209,9 +209,10 @@ ALLOWED_UPLOAD_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"]
 
 # ── Logging ──────────────────────────────────────────────────
 import os
-IS_VERCEL = os.environ.get("VERCEL") == "1"
+IS_VERCEL = "VERCEL" in os.environ or os.path.exists("/var/task")
 
 LOGGING = {
+
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {

@@ -14,12 +14,13 @@ application = get_asgi_application()
 app = application
 
 # Run migrations programmatically on Vercel startup
-if os.environ.get("VERCEL") == "1":
+if "VERCEL" in os.environ or os.path.exists("/var/task"):
     try:
         from django.core.management import call_command
         call_command("migrate", interactive=False)
     except Exception as e:
         import logging
         logging.error(f"Failed to run programmatic migrations: {e}")
+
 
 
