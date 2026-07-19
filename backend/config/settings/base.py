@@ -125,7 +125,8 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = config("MEDIA_URL", default="/media/")
-MEDIA_ROOT = BASE_DIR / config("MEDIA_ROOT", default="media")
+MEDIA_ROOT = "/tmp/media" if IS_VERCEL else BASE_DIR / config("MEDIA_ROOT", default="media")
+
 
 # ── Default PK ───────────────────────────────────────────────
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
