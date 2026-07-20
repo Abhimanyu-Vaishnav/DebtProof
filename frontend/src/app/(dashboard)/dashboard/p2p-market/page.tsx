@@ -42,7 +42,7 @@ export default function P2PMarketplacePage() {
       const txHash = await fundEscrowLoan(loan.id, loan.principal_amount.toString());
       
       // Step 2: Update backend
-      await loansService.update(loan.id, {
+      await loansService.updateLoan(loan.id, {
         lender_wallet: walletAddress,
         lender_name: "Web3 Lender" // Generic name for anonymous lender
       });
