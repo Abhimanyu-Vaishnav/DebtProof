@@ -483,3 +483,56 @@ class EMICalendarView(APIView):
                 }
             }
         })
+
+
+import csv
+from django.http import HttpResponse
+
+class ExportLoansCSVView(APIView):
+    """
+    GET /api/v1/loans/export/csv/
+    Exports all active and closed loans for the authenticated user as a CSV file.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> HttpResponse:
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="debtproof_loans_ledger.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            "Loan ID",
+            "Loan Name",
+            "Lender Name",
+            "Loan Type",
+            "Principal Amount (INR)",
+            "Outstanding Amount (INR)",
+            "Repaid Amount (INR)",
+            "Progress %",
+            "Interest Rate (%)",
+            "Monthly EMI (INR)",
+            "Start Date",
+            "End Date",
+            "Status",
+        ])
+
+        loans = Loan.objects.filter(user=request.user).order_by("-created_at")
+        for loan in loans:
+            writer.writerow([
+                str(loan.id),
+                loan.name,
+                loan.lender_name,
+                loan.get_loan_type_display(),
+                float(loan.principal_amount),
+                float(loan.outstanding_amount),
+                float(loan.paid_amount),
+                round(loan.repayment_progress_percent, 1),
+                float(loan.interest_rate),
+                float(loan.monthly_emi),
+                loan.start_date.isoformat(),
+                loan.end_date.isoformat(),
+                loan.get_status_display(),
+            ])
+
+        return response
+

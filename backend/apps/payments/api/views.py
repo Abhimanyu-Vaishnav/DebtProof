@@ -446,3 +446,83 @@ class VerifyProofView(APIView):
                 "message": "No verified on-chain proof found for this receipt. Verify file integrity or ensure proof has been anchored."
             })
 
+
+import csv
+from django.http import HttpResponse
+
+class ExportPaymentsCSVView(APIView):
+    """
+    GET /api/v1/payments/export/csv/
+    Exports payment history with date range, format, and loan filtering options.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> HttpResponse:
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        loan_id = request.query_params.get("loan_id")
+        export_format = request.query_params.get("format", "csv")
+
+        payments = Payment.objects.filter(loan__user=request.user).select_related("loan").order_by("-payment_date")
+
+        if loan_id:
+            payments = payments.filter(loan_id=loan_id)
+        if start_date:
+            payments = payments.filter(payment_date__gte=start_date)
+        if end_date:
+            payments = payments.filter(payment_date__lte=end_date)
+
+        # JSON Export Option
+        if export_format == "json":
+            from django.http import JsonResponse
+            data = [{
+                "payment_id": str(p.id),
+                "payment_date": p.payment_date.isoformat(),
+                "loan_name": p.loan.name,
+                "lender": p.loan.lender_name,
+                "amount": float(p.amount),
+                "principal_component": float(p.principal_component),
+                "interest_component": float(p.interest_component),
+                "payment_method": p.get_payment_method_display(),
+                "reference_number": p.reference_number,
+                "status": p.get_status_display()
+            } for p in payments]
+            response = JsonResponse({"payments": data}, safe=False)
+            response["Content-Disposition"] = 'attachment; filename="debtproof_payments_history.json"'
+            return response
+
+        # Default CSV Export
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="debtproof_payments_history.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            "Payment ID",
+            "Payment Date",
+            "Loan Name",
+            "Lender",
+            "Amount (INR)",
+            "Principal Component (INR)",
+            "Interest Component (INR)",
+            "Payment Method",
+            "Reference Number",
+            "Status",
+        ])
+
+        for p in payments:
+            writer.writerow([
+                str(p.id),
+                p.payment_date.isoformat(),
+                p.loan.name,
+                p.loan.lender_name,
+                float(p.amount),
+                float(p.principal_component),
+                float(p.interest_component),
+                p.get_payment_method_display(),
+                p.reference_number,
+                p.get_status_display(),
+            ])
+
+        return response
+
+
