@@ -231,6 +231,17 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                   })
                 )}
               </div>
+
+              {/* Dropdown Footer - View All Link */}
+              <div className="bg-[var(--color-surface-secondary)] border-t border-[var(--color-border-light)] p-2 text-center shrink-0">
+                <Link
+                  href="/dashboard/notifications"
+                  onClick={() => setNotificationsOpen(false)}
+                  className="text-xs font-bold text-[var(--color-primary-light)] hover:text-[var(--color-primary)] hover:underline block py-1 cursor-pointer"
+                >
+                  View All Notifications
+                </Link>
+              </div>
             </div>
           )}
         </div>
