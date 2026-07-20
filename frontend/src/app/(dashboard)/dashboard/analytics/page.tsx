@@ -262,8 +262,8 @@ export default function AnalyticsPage() {
         <InteractiveChart />
 
         {/* Blockchain Readiness Card */}
-        <div className="card p-8 border border-emerald-500/30 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e1b4b] text-white shadow-lg overflow-hidden relative">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-emerald-500 rounded-full mix-blend-screen filter blur-[80px] opacity-40 animate-pulse" />
+        <div className="card p-8 border border-emerald-500/30 bg-[var(--color-surface-secondary)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-emerald-500 rounded-full mix-blend-multiply opacity-10 animate-pulse" />
           <div className="flex items-start gap-5 relative z-10">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/30">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -272,17 +272,17 @@ export default function AnalyticsPage() {
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-black text-white mb-2 tracking-wide flex items-center gap-3">
+              <h3 className="text-xl font-black text-[var(--color-text-primary)] mb-2 tracking-wide flex items-center gap-3">
                 Monad Blockchain Integration Active
               </h3>
-              <p className="text-sm text-slate-300 leading-relaxed font-medium max-w-4xl">
+              <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed font-medium max-w-4xl">
                 Every payment receipt is SHA-256 hashed and anchored on the Monad Blockchain. 
                 This creates immutable, tamper-proof proof of repayment that anyone can verify 
                 publicly without compromising your privacy or relying on centralized servers.
               </p>
-              <div className="mt-5 flex items-center gap-3 bg-white/5 w-fit px-4 py-2 rounded-full border border-white/10">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] animate-pulse" />
-                <span className="text-sm text-emerald-400 font-bold tracking-wide">Tamper-Proof Anchoring Live</span>
+              <div className="mt-5 flex items-center gap-3 bg-[var(--color-surface-primary)] w-fit px-4 py-2 rounded-full border border-[var(--color-border-light)] shadow-sm">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
+                <span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold tracking-wide">Tamper-Proof Anchoring Live</span>
               </div>
             </div>
           </div>
