@@ -80,15 +80,19 @@ export default function RepaymentSimulatorPage() {
     1000
   );
 
-  // Generate SVG Points for Progression Chart
+  // Generate SVG Points — chart area: x: 70→670, y: 10→210
+  const CHART_LEFT = 70;
+  const CHART_WIDTH = 570;
+  const CHART_TOP = 10;
+  const CHART_HEIGHT = 200;
+
   const getSvgPoints = (historyList: any[]) => {
-    if (!historyList || historyList.length === 0 || maxOutstanding === 0) return "0,200";
-    const width = 600;
-    const height = 200;
+    if (!historyList || historyList.length === 0 || maxOutstanding === 0)
+      return `${CHART_LEFT},${CHART_TOP + CHART_HEIGHT}`;
     const pts = historyList
       .map((pt) => {
-        const x = Math.min(width, Math.max(0, ((pt.month - 1) / maxMonths) * width));
-        const y = Math.min(height, Math.max(0, height - (pt.outstanding / maxOutstanding) * height));
+        const x = CHART_LEFT + Math.min(CHART_WIDTH, Math.max(0, ((pt.month - 1) / maxMonths) * CHART_WIDTH));
+        const y = CHART_TOP + Math.min(CHART_HEIGHT, Math.max(0, CHART_HEIGHT - (pt.outstanding / maxOutstanding) * CHART_HEIGHT));
         return `${x.toFixed(1)},${y.toFixed(1)}`;
       })
       .join(" ");
@@ -419,84 +423,72 @@ function PayoffChartsContainer({
         {/* ── 1. LINE CHART (TIMELINE PROGRESSION) ───────────────────────────── */}
         {chartFormat === "line" && (
           <div className="w-full">
-            <svg viewBox="0 0 600 240" className="w-full overflow-visible" xmlns="http://www.w3.org/2000/svg">
+            {/* Legend */}
+            <div className="flex items-center gap-5 mb-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-1 rounded-full bg-slate-400" />
+                <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">Baseline ({baselineMonths} mos)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-1 rounded-full bg-blue-500" />
+                <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">Snowball ({snowballMonths} mos)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-1 rounded-full bg-emerald-500" />
+                <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">Avalanche ({avalancheMonths} mos)</span>
+              </div>
+            </div>
+
+            {/* SVG: viewBox 0 0 740 250 — chart area starts at x=70, ends at x=640, y from 10 to 210 */}
+            <svg viewBox="0 0 740 250" className="w-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="baselineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.1" />
-                  <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.0" />
+                <linearGradient id="lgBase" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#94a3b8" stopOpacity="0" />
                 </linearGradient>
-                <linearGradient id="snowballGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.1" />
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                <linearGradient id="lgSnow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
                 </linearGradient>
-                <linearGradient id="avalancheGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.1" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                <linearGradient id="lgAval" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
                 </linearGradient>
               </defs>
 
-              {/* Grid Lines */}
-              <line x1="0" y1="0" x2="600" y2="0" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-              <line x1="0" y1="60" x2="600" y2="60" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-              <line x1="0" y1="120" x2="600" y2="120" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-              <line x1="0" y1="180" x2="600" y2="180" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-              <line x1="0" y1="200" x2="600" y2="200" stroke="var(--color-border)" strokeWidth="1.5" />
-
-              {/* Y-Axis Label Indicators */}
-              <text x="-10" y="5" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">{formatCurrency(maxOutstanding)}</text>
-              <text x="-10" y="105" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">{formatCurrency(maxOutstanding / 2)}</text>
-              <text x="-10" y="205" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">₹0</text>
-
-              {/* Strategy Fill Areas */}
-              <path
-                d={`M 0,200 L ${getSvgPoints(baseline.history)} L 600,200 Z`}
-                fill="url(#baselineGrad)"
-                className="transition-all duration-500"
-              />
-              <path
-                d={`M 0,200 L ${getSvgPoints(snowball.history)} L 600,200 Z`}
-                fill="url(#snowballGrad)"
-                className="transition-all duration-500"
+              {/* Horizontal grid lines — chart spans y: 10 to 210 */}
+              {[10, 60, 110, 160, 210].map((y) => (
+                <line key={y} x1="70" y1={y} x2="640" y2={y}
+                  stroke="var(--color-border-light)" strokeWidth="1"
+                  strokeDasharray={y === 210 ? "0" : "4 3"} opacity={y === 210 ? "0.6" : "0.35"}
                 />
-              <path
-                d={`M 0,200 L ${getSvgPoints(avalanche.history)} L 600,200 Z`}
-                fill="url(#avalancheGrad)"
-                className="transition-all duration-500"
-              />
+              ))}
 
-              {/* Polyline paths */}
-              <polyline
-                fill="none"
-                stroke="#94a3b8"
-                strokeWidth="3.5"
-                points={getSvgPoints(baseline.history)}
-                className="transition-all duration-500"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <polyline
-                fill="none"
-                stroke="#3b82f6"
-                strokeWidth="3.5"
-                points={getSvgPoints(snowball.history)}
-                className="transition-all duration-500"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <polyline
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="3.5"
-                points={getSvgPoints(avalanche.history)}
-                className="transition-all duration-500"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {/* Y-axis labels — chart spans maxOutstanding → 0 */}
+              <text x="62" y="14" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">{formatCurrency(maxOutstanding)}</text>
+              <text x="62" y="114" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">{formatCurrency(maxOutstanding / 2)}</text>
+              <text x="62" y="214" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">₹0</text>
 
-              {/* X-Axis labels */}
-              <text x="0" y="222" textAnchor="middle" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Start</text>
-              <text x="300" y="222" textAnchor="middle" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Month {Math.round(maxMonths / 2)}</text>
-              <text x="600" y="222" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Month {maxMonths}</text>
+              {/* Y-axis line */}
+              <line x1="66" y1="10" x2="66" y2="212" stroke="var(--color-border-light)" strokeWidth="1.5" opacity="0.5" />
+
+              {/* Fill areas under curves */}
+              <path d={`M 70,210 L ${getSvgPoints(baseline.history)} L 640,210 Z`} fill="url(#lgBase)" />
+              <path d={`M 70,210 L ${getSvgPoints(snowball.history)} L 640,210 Z`} fill="url(#lgSnow)" />
+              <path d={`M 70,210 L ${getSvgPoints(avalanche.history)} L 640,210 Z`} fill="url(#lgAval)" />
+
+              {/* Strategy lines — drawn on top of fills */}
+              <polyline fill="none" stroke="#94a3b8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                points={getSvgPoints(baseline.history)} />
+              <polyline fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                points={getSvgPoints(snowball.history)} />
+              <polyline fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                points={getSvgPoints(avalanche.history)} />
+
+              {/* X-axis labels */}
+              <text x="70" y="232" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">Start</text>
+              <text x="355" y="232" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">Month {Math.round(maxMonths / 2)}</text>
+              <text x="640" y="232" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">Month {maxMonths}</text>
             </svg>
           </div>
         )}
