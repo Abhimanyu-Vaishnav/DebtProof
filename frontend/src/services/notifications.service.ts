@@ -46,4 +46,11 @@ export const notificationsService = {
   deleteNotification: async (id: string): Promise<void> => {
     await apiClient.delete(`/notifications/${id}/`);
   },
+
+  /**
+   * Delete all notifications for the authenticated user.
+   */
+  clearAll: async (): Promise<void> => {
+    await apiClient.post("/notifications/clear-all/");
+  },
 };

@@ -8,12 +8,14 @@ from .views import (
     NotificationMarkReadView,
     NotificationMarkAllReadView,
     NotificationDeleteView,
+    NotificationClearAllView,
 )
 
 urlpatterns = [
     path("", NotificationListView.as_view(), name="notification-list"),
     path("unread-count/", NotificationUnreadCountView.as_view(), name="notification-unread-count"),
     path("read-all/", NotificationMarkAllReadView.as_view(), name="notification-read-all"),
+    path("clear-all/", NotificationClearAllView.as_view(), name="notification-clear-all"),
     path("<uuid:pk>/read/", NotificationMarkReadView.as_view(), name="notification-mark-read"),
     path("<uuid:pk>/", NotificationDeleteView.as_view(), name="notification-delete"),
 ]

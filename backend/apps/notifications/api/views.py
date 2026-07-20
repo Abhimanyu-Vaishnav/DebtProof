@@ -92,3 +92,15 @@ class NotificationDeleteView(DestroyAPIView):
         instance = self.get_object()
         instance.delete()
         return Response({"success": True}, status=status.HTTP_200_OK)
+
+
+class NotificationClearAllView(APIView):
+    """
+    POST /api/v1/notifications/clear-all/
+    Delete all notifications for the authenticated user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        deleted, _ = Notification.objects.filter(user=request.user).delete()
+        return Response({"success": True, "deleted": deleted})
