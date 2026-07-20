@@ -100,13 +100,13 @@ export function AdvancedChart({ data, type, xKey, yKey }: AdvancedChartProps) {
             dataKey={xKey} 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fill: "var(--color-text-tertiary)", fontSize: 12 }} 
+            tick={{ fill: "var(--color-text-secondary)", fontSize: 13, fontWeight: 600 }} 
             dy={10} 
           />
           <YAxis 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fill: "var(--color-text-tertiary)", fontSize: 12 }}
+            tick={{ fill: "var(--color-text-secondary)", fontSize: 13, fontWeight: 600 }}
             tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
             width={60}
           />
@@ -132,17 +132,17 @@ export function AdvancedChart({ data, type, xKey, yKey }: AdvancedChartProps) {
           dataKey={xKey} 
           axisLine={false} 
           tickLine={false} 
-          tick={{ fill: "var(--color-text-tertiary)", fontSize: 12 }} 
+          tick={{ fill: "var(--color-text-secondary)", fontSize: 13, fontWeight: 600 }} 
           dy={10} 
         />
         <YAxis 
           axisLine={false} 
           tickLine={false} 
-          tick={{ fill: "var(--color-text-tertiary)", fontSize: 12 }}
+          tick={{ fill: "var(--color-text-secondary)", fontSize: 13, fontWeight: 600 }}
           tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
           width={60}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--color-surface-hover)" }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(100, 116, 139, 0.1)" }} />
         <Bar 
           dataKey={yKey} 
           fill="var(--color-primary)" 
