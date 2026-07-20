@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { BrowserProvider, Contract, ethers } from "ethers";
-import { MONAD_TESTNET_PARAMS, DEBT_PROOF_REGISTRY_ADDRESS, DEBT_PROOF_REGISTRY_ABI } from "@/utils/contract";
+import { MONAD_TESTNET_PARAMS, DEBT_PROOF_REGISTRY_ADDRESS, DEBT_PROOF_REGISTRY_ABI, DEBT_PROOF_ESCROW_ADDRESS, DEBT_PROOF_ESCROW_ABI } from "@/utils/contract";
 
 declare global {
   interface Window {
@@ -192,6 +192,78 @@ export function useWallet() {
     }
   }, [checkNetwork, switchToMonadTestnet]);
 
+  // --- Escrow Functions ---
+
+  const getEscrowContract = async () => {
+    if (typeof window === "undefined" || !window.ethereum) throw new Error("MetaMask is not installed.");
+    const provider = new BrowserProvider(window.ethereum);
+    const isCorrectNetwork = await checkNetwork(provider);
+    if (!isCorrectNetwork) {
+      const switched = await switchToMonadTestnet();
+      if (!switched) throw new Error("Please switch to Monad Testnet.");
+    }
+    const signer = await provider.getSigner();
+    return new Contract(DEBT_PROOF_ESCROW_ADDRESS, DEBT_PROOF_ESCROW_ABI, signer);
+  };
+
+  const createEscrowLoan = useCallback(async (loanId: string, principalMon: string) => {
+    try {
+      const contract = await getEscrowContract();
+      const principalWei = ethers.parseEther(principalMon);
+      const tx = await contract.createLoanRequest(loanId, principalWei);
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to create escrow loan request");
+    }
+  }, [checkNetwork, switchToMonadTestnet]);
+
+  const fundEscrowLoan = useCallback(async (loanId: string, principalMon: string) => {
+    try {
+      const contract = await getEscrowContract();
+      const principalWei = ethers.parseEther(principalMon);
+      const tx = await contract.fundLoan(loanId, { value: principalWei });
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to fund escrow loan");
+    }
+  }, [checkNetwork, switchToMonadTestnet]);
+
+  const withdrawEscrowPrincipal = useCallback(async (loanId: string) => {
+    try {
+      const contract = await getEscrowContract();
+      const tx = await contract.withdrawPrincipal(loanId);
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to withdraw principal");
+    }
+  }, [checkNetwork, switchToMonadTestnet]);
+
+  const repayEscrowLoan = useCallback(async (loanId: string, amountMon: string) => {
+    try {
+      const contract = await getEscrowContract();
+      const amountWei = ethers.parseEther(amountMon);
+      const tx = await contract.repayLoan(loanId, { value: amountWei });
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to repay loan");
+    }
+  }, [checkNetwork, switchToMonadTestnet]);
+
+  const claimEscrowRepayment = useCallback(async (loanId: string) => {
+    try {
+      const contract = await getEscrowContract();
+      const tx = await contract.claimRepayment(loanId);
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to claim repayment");
+    }
+  }, [checkNetwork, switchToMonadTestnet]);
+
   // Set up MetaMask event listeners
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return;
@@ -252,5 +324,10 @@ export function useWallet() {
     disconnectWallet,
     switchToMonadTestnet,
     storeProofOnChain,
+    createEscrowLoan,
+    fundEscrowLoan,
+    withdrawEscrowPrincipal,
+    repayEscrowLoan,
+    claimEscrowRepayment,
   };
 }

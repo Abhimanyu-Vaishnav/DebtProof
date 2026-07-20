@@ -101,9 +101,17 @@ class Loan(BaseModel):
     # ── Notes ─────────────────────────────────────────────────
     notes = models.TextField(blank=True)
 
-    # ── Blockchain (Future) ───────────────────────────────────
+    # ── Blockchain (Future / Escrow) ──────────────────────────
     # blockchain_tx_hash = models.CharField(max_length=66, blank=True)
     # blockchain_verified = models.BooleanField(default=False)
+    
+    is_escrow = models.BooleanField(
+        default=False, 
+        help_text="If true, this loan is managed via smart contract on Monad"
+    )
+    borrower_wallet = models.CharField(max_length=42, blank=True)
+    lender_wallet = models.CharField(max_length=42, blank=True)
+    escrow_contract_address = models.CharField(max_length=42, blank=True)
 
     class Meta:
         db_table = "loans"

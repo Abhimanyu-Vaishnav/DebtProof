@@ -10,6 +10,14 @@ async function main() {
 
   const address = await registry.getAddress();
   console.log(`DebtProofRegistry deployed to: ${address}`);
+
+  console.log("Deploying DebtProofEscrow...");
+  const DebtProofEscrow = await hre.ethers.getContractFactory("DebtProofEscrow");
+  const escrow = await DebtProofEscrow.deploy();
+  await escrow.waitForDeployment();
+  const escrowAddress = await escrow.getAddress();
+  console.log(`DebtProofEscrow deployed to: ${escrowAddress}`);
+
   console.log("Deploy verification check complete.");
 }
 

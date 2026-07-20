@@ -17,6 +17,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { loansService } from "@/services/loans.service";
 import { paymentsService } from "@/services/payments.service";
+import { useWallet } from "@/hooks/useWallet";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { LOAN_TYPE_LABELS, PAYMENT_METHOD_LABELS } from "@/types";
 import type { Loan, Payment } from "@/types";
@@ -35,6 +36,9 @@ export default function LoanDetailPage() {
   const [deletingPayment, setDeletingPayment] = useState(false);
   const [deleteLoanModal, setDeleteLoanModal] = useState(false);
   const [deletingLoan, setDeletingLoan] = useState(false);
+  
+  const [escrowActionLoading, setEscrowActionLoading] = useState(false);
+  const { walletAddress, connectWallet, withdrawEscrowPrincipal, repayEscrowLoan } = useWallet();
 
   const fetchLoan = useCallback(async () => {
     try {
@@ -92,6 +96,58 @@ export default function LoanDetailPage() {
       showToast(msg, "error");
     } finally {
       setDeletingLoan(false);
+    }
+  };
+
+  const handleWithdrawEscrow = async () => {
+    if (!walletAddress) {
+      await connectWallet();
+      return;
+    }
+    setEscrowActionLoading(true);
+    try {
+      const tx = await withdrawEscrowPrincipal(id);
+      showToast(`Principal withdrawn! TX: ${tx}`, "success");
+      // Could also update a backend status if we had one for withdrawn.
+      // For now, let's just refresh loan to see any changes if we added logic.
+      fetchLoan();
+    } catch (err: any) {
+      showToast(err.message, "error");
+    } finally {
+      setEscrowActionLoading(false);
+    }
+  };
+
+  const handleRepayEscrow = async () => {
+    if (!walletAddress) {
+      await connectWallet();
+      return;
+    }
+    
+    const amount = prompt("Enter amount of MON to repay:");
+    if (!amount) return;
+
+    setEscrowActionLoading(true);
+    try {
+      const tx = await repayEscrowLoan(id, amount);
+      showToast(`Repayment successful! TX: ${tx}`, "success");
+      // Create payment record on backend
+      await paymentsService.createPayment({
+        loan: id,
+        amount: amount,
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: "crypto",
+        status: "confirmed",
+        notes: `Web3 Escrow Repayment TX: ${tx}`,
+        interest_component: "0",
+        principal_component: amount
+      });
+      fetchPayments();
+      fetchLoan();
+    } catch (err: any) {
+      showToast(err.message, "error");
+    } finally {
+      setEscrowActionLoading(false);
     }
   };
 
@@ -177,6 +233,39 @@ export default function LoanDetailPage() {
             <span>End: {formatDate(loan.end_date)}</span>
           </div>
         </div>
+
+        {/* Escrow Actions */}
+        {loan.is_escrow && (
+          <div className="card p-5 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-500/30">
+            <h2 className="text-[13px] font-semibold uppercase tracking-widest text-emerald-400 mb-4">
+              Web3 Escrow Actions
+            </h2>
+            <div className="flex flex-col gap-3">
+              {!loan.lender_wallet ? (
+                <div className="text-sm text-emerald-200/70 p-3 bg-emerald-900/30 rounded-lg">
+                  This loan is currently listed on the P2P Marketplace. Waiting for a lender to fund it.
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button 
+                    onClick={handleWithdrawEscrow}
+                    disabled={escrowActionLoading}
+                    className="btn bg-emerald-600 hover:bg-emerald-700 text-white border-none flex-1"
+                  >
+                    {escrowActionLoading ? "Processing..." : "Withdraw Principal"}
+                  </button>
+                  <button 
+                    onClick={handleRepayEscrow}
+                    disabled={escrowActionLoading}
+                    className="btn bg-teal-600 hover:bg-teal-700 text-white border-none flex-1"
+                  >
+                    {escrowActionLoading ? "Processing..." : "Repay via Web3"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Details & Payments row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

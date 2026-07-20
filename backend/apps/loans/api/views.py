@@ -20,6 +20,25 @@ from .serializers import LoanSerializer, LoanListSerializer
 
 logger = logging.getLogger(__name__)
 
+class P2PMarketplaceView(generics.ListAPIView):
+    """
+    GET /api/v1/loans/marketplace/
+    Returns all escrow loans that are pending funding (lender_wallet is empty).
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = LoanListSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ["created_at", "principal_amount"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self) -> QuerySet:
+        # Exclude loans created by the requesting user so they don't fund their own loan
+        return Loan.objects.filter(
+            is_escrow=True,
+            lender_wallet=""
+        ).exclude(user=self.request.user)
+
 
 class LoanListCreateView(generics.ListCreateAPIView):
     """

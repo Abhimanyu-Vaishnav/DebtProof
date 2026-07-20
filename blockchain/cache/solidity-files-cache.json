@@ -36,6 +36,42 @@
       "artifacts": [
         "DebtProofRegistry"
       ]
+    },
+    "C:\\Users\\abhim\\Desktop\\Project\\DebtProof\\blockchain\\contracts\\DebtProofEscrow.sol": {
+      "lastModificationDate": 1784536224465,
+      "contentHash": "2426d805fe403790880563b273526099",
+      "sourceName": "contracts/DebtProofEscrow.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DebtProofEscrow"
+      ]
     }
   }
 }

@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/Toast";
 import { loansService } from "@/services/loans.service";
+import { useWallet } from "@/hooks/useWallet";
 import type { Loan, LoanFormData, LoanType, LoanStatus } from "@/types";
 
 interface LoanFormProps {
@@ -40,6 +41,7 @@ type FormErrors = Partial<Record<keyof LoanFormData | "submit", string>>;
 export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
+  const { walletAddress, connectWallet, createEscrowLoan } = useWallet();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -56,6 +58,7 @@ export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
     next_emi_date: initialData?.next_emi_date ?? "",
     status: initialData?.status ?? "active",
     notes: initialData?.notes ?? "",
+    is_escrow: initialData?.is_escrow ?? false,
   });
 
   const set = (key: keyof LoanFormData) => (value: string) => {
@@ -85,6 +88,11 @@ export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    
+    if (form.is_escrow && !walletAddress) {
+      await connectWallet();
+      return; // Will need to submit again after connecting
+    }
 
     setLoading(true);
     try {
@@ -100,8 +108,26 @@ export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
         showToast("Loan updated successfully.", "success");
         router.push(`/dashboard/loans/${initialData.id}`);
       } else {
+        // Only set borrower_wallet if creating an escrow loan
+        if (payload.is_escrow && walletAddress) {
+          (payload as any).borrower_wallet = walletAddress;
+        }
+        
         const loan = await loansService.createLoan(payload);
-        showToast("Loan created successfully!", "success");
+        
+        // If escrow, trigger Web3 tx
+        if (payload.is_escrow) {
+          try {
+            await createEscrowLoan(loan.id, payload.principal_amount);
+            showToast("Escrow loan created on-chain successfully!", "success");
+          } catch (web3Err: any) {
+            // We created it in DB but failed on chain
+            showToast("Created locally, but failed to create on blockchain. Please try again or delete.", "warning");
+          }
+        } else {
+          showToast("Loan created successfully!", "success");
+        }
+        
         router.push(`/dashboard/loans/${loan.id}`);
       }
     } catch (err: unknown) {
@@ -158,6 +184,26 @@ export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
               onChange={(e) => set("account_number")(e.target.value)}
               error={errors.account_number}
             />
+            
+            {!isEdit && (
+              <div className="sm:col-span-2 flex items-center gap-3 p-4 bg-emerald-900/10 border border-emerald-500/20 rounded-[var(--radius-md)] mt-2">
+                <input 
+                  type="checkbox" 
+                  id="is_escrow"
+                  className="w-5 h-5 accent-emerald-500 rounded"
+                  checked={form.is_escrow}
+                  onChange={(e) => set("is_escrow")(e.target.checked as any)}
+                />
+                <div>
+                  <label htmlFor="is_escrow" className="text-sm font-semibold text-emerald-400 block cursor-pointer">
+                    Enable Web3 P2P Escrow (Monad)
+                  </label>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    List this loan on the marketplace for decentralized funding.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

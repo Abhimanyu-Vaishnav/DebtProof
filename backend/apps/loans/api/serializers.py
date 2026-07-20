@@ -35,6 +35,7 @@ class LoanListSerializer(serializers.ModelSerializer):
             "status",
             "repayment_progress_percent",
             "total_payments",
+            "is_escrow",
             "created_at",
             "updated_at",
         ]
@@ -86,6 +87,10 @@ class LoanSerializer(serializers.ModelSerializer):
             "is_active",
             "is_overdue",
             "total_payments",
+            "is_escrow",
+            "borrower_wallet",
+            "lender_wallet",
+            "escrow_contract_address",
             "created_at",
             "updated_at",
         ]
@@ -98,6 +103,10 @@ class LoanSerializer(serializers.ModelSerializer):
             "is_active",
             "is_overdue",
             "total_payments",
+            "is_escrow",
+            "borrower_wallet",
+            "lender_wallet",
+            "escrow_contract_address",
             "created_at",
             "updated_at",
         ]

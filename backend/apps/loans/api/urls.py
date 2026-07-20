@@ -8,10 +8,12 @@ from .views import (
     LoanDashboardView,
     EMICalendarView,
     ExportLoansCSVView,
+    P2PMarketplaceView,
 )
 
 urlpatterns = [
     path("", LoanListCreateView.as_view(), name="loan-list-create"),
+    path("marketplace/", P2PMarketplaceView.as_view(), name="loan-marketplace"),
     path("dashboard/", LoanDashboardView.as_view(), name="loan-dashboard"),
     path("calendar/", EMICalendarView.as_view(), name="loan-calendar"),
     path("export/csv/", ExportLoansCSVView.as_view(), name="loans-export-csv"),
