@@ -125,9 +125,11 @@ export interface LoanFormData {
   start_date: string;
   end_date: string;
   next_emi_date?: string;
-  status?: LoanStatus;
   notes?: string;
   is_escrow?: boolean;
+  borrower_wallet?: string;
+  lender_wallet?: string;
+  escrow_contract_address?: string;
 }
 
 // ── Payment Types ────────────────────────────────────────────
