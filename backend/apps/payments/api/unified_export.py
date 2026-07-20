@@ -21,20 +21,25 @@ class UnifiedExportView(APIView):
     GET /api/v1/payments/export/unified/?report_type=payments|loans|assets|credit_cards|net_worth&format=csv|xls|pdf
     Generates unified customizable downloads. Supports query-parameter token fallback for PDF windows.
     """
+    from rest_framework_simplejwt.authentication import JWTAuthentication
+    from rest_framework.authentication import SessionAuthentication
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+    permission_classes = []
+
     def get(self, request: Request) -> HttpResponse:
-        token = request.query_params.get("token")
-        if token:
-            from rest_framework_simplejwt.authentication import JWTAuthentication
-            try:
-                auth = JWTAuthentication()
-                validated_token = auth.get_validated_token(token)
-                user = auth.get_user(validated_token)
-            except Exception:
-                return HttpResponse("Unauthorized token key.", status=401)
-        else:
-            if not request.user.is_authenticated:
+        user = request.user
+        if not user or not user.is_authenticated:
+            token = request.query_params.get("token")
+            if token:
+                from rest_framework_simplejwt.authentication import JWTAuthentication
+                try:
+                    auth = JWTAuthentication()
+                    validated_token = auth.get_validated_token(token)
+                    user = auth.get_user(validated_token)
+                except Exception:
+                    return HttpResponse("Unauthorized token key.", status=401)
+            else:
                 return HttpResponse("Authentication credentials were not provided.", status=401)
-            user = request.user
 
         report_type = request.query_params.get("report_type", "payments")
         export_format = request.query_params.get("format", "csv")

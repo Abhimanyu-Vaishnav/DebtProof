@@ -10,7 +10,7 @@ export interface ReportFilterParams {
 export const reportsService = {
   downloadPaymentsReport: async (params?: ReportFilterParams): Promise<void> => {
     const ext = params?.format === "json" ? "json" : "csv";
-    const response = await apiClient.get("/payments/export/csv/", {
+    const response = await apiClient.get("payments/export/csv/", {
       params,
       responseType: "blob",
     });
@@ -42,7 +42,7 @@ export const reportsService = {
       return;
     }
 
-    const response = await apiClient.get("/payments/export/unified/", {
+    const response = await apiClient.get("payments/export/unified/", {
       params: { report_type: reportType, format },
       responseType: "blob",
     });
@@ -65,7 +65,7 @@ export const reportsService = {
    * Triggers browser download for active/closed loans ledger CSV report.
    */
   downloadLoansCSV: async (): Promise<void> => {
-    const response = await apiClient.get("/loans/export/csv/", {
+    const response = await apiClient.get("loans/export/csv/", {
       responseType: "blob",
     });
     const blob = new Blob([response.data], { type: "text/csv" });
@@ -82,7 +82,7 @@ export const reportsService = {
    * Downloads user's latest Net Worth calculations as a JSON file.
    */
   downloadNetWorthJSON: async (): Promise<void> => {
-    const { data } = await apiClient.get("/assets/net-worth/");
+    const { data } = await apiClient.get("assets/net-worth/");
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
       JSON.stringify(data.net_worth_summary, null, 2)
     )}`;

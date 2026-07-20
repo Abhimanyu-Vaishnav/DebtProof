@@ -166,6 +166,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardResultsSetPagination",
     "PAGE_SIZE": 20,
+    "URL_FORMAT_OVERRIDE": None,
 }
 
 # ── JWT Settings ─────────────────────────────────────────────
