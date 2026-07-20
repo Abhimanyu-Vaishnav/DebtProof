@@ -69,10 +69,14 @@ export default function RepaymentSimulatorPage() {
 
   const { baseline, snowball, avalanche } = simData;
 
-  // Find max months for chart scaling
-  const maxMonths = Math.max(baseline.months, snowball.months, avalanche.months, 12);
+  const baselineMonths = baseline?.months || 0;
+  const snowballMonths = snowball?.months || 0;
+  const avalancheMonths = avalanche?.months || 0;
+
+  // Find max months for chart scaling safely without NaN
+  const maxMonths = Math.max(baselineMonths, snowballMonths, avalancheMonths, 12);
   const maxOutstanding = Math.max(
-    baseline.history.length > 0 ? baseline.history[0].outstanding : 0,
+    baseline?.history && baseline.history.length > 0 ? baseline.history[0].outstanding : 0,
     1000
   );
 
@@ -243,9 +247,9 @@ export default function RepaymentSimulatorPage() {
               <p className="text-[11px] text-[var(--color-text-secondary)]">Visualizing outstanding balance depletion over months</p>
             </div>
             <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider">
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-slate-400 rounded-full" /><span>Baseline ({baseline.months} mos)</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-blue-500 rounded-full" /><span>Snowball ({snowball.months} mos)</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" /><span>Avalanche ({avalanche.months} mos)</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-slate-400 rounded-full" /><span>Baseline ({baselineMonths} mos)</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-blue-500 rounded-full" /><span>Snowball ({snowballMonths} mos)</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" /><span>Avalanche ({avalancheMonths} mos)</span></div>
             </div>
           </div>
 
