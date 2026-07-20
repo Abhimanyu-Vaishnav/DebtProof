@@ -14,8 +14,7 @@ export const reportsService = {
       params,
       responseType: "blob",
     });
-    const blob = new Blob([response.data], { type: ext === "json" ? "application/json" : "text/csv" });
-    const url = window.URL.createObjectURL(blob);
+    const url = window.URL.createObjectURL(response.data);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", `debtproof_payments_history.${ext}`);
@@ -47,11 +46,7 @@ export const reportsService = {
       responseType: "blob",
     });
     
-    let mimeType = "text/csv";
-    if (format === "xls") mimeType = "application/vnd.ms-excel";
-
-    const blob = new Blob([response.data], { type: mimeType });
-    const url = window.URL.createObjectURL(blob);
+    const url = window.URL.createObjectURL(response.data);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", `debtproof_${reportType}.${format}`);
@@ -68,8 +63,7 @@ export const reportsService = {
     const response = await apiClient.get("loans/export/csv/", {
       responseType: "blob",
     });
-    const blob = new Blob([response.data], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
+    const url = window.URL.createObjectURL(response.data);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", "debtproof_loans_ledger.csv");
