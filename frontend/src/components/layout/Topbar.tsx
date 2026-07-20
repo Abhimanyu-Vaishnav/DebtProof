@@ -107,6 +107,23 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
   return (
     <header className="topbar gap-4" role="banner">
+      {/* Mobile Menu Toggle Button */}
+      <button
+        onClick={() => {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("sidebar:open"));
+          }
+        }}
+        className="lg:hidden p-1.5 -ml-1 rounded-lg hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] transition-colors cursor-pointer"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
       {/* Page Title */}
       <div className="flex-1 min-w-0">
         <h1 className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate leading-none">

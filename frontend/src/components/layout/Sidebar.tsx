@@ -1,6 +1,6 @@
 /**
- * DebtProof — Dashboard Sidebar
- * Fixed navigation sidebar with logo, nav links, and user info.
+ * DebtProof — Dashboard Sidebar (Mobile Responsive)
+ * Desktop: Fixed sidebar | Mobile: Slide-out drawer with hamburger from Topbar
  */
 "use client";
 
@@ -30,6 +30,35 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    label: "My Loans",
+    href: "/dashboard/loans",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      </svg>
+    ),
+  },
+  {
+    label: "Credit Cards",
+    href: "/dashboard/credit-cards",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
+        <line x1="2" y1="10" x2="22" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    label: "Payments",
+    href: "/dashboard/payments",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+        <line x1="1" y1="10" x2="23" y2="10" />
+      </svg>
+    ),
+  },
+  {
     label: "Net Worth",
     href: "/dashboard/net-worth",
     icon: (
@@ -41,12 +70,13 @@ const navItems: NavItem[] = [
     ),
   },
   {
-    label: "Credit Cards",
-    href: "/dashboard/credit-cards",
+    label: "Analytics",
+    href: "/dashboard/analytics",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
-        <line x1="2" y1="10" x2="22" y2="10" />
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
       </svg>
     ),
   },
@@ -63,53 +93,22 @@ const navItems: NavItem[] = [
     ),
   },
   {
-    label: "My Loans",
-    href: "/dashboard/loans",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    ),
-  },
-  {
-    label: "P2P Market",
-    href: "/dashboard/p2p-market",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-        <line x1="12" y1="11" x2="12" y2="15" />
-      </svg>
-    ),
-  },
-  {
-    label: "Payments",
-    href: "/dashboard/payments",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-        <line x1="1" y1="10" x2="23" y2="10" />
-      </svg>
-    ),
-  },
-  {
-    label: "Analytics",
-    href: "/dashboard/analytics",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10" />
-        <line x1="12" y1="20" x2="12" y2="4" />
-        <line x1="6" y1="20" x2="6" y2="14" />
-      </svg>
-    ),
-  },
-  {
     label: "Simulator",
     href: "/dashboard/repayment-simulator",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"/>
         <polyline points="12 6 12 12 16 14"/>
+      </svg>
+    ),
+  },
+  {
+    label: "Reports",
+    href: "/dashboard/reports",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+        <path d="M22 12A10 10 0 0 0 12 2v10z" />
       </svg>
     ),
   },
@@ -126,12 +125,13 @@ const navItems: NavItem[] = [
     ),
   },
   {
-    label: "Reports",
-    href: "/dashboard/reports",
+    label: "P2P Market",
+    href: "/dashboard/p2p-market",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-        <path d="M22 12A10 10 0 0 0 12 2v10z" />
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+        <line x1="12" y1="11" x2="12" y2="15" />
       </svg>
     ),
   },
@@ -170,11 +170,29 @@ const bottomNavItems: NavItem[] = [
   },
 ];
 
+// Global sidebar open state via custom event
+export function openSidebar() {
+  window.dispatchEvent(new CustomEvent("sidebar:open"));
+}
+
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
 
-  return (
-    <aside className="sidebar" aria-label="Main navigation">
+  React.useEffect(() => {
+    const handler = () => setMobileOpen(true);
+    window.addEventListener("sidebar:open", handler);
+    return () => window.removeEventListener("sidebar:open", handler);
+  }, []);
+
+  // Close on route change
+  React.useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const sidebarContent = (
+    <>
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-[var(--color-border)] shrink-0">
         <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center shrink-0">
@@ -182,7 +200,7 @@ export function Sidebar() {
             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
         </div>
-        <div>
+        <div className="flex-1">
           <span className="text-[var(--color-text-primary)] font-bold text-[15px] tracking-tight">
             DebtProof
           </span>
@@ -190,6 +208,17 @@ export function Sidebar() {
             by Sanatan Labs
           </p>
         </div>
+        {/* Mobile close button */}
+        <button
+          className="lg:hidden p-1.5 rounded-lg hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]"
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close menu"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
       </div>
 
       {/* Main Navigation */}
@@ -204,7 +233,7 @@ export function Sidebar() {
                 href={item.href}
                 className={cn(
                   "nav-item",
-                  pathname === item.href && "active"
+                  (pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))) && "active"
                 )}
                 aria-current={pathname === item.href ? "page" : undefined}
               >
@@ -244,7 +273,46 @@ export function Sidebar() {
             {item.label}
           </Link>
         ))}
+        {user && (
+          <button onClick={logout} className="nav-item w-full text-left text-red-500 hover:bg-red-50 hover:text-red-600">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign Out
+          </button>
+        )}
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="sidebar hidden lg:flex" aria-label="Main navigation">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Overlay Backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Drawer Sidebar */}
+      <aside
+        className={cn(
+          "sidebar lg:hidden fixed top-0 left-0 z-50 flex transition-transform duration-300 ease-in-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+        aria-label="Mobile navigation drawer"
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }
