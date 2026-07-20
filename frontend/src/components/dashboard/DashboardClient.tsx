@@ -288,9 +288,12 @@ export function DashboardClient() {
                     Payoff Accelerator Simulator
                   </h3>
                 </div>
-                <span className="bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-[10px] font-semibold py-0.5 px-2 rounded-full">
-                  + {formatCurrency(5000)} / mo extra
-                </span>
+                <Link
+                  href="/dashboard/repayment-simulator"
+                  className="bg-[var(--color-accent)]/10 text-[var(--color-accent)] text-[10px] font-semibold py-0.5 px-2 rounded-full hover:bg-[var(--color-accent)]/20 transition-colors"
+                >
+                  Configure Simulator →
+                </Link>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
