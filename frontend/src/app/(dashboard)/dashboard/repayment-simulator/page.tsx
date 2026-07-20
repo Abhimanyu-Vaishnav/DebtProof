@@ -267,15 +267,15 @@ export default function RepaymentSimulatorPage() {
               <svg viewBox="0 0 600 240" className="w-full overflow-visible" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="baselineGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.15" />
+                    <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.1" />
                     <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.0" />
                   </linearGradient>
                   <linearGradient id="snowballGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.1" />
                     <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
                   </linearGradient>
                   <linearGradient id="avalancheGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.15" />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.1" />
                     <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
@@ -346,7 +346,88 @@ export default function RepaymentSimulatorPage() {
             </div>
           </div>
         </div>
+
+        {/* Dynamic Payment Schedule Table */}
+        <PayoffScheduleTabs simulations={simData} />
       </main>
     </>
+  );
+}
+
+// ── Tabbed Schedule Table Component ─────────────────────────────
+interface ScheduleItem {
+  month: number;
+  outstanding_before: number;
+  interest_charged: number;
+  regular_payment: number;
+  extra_payment: number;
+  total_payment: number;
+  outstanding_after: number;
+}
+
+function PayoffScheduleTabs({ simulations }: { simulations: any }) {
+  const [activeTab, setActiveTab] = useState<"baseline" | "snowball" | "avalanche">("avalanche");
+
+  const schedule: ScheduleItem[] = simulations[activeTab]?.schedule || [];
+
+  return (
+    <div className="card p-6 border border-[var(--color-border-light)] space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[var(--color-border-light)] pb-4 gap-3">
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-primary)]">Repayment Schedule Table</h3>
+          <p className="text-[11px] text-[var(--color-text-secondary)]">Month-by-month payment ledger under selected strategy</p>
+        </div>
+        <div className="flex rounded-lg bg-[var(--color-surface-secondary)] p-1 border border-[var(--color-border-light)]">
+          {(["baseline", "snowball", "avalanche"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-colors ${
+                activeTab === tab
+                  ? "bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm"
+                  : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {schedule.length === 0 ? (
+        <p className="text-xs text-[var(--color-text-tertiary)] text-center py-6">No schedule coordinates generated.</p>
+      ) : (
+        <div className="overflow-x-auto max-h-[350px] overflow-y-auto pr-1">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead className="sticky top-0 bg-[var(--color-surface)] shadow-xs">
+              <tr className="border-b border-[var(--color-border-light)] text-[var(--color-text-tertiary)] bg-[var(--color-surface-secondary)]">
+                <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Month</th>
+                <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Starting Bal</th>
+                <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Interest Added</th>
+                <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Min Pay</th>
+                <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Extra Pay</th>
+                <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Total Pay</th>
+                <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Ending Bal</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--color-border-light)]/40">
+              {schedule.map((row) => (
+                <tr key={row.month} className="hover:bg-[var(--color-surface-secondary)]/30 text-[var(--color-text-secondary)]">
+                  <td className="py-2.5 px-3 font-semibold text-[var(--color-text-primary)]">Month {row.month}</td>
+                  <td className="py-2.5 px-3">{formatCurrency(row.outstanding_before)}</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-semibold">+ {formatCurrency(row.interest_charged)}</td>
+                  <td className="py-2.5 px-3">{formatCurrency(row.regular_payment)}</td>
+                  <td className="py-2.5 px-3 text-emerald-500 font-bold">{row.extra_payment > 0 ? `+ ${formatCurrency(row.extra_payment)}` : "—"}</td>
+                  <td className="py-2.5 px-3 font-bold text-[var(--color-text-primary)]">{formatCurrency(row.total_payment)}</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--color-text-primary)]">
+                    {row.outstanding_after > 0 ? formatCurrency(row.outstanding_after) : <span className="text-emerald-500 font-extrabold">Paid Off! 🎉</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
