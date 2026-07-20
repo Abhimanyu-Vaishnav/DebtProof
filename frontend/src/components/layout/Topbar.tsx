@@ -1,50 +1,89 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { notificationsService } from "@/services/notifications.service";
+import type { Notification } from "@/types";
 
 interface TopbarProps {
   title?: string;
   subtitle?: string;
 }
 
+// ── Helpers ─────────────────────────────────────────────────────
+function timeAgo(isoString: string): string {
+  const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function notifIcon(type: string) {
+  if (type === "emi_overdue") return { dot: "bg-rose-500", emoji: "⚠️" };
+  if (type === "emi_upcoming") return { dot: "bg-amber-400", emoji: "📅" };
+  if (type === "payment_received") return { dot: "bg-emerald-500", emoji: "✅" };
+  if (type === "loan_closed") return { dot: "bg-purple-500", emoji: "🎉" };
+  return { dot: "bg-blue-500", emoji: "ℹ️" };
+}
+
 export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    {
-      id: "notif-1",
-      title: "Anchor Pending",
-      description: "You have recorded payments with unanchored receipts. Secure them on Monad Testnet.",
-      time: "Just now",
-      read: false,
-      type: "warning"
-    },
-    {
-      id: "notif-2",
-      title: "Wallet Connected",
-      description: "Successfully connected MetaMask with Monad Testnet provider.",
-      time: "5m ago",
-      read: false,
-      type: "success"
-    },
-    {
-      id: "notif-3",
-      title: "System Update",
-      description: "DebtProof v1.0.0 is production-ready for Monad Blockchain Hackathon.",
-      time: "1h ago",
-      read: true,
-      type: "info"
-    }
-  ]);
-  
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const notificationsRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { logout } = useAuth();
+
+  // ── Fetch notifications ────────────────────────────────────────
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const [listResp, count] = await Promise.all([
+        notificationsService.getNotifications(),
+        notificationsService.getUnreadCount(),
+      ]);
+      setNotifications(listResp.results ?? []);
+      setUnreadCount(count);
+    } catch {
+      // Silent fail — don't break UI if notification API is unavailable
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    // Poll every 60s for new notifications
+    const interval = setInterval(fetchNotifications, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  // ── Actions ────────────────────────────────────────────────────
+  const handleMarkRead = async (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    try { await notificationsService.markRead(id); } catch { /* silent */ }
+  };
+
+  const handleMarkAllRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+    try { await notificationsService.markAllRead(); } catch { /* silent */ }
+  };
+
+  const handleDismiss = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const notif = notifications.find(n => n.id === id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    if (notif && !notif.is_read) setUnreadCount(prev => Math.max(0, prev - 1));
+    try { await notificationsService.deleteNotification(id); } catch { /* silent */ }
+  };
 
   const handleLogout = async () => {
     setDropdownOpen(false);
@@ -52,18 +91,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
     router.push("/login");
   };
 
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const handleDismissNotification = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  // Close dropdown when clicking outside
+  // Close panels when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -91,7 +119,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-3 shrink-0">
-        {/* Notification Bell Dropdown */}
+        {/* Notification Bell */}
         <div className="relative" ref={notificationsRef}>
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -103,79 +131,93 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
-            {/* Unread dot */}
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--color-accent)] rounded-full animate-pulse" aria-label={`${unreadCount} unread notifications`} />
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
             )}
           </button>
 
           {/* Notifications Panel */}
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg py-2.5 z-50 animate-fade-in-up">
-              <div className="flex items-center justify-between px-4 pb-2 border-b border-[var(--color-border-light)]">
-                <span className="text-xs font-bold text-[var(--color-text-primary)]">Notifications ({unreadCount})</span>
+            <div className="absolute right-0 mt-2 w-88 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-2xl z-50 animate-fade-in-up overflow-hidden" style={{ width: "22rem" }}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-light)] bg-[var(--color-surface-secondary)]">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[var(--color-text-primary)]">Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="text-[9px] font-bold bg-rose-500 text-white px-1.5 py-0.5 rounded-full">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllRead}
-                    className="text-[10px] font-bold text-[var(--color-accent)] hover:underline cursor-pointer"
+                    className="text-[10px] font-bold text-[var(--color-primary-light)] hover:underline cursor-pointer"
                   >
                     Mark all read
                   </button>
                 )}
               </div>
-              <div className="max-h-64 overflow-y-auto mt-1">
+
+              {/* List */}
+              <div className="max-h-80 overflow-y-auto divide-y divide-[var(--color-border-light)]">
                 {notifications.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-[var(--color-text-tertiary)]">
-                    No new notifications
+                  <div className="py-10 text-center">
+                    <p className="text-2xl mb-2">🔔</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)]">No notifications yet</p>
                   </div>
                 ) : (
-                  notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      onClick={() => {
-                        setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
-                        setNotificationsOpen(false);
-                      }}
-                      className={`px-4 py-3 flex gap-2.5 items-start hover:bg-[var(--color-surface-secondary)] cursor-pointer transition-colors border-b border-[var(--color-border-light)] last:border-0 ${
-                        !n.read ? "bg-[var(--color-surface-secondary)]/50" : ""
-                      }`}
-                    >
-                      <div className="mt-0.5 shrink-0">
-                        {n.type === "success" && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        )}
-                        {n.type === "warning" && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)]" />
-                        )}
-                        {n.type === "info" && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-primary)]" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className={`text-xs text-[var(--color-text-primary)] leading-tight ${!n.read ? "font-bold" : "font-semibold"}`}>
-                          {n.title}
-                        </p>
-                        <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed">
-                          {n.description}
-                        </p>
-                        <span className="text-[9px] text-[var(--color-text-tertiary)] mt-1 inline-block">{n.time}</span>
-                      </div>
-                      <button
-                        onClick={(e) => handleDismissNotification(n.id, e)}
-                        className="text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] transition-colors p-0.5 cursor-pointer"
-                        title="Dismiss"
+                  notifications.map((n) => {
+                    const icon = notifIcon(n.notif_type);
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
+                        className={`px-4 py-3 flex gap-3 items-start hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer ${
+                          !n.is_read ? "bg-[var(--color-primary)]/5" : ""
+                        }`}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))
+                        {/* Icon */}
+                        <div className="relative shrink-0 mt-0.5">
+                          <span className="text-base">{icon.emoji}</span>
+                          {!n.is_read && (
+                            <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${icon.dot}`} />
+                          )}
+                        </div>
+                        {/* Content */}
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs leading-snug text-[var(--color-text-primary)] ${!n.is_read ? "font-bold" : "font-medium"}`}>
+                            {n.title}
+                          </p>
+                          {n.loan_name && (
+                            <p className="text-[10px] text-[var(--color-primary-light)] font-semibold mt-0.5">{n.loan_name}</p>
+                          )}
+                          <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed line-clamp-2"
+                            dangerouslySetInnerHTML={{ __html: n.body }}
+                          />
+                          <span className="text-[9px] text-[var(--color-text-tertiary)] mt-1 inline-block">{timeAgo(n.created_at)}</span>
+                        </div>
+                        {/* Dismiss */}
+                        <button
+                          onClick={(e) => handleDismiss(n.id, e)}
+                          className="shrink-0 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] transition-colors p-0.5 cursor-pointer mt-0.5"
+                          title="Dismiss"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
           )}
         </div>
+
 
         {/* Divider */}
         <div className="w-px h-5 bg-[var(--color-border)]" />

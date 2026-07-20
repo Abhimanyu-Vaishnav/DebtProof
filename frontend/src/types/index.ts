@@ -398,3 +398,23 @@ export interface CalendarData {
   month_summary: CalendarMonthSummary;
 }
 
+// ── Notification Types ─────────────────────────────────────────
+export type NotificationType =
+  | "emi_upcoming"
+  | "emi_overdue"
+  | "payment_received"
+  | "loan_closed"
+  | "info";
+
+export interface Notification {
+  id: string;
+  title: string;
+  body: string;
+  notif_type: NotificationType;
+  loan: string | null;
+  loan_name: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+
