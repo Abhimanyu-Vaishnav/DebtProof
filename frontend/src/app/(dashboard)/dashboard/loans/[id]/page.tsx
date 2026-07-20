@@ -236,13 +236,13 @@ export default function LoanDetailPage() {
 
         {/* Escrow Actions */}
         {loan.is_escrow && (
-          <div className="card p-5 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-emerald-500/30">
-            <h2 className="text-[13px] font-semibold uppercase tracking-widest text-emerald-400 mb-4">
+          <div className="card p-5 bg-[var(--color-surface-secondary)] border-[var(--color-accent)] border-l-4">
+            <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-accent)] mb-4">
               Web3 Escrow Actions
             </h2>
             <div className="flex flex-col gap-3">
               {!loan.lender_wallet ? (
-                <div className="text-sm text-emerald-200/70 p-3 bg-emerald-900/30 rounded-lg">
+                <div className="text-sm text-[var(--color-text-secondary)] p-3 bg-[var(--color-surface-tertiary)] rounded-[var(--radius-md)] border border-[var(--color-border)]">
                   This loan is currently listed on the P2P Marketplace. Waiting for a lender to fund it.
                 </div>
               ) : (
@@ -250,14 +250,14 @@ export default function LoanDetailPage() {
                   <button 
                     onClick={handleWithdrawEscrow}
                     disabled={escrowActionLoading}
-                    className="btn bg-emerald-600 hover:bg-emerald-700 text-white border-none flex-1"
+                    className="btn btn-primary flex-1"
                   >
                     {escrowActionLoading ? "Processing..." : "Withdraw Principal"}
                   </button>
                   <button 
                     onClick={handleRepayEscrow}
                     disabled={escrowActionLoading}
-                    className="btn bg-teal-600 hover:bg-teal-700 text-white border-none flex-1"
+                    className="btn btn-secondary flex-1"
                   >
                     {escrowActionLoading ? "Processing..." : "Repay via Web3"}
                   </button>

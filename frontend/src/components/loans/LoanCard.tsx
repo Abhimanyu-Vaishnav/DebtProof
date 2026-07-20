@@ -69,11 +69,20 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
         </div>
       </div>
 
-      {/* Progress */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs text-[var(--color-text-tertiary)]">
-            {formatCurrency(loan.paid_amount)} paid
+          <span className="text-[11px] text-[var(--color-text-tertiary)] flex flex-col sm:flex-row sm:gap-2">
+            <span>
+              <strong className="text-[var(--color-text-primary)]">{formatCurrency(loan.paid_amount)}</strong> paid
+            </span>
+            <span className="hidden sm:inline text-[var(--color-border)]">•</span>
+            {loan.next_emi_date ? (
+              <span className={loan.is_overdue ? "text-[var(--color-error)] font-medium" : "text-[var(--color-text-secondary)]"}>
+                {loan.is_overdue ? "Overdue" : "Upcoming"}: {formatCurrency(loan.monthly_emi)}
+              </span>
+            ) : (
+              <span>No active EMI</span>
+            )}
           </span>
           <span className="text-xs font-semibold text-[var(--color-text-primary)]">
             {Math.round(progress)}%

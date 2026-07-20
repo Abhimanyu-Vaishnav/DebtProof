@@ -140,21 +140,27 @@ export function DashboardClient() {
     },
     {
       id: "upcoming-emi",
-      title: "Upcoming EMI",
+      title: data.overdue_count > 0 ? "Overdue EMI" : "Upcoming EMI",
       value: data.upcoming_emi_amount > 0 ? formatCurrency(data.upcoming_emi_amount) : "—",
-      subtitle: data.upcoming_emi_date ? `Due ${formatDate(data.upcoming_emi_date)}` : "No upcoming EMI",
-      bg: "bg-[var(--color-warning)]",
+      subtitle: data.upcoming_emi_date 
+        ? `${data.overdue_count > 0 ? "Overdue since" : "Due"} ${formatDate(data.upcoming_emi_date)}` 
+        : "No upcoming EMI",
+      bg: data.overdue_count > 0 ? "bg-[var(--color-error)]" : "bg-[var(--color-warning)]",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+          {data.overdue_count > 0 ? (
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01" />
+          ) : (
+            <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>
+          )}
         </svg>
       ),
     },
     {
-      id: "loans-closed",
-      title: "Loans Closed",
-      value: data.closed_loans.toString(),
-      subtitle: data.overdue_count > 0 ? `${data.overdue_count} overdue` : "All on track",
+      id: "loans-status",
+      title: "Loans Status",
+      value: `${data.active_loans} Active`,
+      subtitle: `${data.closed_loans} closed · ${data.defaulted_loans} defaulted`,
       bg: "bg-[var(--color-accent)]",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -182,6 +188,26 @@ export function DashboardClient() {
           ))}
         </div>
       </section>
+
+      {/* Overdue Banner */}
+      {data.overdue_count > 0 && (
+        <div className="bg-[var(--color-error)]/10 border-l-4 border-[var(--color-error)] p-4 rounded-r-[var(--radius-md)] flex items-start gap-3">
+          <div className="mt-0.5 text-[var(--color-error)]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-[var(--color-error)]">Action Required: Overdue Payments</h3>
+            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+              You have {data.overdue_count} loan(s) with overdue EMI payments totaling {formatCurrency(data.upcoming_emi_amount)}. Please clear your dues to avoid penalties.
+            </p>
+            <Link href="/dashboard/loans" className="text-xs font-semibold text-[var(--color-error)] underline mt-2 inline-block">
+              View My Loans
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <section aria-labelledby="quick-actions-heading">

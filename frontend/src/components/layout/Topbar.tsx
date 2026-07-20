@@ -271,6 +271,18 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                 </svg>
                 Settings
               </Link>
+              <Link
+                href="/dashboard/help"
+                onClick={() => setDropdownOpen(false)}
+                className="flex items-center gap-2 px-4 py-2 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                Help & About
+              </Link>
               <div className="border-t border-[var(--color-border-light)] my-1" />
               <button
                 onClick={handleLogout}
