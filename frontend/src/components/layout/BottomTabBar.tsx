@@ -1,5 +1,5 @@
 /**
- * DebtProof — Bottom Tab Bar (Mobile Navigation with Notifications Drawer)
+ * DebtProof — Bottom Tab Bar (Mobile Navigation with Center Alerts)
  */
 "use client";
 
@@ -16,7 +16,7 @@ interface TabItem {
   icon: React.ReactNode;
 }
 
-const primaryTabs: TabItem[] = [
+const leftTabs: TabItem[] = [
   {
     label: "Home",
     href: "/dashboard",
@@ -36,6 +36,9 @@ const primaryTabs: TabItem[] = [
       </svg>
     ),
   },
+];
+
+const rightTabs: TabItem[] = [
   {
     label: "Payments",
     href: "/dashboard/payments",
@@ -102,7 +105,6 @@ export function BottomTabBar() {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Listen to global events for real-time notification updates
   useEffect(() => {
     const handleRefresh = () => fetchNotifications();
     window.addEventListener("notifications:refresh", handleRefresh);
@@ -135,28 +137,31 @@ export function BottomTabBar() {
 
   if (!mounted) return null;
 
+  const renderTabLink = (item: TabItem) => {
+    const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn("bottom-tab-item", isActive && "active")}
+      >
+        <span className={cn("bottom-tab-icon", isActive && "active-icon")}>
+          {item.icon}
+        </span>
+        <span className="bottom-tab-label">{item.label}</span>
+        {isActive && <span className="bottom-tab-dot" />}
+      </Link>
+    );
+  };
+
   return (
     <>
       <nav className="bottom-tab-bar" aria-label="Mobile navigation tab bar">
         <div className="bottom-tab-bar-container">
-          {primaryTabs.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn("bottom-tab-item", isActive && "active")}
-              >
-                <span className={cn("bottom-tab-icon", isActive && "active-icon")}>
-                  {item.icon}
-                </span>
-                <span className="bottom-tab-label">{item.label}</span>
-                {isActive && <span className="bottom-tab-dot" />}
-              </Link>
-            );
-          })}
+          {/* Left Side Tabs */}
+          {leftTabs.map(renderTabLink)}
 
-          {/* Notifications Button instead of More */}
+          {/* Center Alerts Button */}
           <button
             className={cn("bottom-tab-item", notifOpen && "active")}
             onClick={() => setNotifOpen(!notifOpen)}
@@ -176,6 +181,9 @@ export function BottomTabBar() {
             <span className="bottom-tab-label">Alerts</span>
             {notifOpen && <span className="bottom-tab-dot" />}
           </button>
+
+          {/* Right Side Tabs */}
+          {rightTabs.map(renderTabLink)}
         </div>
       </nav>
 
@@ -216,54 +224,53 @@ export function BottomTabBar() {
 
           {/* List area with big readable fonts and spacing */}
           <div className="flex-1 overflow-y-auto divide-y divide-[var(--color-border-light)] pb-20 bg-[var(--color-surface-secondary)]">
-              {notifications.length === 0 ? (
-                <div className="py-16 text-center">
-                  <p className="text-4xl mb-3">🔔</p>
-                  <p className="text-sm font-semibold text-[var(--color-text-tertiary)]">No notifications yet</p>
-                </div>
-              ) : (
-                notifications.map((n) => {
-                  const icon = notifIcon(n.notif_type);
-                  return (
-                    <div
-                      key={n.id}
-                      onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
-                      className={cn(
-                        "px-5 py-4 flex gap-3.5 items-start hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer",
-                        !n.is_read && "bg-[var(--color-primary)]/[0.04]"
+            {notifications.length === 0 ? (
+              <div className="py-16 text-center">
+                <p className="text-4xl mb-3">🔔</p>
+                <p className="text-sm font-semibold text-[var(--color-text-tertiary)]">No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map((n) => {
+                const icon = notifIcon(n.notif_type);
+                return (
+                  <div
+                    key={n.id}
+                    onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
+                    className={cn(
+                      "px-5 py-4 flex gap-3.5 items-start hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer",
+                      !n.is_read && "bg-slate-100 dark:bg-slate-800"
+                    )}
+                  >
+                    <div className="relative shrink-0 mt-1">
+                      <span className="text-xl">{icon.emoji}</span>
+                      {!n.is_read && (
+                        <span className={cn("absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full", icon.dot)} />
                       )}
-                    >
-                      <div className="relative shrink-0 mt-1">
-                        <span className="text-xl">{icon.emoji}</span>
-                        {!n.is_read && (
-                          <span className={cn("absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full", icon.dot)} />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className={cn(
-                          "text-[13px] leading-normal text-[var(--color-text-primary)]",
-                          !n.is_read ? "font-bold" : "font-medium"
-                        )}>
-                          {n.title}
-                        </p>
-                        {n.loan_name && (
-                          <p className="text-[11px] text-[var(--color-primary-light)] font-bold mt-1">{n.loan_name}</p>
-                        )}
-                        <div
-                          className="text-[12px] text-[var(--color-text-secondary)] mt-1.5 leading-relaxed font-normal break-words"
-                          dangerouslySetInnerHTML={{ __html: n.body }}
-                        />
-                        <span className="text-[10px] text-[var(--color-text-tertiary)] mt-2 inline-block font-medium">
-                          {timeAgo(n.created_at)}
-                        </span>
-                      </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={cn(
+                        "text-[13px] leading-normal text-[var(--color-text-primary)]",
+                        !n.is_read ? "font-bold" : "font-medium"
+                      )}>
+                        {n.title}
+                      </p>
+                      {n.loan_name && (
+                        <p className="text-[11px] text-[var(--color-primary-light)] font-bold mt-1">{n.loan_name}</p>
+                      )}
+                      <div
+                        className="text-[12px] text-[var(--color-text-secondary)] mt-1.5 leading-relaxed font-normal break-words"
+                        dangerouslySetInnerHTML={{ __html: n.body }}
+                      />
+                      <span className="text-[10px] text-[var(--color-text-tertiary)] mt-2 inline-block font-medium">
+                        {timeAgo(n.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
-        </>
+        </div>
       )}
     </>
   );
