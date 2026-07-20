@@ -6,7 +6,7 @@ from django.db.models import Sum
 from apps.assets.models import Asset, AssetType, AssetClass, Liability, LiabilityType, LiabilityClass
 from apps.assets.api.serializers import AssetSerializer, LiabilitySerializer
 from apps.loans.models import Loan, LoanStatus
-from apps.credit_cards.models import CreditCard
+from apps.credit_cards.models import CreditCard, CreditCardStatus
 
 
 class AssetViewSet(viewsets.ModelViewSet):
@@ -54,8 +54,8 @@ class NetWorthView(APIView):
         loans_agg = Loan.objects.filter(user=user, status=LoanStatus.ACTIVE).aggregate(total=Sum("outstanding_amount"))
         total_loans_debt = float(loans_agg["total"] or 0)
 
-        # 2c. Credit Cards (treated as Short-term liabilities)
-        cc_agg = CreditCard.objects.filter(user=user).aggregate(total=Sum("current_outstanding"))
+        # 2c. Credit Cards (treated as Short-term liabilities — active cards only)
+        cc_agg = CreditCard.objects.filter(user=user, status=CreditCardStatus.ACTIVE).aggregate(total=Sum("current_outstanding"))
         total_cc_debt = float(cc_agg["total"] or 0)
 
         # 2d. Combined liabilities
@@ -92,7 +92,7 @@ class NetWorthView(APIView):
                 "liability_type": "credit_cards",
                 "label": "Credit Cards",
                 "value": total_cc_debt,
-                "count": CreditCard.objects.filter(user=user).count()
+                "count": CreditCard.objects.filter(user=user, status=CreditCardStatus.ACTIVE).count()
             })
         for type_code, type_label in LiabilityType.choices:
             type_liabs = custom_liabs.filter(liability_type=type_code)

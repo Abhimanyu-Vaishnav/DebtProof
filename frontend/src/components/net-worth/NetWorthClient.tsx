@@ -36,7 +36,8 @@ function LiabilityIcon({ type }: { type: string }) {
     rent: <span>🏠</span>,
     tax: <span>🏛️</span>,
     personal_debt: <span>🤝</span>,
-    active_loans: <span>💳</span>,
+    active_loans: <span>🏦</span>,
+    credit_cards: <span>💳</span>,
     other: <span>⚡</span>,
   };
   return <span className="text-xl">{icons[type] ?? icons.other}</span>;
@@ -428,22 +429,35 @@ export function NetWorthClient() {
             onAdd={() => openModal("liability")}
           />
           <div className="space-y-2">
-            {shortTermLiabs.length === 0 ? (
-              <p className="text-xs text-[var(--color-text-tertiary)] pl-2 py-2">No short-term liabilities. Add Bills, Rent, Tax, etc.</p>
-            ) : (
-              shortTermLiabs.map(l => (
+            {/* Credit Cards from distribution */}
+            {s.liability_distribution
+              .filter(d => d.liability_type === "credit_cards")
+              .map(d => (
                 <ItemRow
-                  key={l.id}
-                  icon={<LiabilityIcon type={l.liability_type} />}
-                  name={l.name}
-                  sublabel={LIABILITY_TYPE_LABELS[l.liability_type] ?? l.liability_type}
+                  key="credit_cards"
+                  icon={<LiabilityIcon type="credit_cards" />}
+                  name="Credit Cards Outstanding"
+                  sublabel={`${d.count} active card(s) — managed in Credit Cards section`}
                   badge="Short-term"
                   badgeColor="bg-orange-500/10 text-orange-500"
-                  value={parseFloat(l.value)}
-                  onEdit={() => openModal("liability", l)}
-                  onDelete={() => handleDelete("liability", l.id)}
+                  value={d.value}
                 />
-              ))
+              ))}
+            {shortTermLiabs.map(l => (
+              <ItemRow
+                key={l.id}
+                icon={<LiabilityIcon type={l.liability_type} />}
+                name={l.name}
+                sublabel={LIABILITY_TYPE_LABELS[l.liability_type] ?? l.liability_type}
+                badge="Short-term"
+                badgeColor="bg-orange-500/10 text-orange-500"
+                value={parseFloat(l.value)}
+                onEdit={() => openModal("liability", l)}
+                onDelete={() => handleDelete("liability", l.id)}
+              />
+            ))}
+            {shortTermLiabs.length === 0 && s.liability_distribution.filter(d => d.liability_type === "credit_cards").length === 0 && (
+              <p className="text-xs text-[var(--color-text-tertiary)] pl-2 py-2">No short-term liabilities. Add Bills, Rent, Tax, etc.</p>
             )}
           </div>
 
