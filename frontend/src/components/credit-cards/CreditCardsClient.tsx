@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import { creditCardsService, CreditCardFormData } from "@/services/credit-cards.service";
 import { formatCurrency } from "@/utils/formatters";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import type { CreditCard, CreditCardSummary } from "@/types";
+import type { CreditCard, CreditCardSummary, CreditCardPayment } from "@/types";
+import { CreditCardPaymentModal } from "./CreditCardPaymentModal";
 
 // Helper for card styling gradients
 function getCardGradient(idx: number) {
@@ -39,6 +40,13 @@ export function CreditCardsClient() {
   // Modal States
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
+
+  // Credit Card Payment states
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [payingCard, setPayingCard] = useState<CreditCard | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [payments, setPayments] = useState<CreditCardPayment[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   // Form Fields
   const [cardName, setCardName] = useState("");
@@ -156,17 +164,64 @@ export function CreditCardsClient() {
     }
   };
 
+  const fetchPayments = async (cardId: string) => {
+    try {
+      setLoadingPayments(true);
+      const data = await creditCardsService.getPayments(cardId);
+      setPayments(data);
+    } catch {
+      console.error("Failed to load payment history.");
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  const handlePayOpen = (card: CreditCard) => {
+    setPayingCard(card);
+    setPayModalOpen(true);
+  };
+
+  const selectCardForHistory = (cardId: string) => {
+    if (selectedCardId === cardId) {
+      setSelectedCardId(null);
+      setPayments([]);
+    } else {
+      setSelectedCardId(cardId);
+      fetchPayments(cardId);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this credit card?")) return;
     try {
       setLoading(true);
       await creditCardsService.deleteCard(id);
+      if (selectedCardId === id) {
+        setSelectedCardId(null);
+        setPayments([]);
+      }
       fetchData();
     } catch {
       alert("Failed to delete the card.");
       setLoading(false);
     }
   };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!confirm("Are you sure you want to delete this payment record? This will restore the card's outstanding balance.")) return;
+    try {
+      setLoading(true);
+      await creditCardsService.deletePayment(paymentId);
+      if (selectedCardId) {
+        await fetchPayments(selectedCardId);
+      }
+      await fetchData();
+    } catch {
+      alert("Failed to delete payment.");
+      setLoading(false);
+    }
+  };
+
 
   if (loading && !summary) {
     return <LoadingSpinner size="md" label="Loading credit card module..." />;
@@ -266,13 +321,71 @@ export function CreditCardsClient() {
                   <span>Stmt: <b>{card.statement_date}</b></span>
                   <span>Due: <b>{card.due_date}</b></span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2.5">
+                  <button onClick={() => handlePayOpen(card)} className="text-emerald-400 hover:text-emerald-300 font-bold bg-slate-800/60 px-2 py-0.5 rounded">Pay</button>
+                  <button onClick={() => selectCardForHistory(card.id)} className="text-blue-300 hover:text-blue-200 font-bold bg-slate-800/60 px-2 py-0.5 rounded">
+                    {selectedCardId === card.id ? "Hide Tx" : "Tx History"}
+                  </button>
                   <button onClick={() => openEditModal(card)} className="text-slate-300 hover:text-white font-bold">Edit</button>
                   <button onClick={() => handleDelete(card.id)} className="text-rose-400 hover:text-rose-300 font-bold">Delete</button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Payment History Log */}
+      {selectedCardId && (
+        <div className="card p-6 shadow-sm border border-[var(--color-border-light)] space-y-4">
+          <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-3">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-primary)]">
+              Payment History for Selected Card
+            </h4>
+            <button onClick={() => setSelectedCardId(null)} className="text-xs text-[var(--color-text-tertiary)] hover:underline">
+              Close
+            </button>
+          </div>
+
+          {loadingPayments ? (
+            <LoadingSpinner size="sm" label="Loading payments..." />
+          ) : payments.length === 0 ? (
+            <p className="text-xs text-[var(--color-text-tertiary)] text-center py-4">No payments recorded for this card yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-[var(--color-border-light)] text-[var(--color-text-tertiary)]">
+                    <th className="py-2 font-bold uppercase">Date</th>
+                    <th className="py-2 font-bold uppercase">Amount</th>
+                    <th className="py-2 font-bold uppercase">Method</th>
+                    <th className="py-2 font-bold uppercase">Ref No.</th>
+                    <th className="py-2 font-bold uppercase">Notes</th>
+                    <th className="py-2 font-bold uppercase text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border-light)]/40">
+                  {payments.map((p) => (
+                    <tr key={p.id} className="text-[var(--color-text-secondary)]">
+                      <td className="py-2.5 font-medium">{p.payment_date}</td>
+                      <td className="py-2.5 font-bold text-[var(--color-text-primary)]">{formatCurrency(parseFloat(p.amount))}</td>
+                      <td className="py-2.5 capitalize">{p.payment_method.replace("_", " ")}</td>
+                      <td className="py-2.5 font-mono text-[10px]">{p.reference_number || "—"}</td>
+                      <td className="py-2.5 truncate max-w-[150px]" title={p.notes}>{p.notes || "—"}</td>
+                      <td className="py-2.5 text-right">
+                        <button
+                          onClick={() => handleDeletePayment(p.id)}
+                          className="text-[var(--color-error)] hover:underline font-semibold"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -346,6 +459,25 @@ export function CreditCardsClient() {
           </div>
         </div>
       )}
+
+      {/* Record Payment Modal Dialog */}
+      {payingCard && (
+        <CreditCardPaymentModal
+          card={payingCard}
+          isOpen={payModalOpen}
+          onClose={() => {
+            setPayModalOpen(false);
+            setPayingCard(null);
+          }}
+          onSuccess={() => {
+            fetchData();
+            if (selectedCardId === payingCard.id) {
+              fetchPayments(payingCard.id);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
+

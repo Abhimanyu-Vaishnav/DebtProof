@@ -455,5 +455,28 @@ export interface CreditCardSummary {
   avg_interest_rate: number;
 }
 
+export interface CreditCardPayment {
+  id: string;
+  card: string;
+  card_name: string;
+  amount: string;
+  payment_date: string;
+  payment_method: string;
+  reference_number: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreditCardPaymentFormData {
+  card: string;
+  amount: string;
+  payment_date: string;
+  payment_method: string;
+  reference_number?: string;
+  notes?: string;
+}
+
+
 
 
