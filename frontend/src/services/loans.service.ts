@@ -7,6 +7,7 @@ import type {
   Loan,
   LoanFormData,
   DashboardData,
+  CalendarData,
   PaginatedResponse,
 } from "@/types";
 
@@ -79,5 +80,18 @@ export const loansService = {
       dashboard: DashboardData;
     }>("/loans/dashboard/");
     return data.dashboard;
+  },
+
+  /**
+   * Get EMI calendar events for a given year/month.
+   */
+  getCalendar: async (year: number, month: number): Promise<CalendarData> => {
+    const { data } = await apiClient.get<{
+      success: boolean;
+      year: number;
+      month: number;
+      calendar: CalendarData;
+    }>("/loans/calendar/", { params: { year, month } });
+    return data.calendar;
   },
 };

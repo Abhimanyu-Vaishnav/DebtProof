@@ -372,3 +372,29 @@ export const LIABILITY_CLASS_LABELS: Record<LiabilityClass, string> = {
   short_term: "Short-term",
   long_term: "Long-term",
 };
+
+// ── EMI Calendar Types ────────────────────────────────────────
+export type EMIEventStatus = "upcoming" | "overdue" | "paid";
+
+export interface EMIEvent {
+  loan_id: string;
+  loan_name: string;
+  lender_name: string;
+  loan_type: string;
+  emi_amount: number;
+  due_date: string; // "YYYY-MM-DD"
+  status: EMIEventStatus;
+}
+
+export interface CalendarMonthSummary {
+  total_emi: number;
+  overdue_count: number;
+  upcoming_count: number;
+  paid_count: number;
+}
+
+export interface CalendarData {
+  events: EMIEvent[];
+  month_summary: CalendarMonthSummary;
+}
+

@@ -3,6 +3,7 @@ DebtProof — Loan API Views
 Full CRUD for loans + dashboard aggregations.
 """
 import logging
+import calendar
 from decimal import Decimal
 from datetime import date
 from django.db.models import Sum, Count, Q, QuerySet
@@ -13,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.loans.models import Loan, LoanStatus
+from apps.payments.models import Payment, PaymentStatus
 from apps.core.pagination import StandardResultsSetPagination
 from .serializers import LoanSerializer, LoanListSerializer
 
@@ -386,3 +388,98 @@ class LoanDashboardView(APIView):
                 },
             }
         )
+
+
+class EMICalendarView(APIView):
+    """
+    GET /api/v1/loans/calendar/?year=YYYY&month=MM
+    Returns EMI events for every active loan in the requested month.
+    Each event status is resolved as: paid | overdue | upcoming.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        today = date.today()
+        try:
+            year = int(request.query_params.get("year", today.year))
+            month = int(request.query_params.get("month", today.month))
+            if not (1 <= month <= 12):
+                raise ValueError
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid year or month parameter."}, status=400)
+
+        # Days in the requested month
+        _, days_in_month = calendar.monthrange(year, month)
+        month_start = date(year, month, 1)
+        month_end = date(year, month, days_in_month)
+
+        # Fetch all active loans for this user
+        active_loans = Loan.objects.filter(
+            user=request.user,
+            status=LoanStatus.ACTIVE
+        ).select_related("user")
+
+        # All confirmed payments this user made in the requested month
+        paid_loan_ids = set(
+            Payment.objects.filter(
+                loan__user=request.user,
+                payment_date__year=year,
+                payment_date__month=month,
+                status=PaymentStatus.CONFIRMED
+            ).values_list("loan_id", flat=True)
+        )
+
+        events = []
+        total_emi = 0.0
+        overdue_count = 0
+        upcoming_count = 0
+        paid_count = 0
+
+        for loan in active_loans:
+            # Determine due date: use next_emi_date if it falls in this month,
+            # otherwise derive from start_date day-of-month.
+            emi_day = loan.start_date.day
+            # Clamp to valid day in this month
+            emi_day = min(emi_day, days_in_month)
+            due_date = date(year, month, emi_day)
+
+            # Resolve status
+            if str(loan.id) in {str(pid) for pid in paid_loan_ids}:
+                event_status = "paid"
+                paid_count += 1
+            elif due_date < today:
+                event_status = "overdue"
+                overdue_count += 1
+            else:
+                event_status = "upcoming"
+                upcoming_count += 1
+
+            total_emi += float(loan.monthly_emi)
+
+            events.append({
+                "loan_id": str(loan.id),
+                "loan_name": loan.name,
+                "lender_name": loan.lender_name,
+                "loan_type": loan.loan_type,
+                "emi_amount": float(loan.monthly_emi),
+                "due_date": due_date.isoformat(),
+                "status": event_status
+            })
+
+        # Sort events by due_date
+        events.sort(key=lambda e: e["due_date"])
+
+        return Response({
+            "success": True,
+            "year": year,
+            "month": month,
+            "calendar": {
+                "events": events,
+                "month_summary": {
+                    "total_emi": total_emi,
+                    "overdue_count": overdue_count,
+                    "upcoming_count": upcoming_count,
+                    "paid_count": paid_count
+                }
+            }
+        })
