@@ -136,8 +136,8 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-3 shrink-0">
-        {/* Notification Bell */}
-        <div className="relative" ref={notificationsRef}>
+        {/* Notification Bell (Hidden on Mobile) */}
+        <div className="relative hidden lg:block" ref={notificationsRef}>
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
             className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors relative cursor-pointer"

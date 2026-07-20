@@ -179,50 +179,43 @@ export function BottomTabBar() {
         </div>
       </nav>
 
-      {/* Slide-Up Mobile Notification Drawer */}
+      {/* Full Screen Mobile Notification Overlay */}
       {notifOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 z-50 lg:hidden backdrop-blur-xs transition-opacity duration-300"
-            onClick={() => setNotifOpen(false)}
-          />
-          {/* Drawer content panel */}
-          <div className="fixed bottom-0 left-0 right-0 max-h-[85vh] bg-[var(--color-surface)] rounded-t-2xl z-55 lg:hidden flex flex-col shadow-2xl animate-fade-in-up border-t border-[var(--color-border)]">
-            {/* Grab handle/Header bar */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-light)] shrink-0">
-              <div className="flex items-center gap-2.5">
-                <span className="text-sm font-extrabold text-[var(--color-text-primary)]">Notifications</span>
-                {unreadCount > 0 && (
-                  <span className="text-[10px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded-full">
-                    {unreadCount} new
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-4">
-                {unreadCount > 0 && (
-                  <button
-                    onClick={handleMarkAllRead}
-                    className="text-xs font-bold text-[var(--color-primary-light)] hover:underline cursor-pointer"
-                  >
-                    Mark all read
-                  </button>
-                )}
-                <button
-                  className="p-1 rounded-full hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]"
-                  onClick={() => setNotifOpen(false)}
-                  aria-label="Close"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-[var(--color-surface)] z-55 lg:hidden flex flex-col animate-fade-in-up">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)] shrink-0 bg-[var(--color-surface)]">
+            <div className="flex items-center gap-2.5">
+              <span className="text-base font-extrabold text-[var(--color-text-primary)]">Notifications</span>
+              {unreadCount > 0 && (
+                <span className="text-[10px] font-bold bg-rose-500 text-white px-2 py-0.5 rounded-full">
+                  {unreadCount} new
+                </span>
+              )}
             </div>
+            <div className="flex items-center gap-4">
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-xs font-bold text-[var(--color-primary-light)] hover:underline cursor-pointer"
+                >
+                  Mark all read
+                </button>
+              )}
+              <button
+                className="p-1.5 rounded-full hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)]"
+                onClick={() => setNotifOpen(false)}
+                aria-label="Close"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-            {/* List area with big readable fonts and spacing */}
-            <div className="flex-1 overflow-y-auto divide-y divide-[var(--color-border-light)] pb-8">
+          {/* List area with big readable fonts and spacing */}
+          <div className="flex-1 overflow-y-auto divide-y divide-[var(--color-border-light)] pb-20 bg-[var(--color-surface-secondary)]">
               {notifications.length === 0 ? (
                 <div className="py-16 text-center">
                   <p className="text-4xl mb-3">🔔</p>
