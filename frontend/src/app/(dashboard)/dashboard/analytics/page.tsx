@@ -11,6 +11,7 @@ import { loansService } from "@/services/loans.service";
 import { formatCurrency } from "@/utils/formatters";
 import { LOAN_TYPE_LABELS } from "@/types";
 import type { DashboardData } from "@/types";
+import { InteractiveChart } from "@/components/analytics/InteractiveChart";
 
 // ── Donut Chart (SVG) ─────────────────────────────────────────
 const DONUT_COLORS = [
@@ -89,34 +90,7 @@ function DonutChart({
   );
 }
 
-// ── Bar Chart (CSS) ───────────────────────────────────────────
-function BarChart({ data }: { data: { month: string; total: number; count: number }[] }) {
-  const max = Math.max(...data.map((d) => d.total), 1);
-
-  return (
-    <div className="flex items-end gap-3 h-48 pt-4 w-full">
-      {data.map((item) => {
-        const height = Math.max(8, (item.total / max) * 160);
-        return (
-          <div key={item.month} className="flex-1 flex flex-col items-center gap-2 group relative cursor-pointer" title={`${item.month}: ${formatCurrency(item.total)}`}>
-            {/* Tooltip */}
-            <div className="absolute bottom-full mb-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 bg-[var(--color-surface-inverse)] text-[var(--color-text-inverse)] text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl pointer-events-none z-10 flex flex-col items-center">
-              <span className="font-bold">{formatCurrency(item.total)}</span>
-              <span className="text-[10px] opacity-80">{item.count} payment{item.count !== 1 ? "s" : ""}</span>
-            </div>
-            <div
-              className="w-full max-w-[48px] rounded-t-xl bg-gradient-to-t from-[var(--color-primary-light)] to-[var(--color-primary)] group-hover:from-[var(--color-accent-light)] group-hover:to-[var(--color-accent)] transition-all duration-300 shadow-md shadow-primary/20"
-              style={{ height: `${height}px` }}
-            />
-            <span className="text-xs font-semibold text-[var(--color-text-tertiary)] leading-none mt-1">
-              {item.month.slice(5)}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+// (Removed CSS BarChart as it is now replaced by InteractiveChart)
 
 // ── Progress Ring (SVG) ───────────────────────────────────────
 function ProgressRing({ value, label, color = "#10b981" }: { value: number; label: string; color?: string }) {
@@ -284,18 +258,8 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Monthly Payment Bar Chart */}
-        {data.monthly_trend.length > 0 && (
-          <div className="card p-6 shadow-sm border border-[var(--color-border-light)]">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--color-text-primary)]">
-                Monthly Payment Trend
-              </h2>
-              <span className="text-xs font-semibold px-3 py-1 bg-[var(--color-surface-secondary)] text-[var(--color-text-tertiary)] rounded-full">Last {data.monthly_trend.length} months</span>
-            </div>
-            <BarChart data={data.monthly_trend} />
-          </div>
-        )}
+        {/* Advanced Interactive Chart */}
+        <InteractiveChart />
 
         {/* Blockchain Readiness Card */}
         <div className="card p-8 border border-emerald-500/30 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e1b4b] text-white shadow-lg overflow-hidden relative">
