@@ -132,11 +132,10 @@ export default function LoanDetailPage() {
       const tx = await repayEscrowLoan(id, amount);
       showToast(`Repayment successful! TX: ${tx}`, "success");
       // Create payment record on backend
-      await paymentsService.createPayment({
-        loan: id,
+      await paymentsService.createPayment(id, {
         amount: amount,
         payment_date: new Date().toISOString().split('T')[0],
-        payment_method: "crypto",
+        payment_method: "other",
         status: "confirmed",
         notes: `Web3 Escrow Repayment TX: ${tx}`,
         interest_component: "0",

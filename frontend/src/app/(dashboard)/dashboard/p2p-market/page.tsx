@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
 import { useWallet } from "@/hooks/useWallet";
 import { loansService } from "@/services/loans.service";
 import { Topbar } from "@/components/layout/Topbar";
