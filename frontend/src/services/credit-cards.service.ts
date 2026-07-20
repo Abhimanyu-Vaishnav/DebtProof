@@ -1,5 +1,5 @@
 import apiClient from "./api";
-import type { CreditCard, CreditCardSummary } from "@/types";
+import type { CreditCard, CreditCardSummary, CreditCardPayment, CreditCardPaymentFormData } from "@/types";
 
 export interface CreditCardFormData {
   card_name: string;
@@ -53,4 +53,28 @@ export const creditCardsService = {
   deleteCard: async (id: string): Promise<void> => {
     await apiClient.delete(`/credit-cards/${id}/`);
   },
+
+  /**
+   * Get payment history for a credit card.
+   */
+  getPayments: async (cardId: string): Promise<CreditCardPayment[]> => {
+    const { data } = await apiClient.get<CreditCardPayment[]>(`/credit-cards/${cardId}/payments/`);
+    return data || [];
+  },
+
+  /**
+   * Create a new credit card payment.
+   */
+  createPayment: async (paymentData: CreditCardPaymentFormData): Promise<CreditCardPayment> => {
+    const { data } = await apiClient.post<CreditCardPayment>("/credit-cards/payments/", paymentData);
+    return data;
+  },
+
+  /**
+   * Delete a credit card payment (will restore outstanding amount).
+   */
+  deletePayment: async (paymentId: string): Promise<void> => {
+    await apiClient.delete(`/credit-cards/payments/${paymentId}/`);
+  },
 };
+

@@ -2,7 +2,38 @@
 DebtProof — Credit Card Serializer
 """
 from rest_framework import serializers
-from apps.credit_cards.models import CreditCard
+from apps.credit_cards.models import CreditCard, CreditCardPayment
+
+
+class CreditCardPaymentSerializer(serializers.ModelSerializer):
+    card_name = serializers.ReadOnlyField(source="card.card_name")
+
+    class Meta:
+        model = CreditCardPayment
+        fields = [
+            "id",
+            "card",
+            "card_name",
+            "amount",
+            "payment_date",
+            "payment_method",
+            "reference_number",
+            "notes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, data):
+        card = data.get("card")
+        amount = data.get("amount")
+        if card and amount is not None:
+            if amount <= 0:
+                raise serializers.ValidationError({"amount": "Payment amount must be greater than zero."})
+            # Optionally validate payment against current outstanding
+            if amount > card.current_outstanding:
+                raise serializers.ValidationError({"amount": f"Payment amount ₹{amount} cannot exceed current outstanding balance ₹{card.current_outstanding}."})
+        return data
 
 
 class CreditCardSerializer(serializers.ModelSerializer):
@@ -39,10 +70,11 @@ class CreditCardSerializer(serializers.ModelSerializer):
             limit = self.instance.credit_limit
         if outstanding is None and self.instance:
             outstanding = self.instance.current_outstanding
-
+ 
         if limit is not None and outstanding is not None:
             if outstanding > limit:
                 raise serializers.ValidationError(
                     {"current_outstanding": "Current outstanding balance cannot exceed the credit limit."}
                 )
         return data
+
