@@ -6,6 +6,8 @@ from django.db.models import Sum
 from apps.assets.models import Asset, AssetType, AssetClass, Liability, LiabilityType, LiabilityClass
 from apps.assets.api.serializers import AssetSerializer, LiabilitySerializer
 from apps.loans.models import Loan, LoanStatus
+from apps.credit_cards.models import CreditCard
+
 
 class AssetViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -52,8 +54,13 @@ class NetWorthView(APIView):
         loans_agg = Loan.objects.filter(user=user, status=LoanStatus.ACTIVE).aggregate(total=Sum("outstanding_amount"))
         total_loans_debt = float(loans_agg["total"] or 0)
 
-        # 2c. Combined liabilities
-        total_liabilities = custom_total + total_loans_debt
+        # 2c. Credit Cards (treated as Short-term liabilities)
+        cc_agg = CreditCard.objects.filter(user=user).aggregate(total=Sum("current_outstanding"))
+        total_cc_debt = float(cc_agg["total"] or 0)
+
+        # 2d. Combined liabilities
+        total_liabilities = custom_total + total_loans_debt + total_cc_debt
+        short_term_liabs_combined = short_term_liabs + total_cc_debt
         long_term_liabilities = long_term_custom_liabs + total_loans_debt
 
         # 3. Net Worth
@@ -72,7 +79,6 @@ class NetWorthView(APIView):
                     "count": type_assets.count()
                 })
 
-        # 5. Liability Type Distribution (Include loans as a virtual type "active_loans")
         liability_distribution = []
         if total_loans_debt > 0:
             liability_distribution.append({
@@ -80,6 +86,13 @@ class NetWorthView(APIView):
                 "label": "Active Loans",
                 "value": total_loans_debt,
                 "count": Loan.objects.filter(user=user, status=LoanStatus.ACTIVE).count()
+            })
+        if total_cc_debt > 0:
+            liability_distribution.append({
+                "liability_type": "credit_cards",
+                "label": "Credit Cards",
+                "value": total_cc_debt,
+                "count": CreditCard.objects.filter(user=user).count()
             })
         for type_code, type_label in LiabilityType.choices:
             type_liabs = custom_liabs.filter(liability_type=type_code)
@@ -99,7 +112,7 @@ class NetWorthView(APIView):
                 "current_assets": current_assets,
                 "fixed_assets": fixed_assets,
                 "total_liabilities": total_liabilities,
-                "short_term_liabilities": short_term_liabs,
+                "short_term_liabilities": short_term_liabs_combined,
                 "long_term_liabilities": long_term_liabilities,
                 "net_worth": net_worth,
                 "asset_distribution": asset_distribution,

@@ -30,6 +30,7 @@ urlpatterns = [
     path("api/v1/payments/", include("apps.payments.api.urls")),
     path("api/v1/", include("apps.assets.api.urls")),
     path("api/v1/notifications/", include("apps.notifications.api.urls")),
+    path("api/v1/credit-cards/", include("apps.credit_cards.api.urls")),
 ]
 
 # Serve media files in development only

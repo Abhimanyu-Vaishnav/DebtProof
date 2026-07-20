@@ -417,4 +417,35 @@ export interface Notification {
   created_at: string;
 }
 
+// ── Credit Card Types ─────────────────────────────────────────
+export type CreditCardStatus = "active" | "frozen" | "closed";
+
+export interface CreditCard {
+  id: string;
+  card_name: string;
+  bank_name: string;
+  credit_limit: number;
+  current_outstanding: number;
+  interest_rate: number;
+  minimum_due: number;
+  statement_date: number;
+  due_date: number;
+  status: CreditCardStatus;
+  notes: string;
+  utilization_rate: number;
+  available_limit: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreditCardSummary {
+  total_cards: number;
+  total_limit: number;
+  total_outstanding: number;
+  available_limit: number;
+  overall_utilization: number;
+  avg_interest_rate: number;
+}
+
+
 
