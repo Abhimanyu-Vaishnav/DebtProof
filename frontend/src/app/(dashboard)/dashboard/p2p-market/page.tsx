@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useWallet } from "@/hooks/useWallet";
 import { loansService } from "@/services/loans.service";
+import apiClient from "@/services/api";
 import { Topbar } from "@/components/layout/Topbar";
 
 export default function P2PMarketplacePage() {
@@ -19,7 +20,7 @@ export default function P2PMarketplacePage() {
     try {
       setIsLoading(true);
       // Custom endpoint for marketplace we added in Django
-      const res = await loansService.api.get("/loans/marketplace/");
+      const res = await apiClient.get("/loans/marketplace/");
       setLoans(res.data.results || []);
     } catch (err) {
       console.error("Failed to fetch marketplace loans", err);
