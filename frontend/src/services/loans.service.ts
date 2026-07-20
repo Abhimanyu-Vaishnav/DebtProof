@@ -94,4 +94,16 @@ export const loansService = {
     }>("/loans/calendar/", { params: { year, month } });
     return data.calendar;
   },
+
+  /**
+   * Simulate payoff projections with customized extra monthly payment.
+   */
+  simulatePayoff: async (extraMonthly: number): Promise<any> => {
+    const { data } = await apiClient.get<{
+      success: boolean;
+      extra_monthly: number;
+      simulations: any;
+    }>("/loans/simulate/", { params: { extra_monthly: extraMonthly } });
+    return data;
+  },
 };

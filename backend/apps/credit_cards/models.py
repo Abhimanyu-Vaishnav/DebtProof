@@ -85,3 +85,51 @@ class CreditCard(BaseModel):
     @property
     def available_limit(self) -> Decimal:
         return self.credit_limit - self.current_outstanding
+
+
+class CreditCardPayment(BaseModel):
+    """
+    Tracks payment history for credit cards.
+    """
+    card = models.ForeignKey(
+        CreditCard,
+        on_delete=models.CASCADE,
+        related_name="payments",
+        db_index=True,
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    payment_date = models.DateField(db_index=True)
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices if 'PaymentMethod' in globals() else [
+            ("bank_transfer", "Bank Transfer"),
+            ("upi", "UPI"),
+            ("neft", "NEFT"),
+            ("rtgs", "RTGS"),
+            ("cheque", "Cheque"),
+            ("auto_debit", "Auto Debit"),
+            ("cash", "Cash"),
+            ("other", "Other"),
+        ],
+        default="bank_transfer",
+    )
+    reference_number = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Reference/UTR number",
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "credit_card_payments"
+        verbose_name = "Credit Card Payment"
+        verbose_name_plural = "Credit Card Payments"
+        ordering = ["-payment_date", "-created_at"]
+
+    def __str__(self) -> str:
+        return f"Payment ₹{self.amount} for {self.card.card_name} on {self.payment_date}"
+

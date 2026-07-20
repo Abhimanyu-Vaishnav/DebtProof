@@ -555,3 +555,171 @@ class ExportLoansCSVView(APIView):
 
         return response
 
+
+class LoanSimulationView(APIView):
+    """
+    GET /api/v1/loans/simulate/
+    Accepts extra_monthly query param and recalculates debt repayment projections.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        user = request.user
+        loans = Loan.objects.filter(user=user)
+        active_loans_qs = loans.filter(status=LoanStatus.ACTIVE)
+        active_loans_list = list(active_loans_qs)
+
+        try:
+            extra_monthly = float(request.query_params.get("extra_monthly", 5000.0))
+        except (ValueError, TypeError):
+            extra_monthly = 5000.0
+
+        def simulate_payoff(active_loans, extra_monthly_amount=0.0, sorting_key=None):
+            loans_state = []
+            for l in active_loans:
+                balance = float(l.outstanding_amount)
+                rate = (float(l.interest_rate) / 12.0 / 100.0)
+                emi = float(l.monthly_emi)
+                min_emi = balance * rate + 10.0
+                if emi < min_emi:
+                    emi = max(emi, min_emi + (balance * 0.01))
+                
+                loans_state.append({
+                    'id': str(l.id),
+                    'name': l.name,
+                    'balance': balance,
+                    'rate': rate,
+                    'emi': emi
+                })
+                
+        def simulate_payoff(active_loans, extra_monthly_amount=0.0, sorting_key=None):
+            loans_state = []
+            for l in active_loans:
+                balance = float(l.outstanding_amount)
+                rate = (float(l.interest_rate) / 12.0 / 100.0)
+                emi = float(l.monthly_emi)
+                min_emi = balance * rate + 10.0
+                if emi < min_emi:
+                    emi = max(emi, min_emi + (balance * 0.01))
+                
+                loans_state.append({
+                    'id': str(l.id),
+                    'name': l.name,
+                    'balance': balance,
+                    'rate': rate,
+                    'emi': emi
+                })
+                
+            months = 0
+            total_interest = 0.0
+            max_months = 360
+            
+            history = []
+            schedule = []
+            
+            while any(l['balance'] > 0.01 for l in loans_state) and months < max_months:
+                months += 1
+                total_balance_before = sum(max(0, l['balance']) for l in loans_state)
+                history.append({
+                    "month": months,
+                    "outstanding": total_balance_before
+                })
+
+                # Interest accrues
+                monthly_interest_accrued = 0.0
+                for l in loans_state:
+                    if l['balance'] > 0:
+                        interest = l['balance'] * l['rate']
+                        l['balance'] += interest
+                        total_interest += interest
+                        monthly_interest_accrued += interest
+
+                # Pay minimums
+                total_regular_paid = 0.0
+                for l in loans_state:
+                    if l['balance'] <= 0:
+                        continue
+                    payment = min(l['emi'], l['balance'])
+                    l['balance'] -= payment
+                    total_regular_paid += payment
+
+                # Apply extra payment
+                total_extra_paid = 0.0
+                if extra_monthly_amount > 0:
+                    available_budget = extra_monthly_amount
+                    if sorting_key == "snowball":
+                        target_loans = sorted([l for l in loans_state if l['balance'] > 0], key=lambda x: x['balance'])
+                    elif sorting_key == "avalanche":
+                        target_loans = sorted([l for l in loans_state if l['balance'] > 0], key=lambda x: -x['rate'])
+                    else:
+                        target_loans = [l for l in loans_state if l['balance'] > 0]
+                        
+                    for target in target_loans:
+                        if target['balance'] <= 0:
+                            continue
+                        payment = min(available_budget, target['balance'])
+                        target['balance'] -= payment
+                        available_budget -= payment
+                        total_extra_paid += payment
+                        if available_budget <= 0:
+                            break
+
+                schedule.append({
+                    "month": months,
+                    "outstanding_before": total_balance_before,
+                    "interest_charged": monthly_interest_accrued,
+                    "regular_payment": total_regular_paid,
+                    "extra_payment": total_extra_paid,
+                    "total_payment": total_regular_paid + total_extra_paid,
+                    "outstanding_after": sum(max(0, l['balance']) for l in loans_state)
+                })
+                            
+            history.append({
+                "month": months + 1,
+                "outstanding": 0.0
+            })
+            return months, total_interest, history, schedule
+
+        def months_to_date_string(months_count):
+            if months_count == 0:
+                return None
+            today = date.today()
+            future_year = today.year + (today.month + months_count - 1) // 12
+            future_month = (today.month + months_count - 1) % 12 + 1
+            return f"{future_year}-{future_month:02d}"
+
+        baseline_months, baseline_interest, baseline_hist, baseline_sched = simulate_payoff(active_loans_list, extra_monthly_amount=0.0)
+        snowball_months, snowball_interest, snowball_hist, snowball_sched = simulate_payoff(active_loans_list, extra_monthly_amount=extra_monthly, sorting_key="snowball")
+        avalanche_months, avalanche_interest, avalanche_hist, avalanche_sched = simulate_payoff(active_loans_list, extra_monthly_amount=extra_monthly, sorting_key="avalanche")
+
+        return Response({
+            "success": True,
+            "extra_monthly": extra_monthly,
+            "simulations": {
+                "baseline": {
+                    "debt_free_date": months_to_date_string(baseline_months),
+                    "total_interest": baseline_interest,
+                    "months": baseline_months,
+                    "history": baseline_hist,
+                    "schedule": baseline_sched
+                },
+                "snowball": {
+                    "debt_free_date": months_to_date_string(snowball_months),
+                    "total_interest": snowball_interest,
+                    "interest_saved": max(0.0, baseline_interest - snowball_interest),
+                    "months_saved": max(0, baseline_months - snowball_months),
+                    "history": snowball_hist,
+                    "schedule": snowball_sched
+                },
+                "avalanche": {
+                    "debt_free_date": months_to_date_string(avalanche_months),
+                    "total_interest": avalanche_interest,
+                    "interest_saved": max(0.0, baseline_interest - avalanche_interest),
+                    "months_saved": max(0, baseline_months - avalanche_months),
+                    "history": avalanche_hist,
+                    "schedule": avalanche_sched
+                }
+            }
+        })
+
+
