@@ -240,112 +240,18 @@ export default function RepaymentSimulatorPage() {
         </div>
 
         {/* Visual Progression Graph */}
-        <div className="card p-6 border border-[var(--color-border-light)] space-y-4">
-          <div className="flex justify-between items-center pb-3 border-b border-[var(--color-border-light)]">
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-primary)]">Debt Progression Timeline</h3>
-              <p className="text-[11px] text-[var(--color-text-secondary)]">Visualizing outstanding balance depletion over months</p>
-            </div>
-            <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider">
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-slate-400 rounded-full" /><span>Baseline ({baselineMonths} mos)</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-blue-500 rounded-full" /><span>Snowball ({snowballMonths} mos)</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" /><span>Avalanche ({avalancheMonths} mos)</span></div>
-            </div>
-          </div>
-
-          <div className="relative pt-4 px-2 pb-6">
-            {updating && (
-              <div className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-xs flex items-center justify-center z-10 rounded-xl">
-                <div className="flex items-center gap-2 bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border-light)] shadow-md">
-                  <span className="w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-semibold text-[var(--color-text-primary)]">Recalculating...</span>
-                </div>
-              </div>
-            )}
-
-            <div className="w-full">
-              <svg viewBox="0 0 600 240" className="w-full overflow-visible" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="baselineGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.1" />
-                    <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.0" />
-                  </linearGradient>
-                  <linearGradient id="snowballGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.1" />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
-                  </linearGradient>
-                  <linearGradient id="avalancheGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.1" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-
-                {/* Grid Lines */}
-                <line x1="0" y1="0" x2="600" y2="0" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-                <line x1="0" y1="60" x2="600" y2="60" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-                <line x1="0" y1="120" x2="600" y2="120" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-                <line x1="0" y1="180" x2="600" y2="180" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-                <line x1="0" y1="200" x2="600" y2="200" stroke="var(--color-border)" strokeWidth="1.5" />
-
-                {/* Y-Axis Label Indicators */}
-                <text x="-10" y="5" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">{formatCurrency(maxOutstanding)}</text>
-                <text x="-10" y="105" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">{formatCurrency(maxOutstanding / 2)}</text>
-                <text x="-10" y="205" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">₹0</text>
-
-                {/* Strategy Fill Areas */}
-                <path
-                  d={`M 0,200 L ${getSvgPoints(baseline.history)} L 600,200 Z`}
-                  fill="url(#baselineGrad)"
-                  className="transition-all duration-500"
-                />
-                <path
-                  d={`M 0,200 L ${getSvgPoints(snowball.history)} L 600,200 Z`}
-                  fill="url(#snowballGrad)"
-                  className="transition-all duration-500"
-                />
-                <path
-                  d={`M 0,200 L ${getSvgPoints(avalanche.history)} L 600,200 Z`}
-                  fill="url(#avalancheGrad)"
-                  className="transition-all duration-500"
-                />
-
-                {/* Polyline paths */}
-                <polyline
-                  fill="none"
-                  stroke="#94a3b8"
-                  strokeWidth="3.5"
-                  points={getSvgPoints(baseline.history)}
-                  className="transition-all duration-500"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <polyline
-                  fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth="3.5"
-                  points={getSvgPoints(snowball.history)}
-                  className="transition-all duration-500"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <polyline
-                  fill="none"
-                  stroke="#10b981"
-                  strokeWidth="3.5"
-                  points={getSvgPoints(avalanche.history)}
-                  className="transition-all duration-500"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                {/* X-Axis labels */}
-                <text x="0" y="222" textAnchor="middle" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Start</text>
-                <text x="300" y="222" textAnchor="middle" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Month {Math.round(maxMonths / 2)}</text>
-                <text x="600" y="222" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Month {maxMonths}</text>
-              </svg>
-            </div>
-          </div>
-        </div>
+        <PayoffChartsContainer
+          baseline={baseline}
+          snowball={snowball}
+          avalanche={avalanche}
+          baselineMonths={baselineMonths}
+          snowballMonths={snowballMonths}
+          avalancheMonths={avalancheMonths}
+          maxMonths={maxMonths}
+          maxOutstanding={maxOutstanding}
+          getSvgPoints={getSvgPoints}
+          updating={updating}
+        />
 
         {/* Dynamic Payment Schedule Table */}
         <PayoffScheduleTabs simulations={simData} />
@@ -431,3 +337,303 @@ function PayoffScheduleTabs({ simulations }: { simulations: any }) {
     </div>
   );
 }
+
+// ── Multi-format Payoff Charts Container Component ─────────────────────────────
+interface ChartsProps {
+  baseline: any;
+  snowball: any;
+  avalanche: any;
+  baselineMonths: number;
+  snowballMonths: number;
+  avalancheMonths: number;
+  maxMonths: number;
+  maxOutstanding: number;
+  getSvgPoints: (history: any[]) => string;
+  updating: boolean;
+}
+
+type ChartFormat = "line" | "bar" | "pie";
+
+function PayoffChartsContainer({
+  baseline,
+  snowball,
+  avalanche,
+  baselineMonths,
+  snowballMonths,
+  avalancheMonths,
+  maxMonths,
+  maxOutstanding,
+  getSvgPoints,
+  updating,
+}: ChartsProps) {
+  const [chartFormat, setChartFormat] = useState<ChartFormat>("line");
+
+  // Calculations for Bar (Interest comparison) and Pie (Savings split)
+  const baseInt = baseline.total_interest || 0;
+  const snowInt = snowball.total_interest || 0;
+  const avalInt = avalanche.total_interest || 0;
+
+  const interestSavedSnowball = Math.max(0, baseInt - snowInt);
+  const interestSavedAvalanche = Math.max(0, baseInt - avalInt);
+
+  // SVG Pie math helper
+  const totalDebtSplit = baseInt + snowInt + avalInt || 1;
+  const pctBase = (baseInt / totalDebtSplit) * 100;
+  const pctSnow = (snowInt / totalDebtSplit) * 100;
+  const pctAval = (avalInt / totalDebtSplit) * 100;
+
+  return (
+    <div className="card p-6 border border-[var(--color-border-light)] space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[var(--color-border-light)] pb-3 gap-3">
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-primary)]">Visual Analytics</h3>
+          <p className="text-[11px] text-[var(--color-text-secondary)]">Choose layout format to visualize repayment strategies</p>
+        </div>
+        <div className="flex rounded-lg bg-[var(--color-surface-secondary)] p-1 border border-[var(--color-border-light)]">
+          {(["line", "bar", "pie"] as const).map((format) => (
+            <button
+              key={format}
+              onClick={() => setChartFormat(format)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-colors ${
+                chartFormat === format
+                  ? "bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm"
+                  : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+              }`}
+            >
+              {format === "line" ? "Timeline Chart" : format === "bar" ? "Interest Bar" : "Interest Share Pie"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative pt-4 px-2 pb-6 min-h-[260px] flex items-center justify-center">
+        {updating && (
+          <div className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-xs flex items-center justify-center z-10 rounded-xl">
+            <div className="flex items-center gap-2 bg-[var(--color-surface)] p-3 rounded-lg border border-[var(--color-border-light)] shadow-md">
+              <span className="w-4 h-4 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-semibold text-[var(--color-text-primary)]">Recalculating...</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── 1. LINE CHART (TIMELINE PROGRESSION) ───────────────────────────── */}
+        {chartFormat === "line" && (
+          <div className="w-full">
+            <svg viewBox="0 0 600 240" className="w-full overflow-visible" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="baselineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.1" />
+                  <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.0" />
+                </linearGradient>
+                <linearGradient id="snowballGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.1" />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                </linearGradient>
+                <linearGradient id="avalancheGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.1" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              {/* Grid Lines */}
+              <line x1="0" y1="0" x2="600" y2="0" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
+              <line x1="0" y1="60" x2="600" y2="60" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
+              <line x1="0" y1="120" x2="600" y2="120" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
+              <line x1="0" y1="180" x2="600" y2="180" stroke="var(--color-border-light)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
+              <line x1="0" y1="200" x2="600" y2="200" stroke="var(--color-border)" strokeWidth="1.5" />
+
+              {/* Y-Axis Label Indicators */}
+              <text x="-10" y="5" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">{formatCurrency(maxOutstanding)}</text>
+              <text x="-10" y="105" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">{formatCurrency(maxOutstanding / 2)}</text>
+              <text x="-10" y="205" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">₹0</text>
+
+              {/* Strategy Fill Areas */}
+              <path
+                d={`M 0,200 L ${getSvgPoints(baseline.history)} L 600,200 Z`}
+                fill="url(#baselineGrad)"
+                className="transition-all duration-500"
+              />
+              <path
+                d={`M 0,200 L ${getSvgPoints(snowball.history)} L 600,200 Z`}
+                fill="url(#snowballGrad)"
+                className="transition-all duration-500"
+                />
+              <path
+                d={`M 0,200 L ${getSvgPoints(avalanche.history)} L 600,200 Z`}
+                fill="url(#avalancheGrad)"
+                className="transition-all duration-500"
+              />
+
+              {/* Polyline paths */}
+              <polyline
+                fill="none"
+                stroke="#94a3b8"
+                strokeWidth="3.5"
+                points={getSvgPoints(baseline.history)}
+                className="transition-all duration-500"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <polyline
+                fill="none"
+                stroke="#3b82f6"
+                strokeWidth="3.5"
+                points={getSvgPoints(snowball.history)}
+                className="transition-all duration-500"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <polyline
+                fill="none"
+                stroke="#10b981"
+                strokeWidth="3.5"
+                points={getSvgPoints(avalanche.history)}
+                className="transition-all duration-500"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* X-Axis labels */}
+              <text x="0" y="222" textAnchor="middle" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Start</text>
+              <text x="300" y="222" textAnchor="middle" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Month {Math.round(maxMonths / 2)}</text>
+              <text x="600" y="222" textAnchor="end" fill="var(--color-text-tertiary)" className="text-[9px] font-bold">Month {maxMonths}</text>
+            </svg>
+          </div>
+        )}
+
+        {/* ── 2. BAR CHART (INTEREST PAYABLE COMPARISON) ─────────────────── */}
+        {chartFormat === "bar" && (
+          <div className="w-full max-w-md space-y-6 pt-4">
+            <div className="space-y-4">
+              {/* Baseline Bar */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold text-[var(--color-text-secondary)]">
+                  <span>Baseline (No Extra Contribution)</span>
+                  <span className="text-rose-500">{formatCurrency(baseInt)}</span>
+                </div>
+                <div className="h-6 w-full bg-[var(--color-surface-tertiary)] rounded-md overflow-hidden border border-[var(--color-border-light)]">
+                  <div className="h-full bg-slate-400 rounded-md transition-all duration-700" style={{ width: "100%" }} />
+                </div>
+              </div>
+
+              {/* Snowball Bar */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold text-[var(--color-text-secondary)]">
+                  <div className="flex items-center gap-1.5">
+                    <span>Debt Snowball</span>
+                    <span className="text-[9px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">Saves {formatCurrency(interestSavedSnowball)}</span>
+                  </div>
+                  <span className="text-[var(--color-text-primary)]">{formatCurrency(snowInt)}</span>
+                </div>
+                <div className="h-6 w-full bg-[var(--color-surface-tertiary)] rounded-md overflow-hidden border border-[var(--color-border-light)]">
+                  <div
+                    className="h-full bg-blue-500 rounded-md transition-all duration-700"
+                    style={{ width: `${baseInt > 0 ? (snowInt / baseInt) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Avalanche Bar */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-bold text-[var(--color-text-secondary)]">
+                  <div className="flex items-center gap-1.5">
+                    <span>Debt Avalanche</span>
+                    <span className="text-[9px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">Saves {formatCurrency(interestSavedAvalanche)}</span>
+                  </div>
+                  <span className="text-[var(--color-text-primary)]">{formatCurrency(avalInt)}</span>
+                </div>
+                <div className="h-6 w-full bg-[var(--color-surface-tertiary)] rounded-md overflow-hidden border border-[var(--color-border-light)]">
+                  <div
+                    className="h-full bg-emerald-500 rounded-md transition-all duration-700"
+                    style={{ width: `${baseInt > 0 ? (avalInt / baseInt) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            <p className="text-[10px] text-[var(--color-text-tertiary)] text-center font-semibold uppercase">Lower interest is better</p>
+          </div>
+        )}
+
+        {/* ── 3. PIE CHART (INTEREST PORTION DISTRIBUTION) ───────────────── */}
+        {chartFormat === "pie" && (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 w-full max-w-lg">
+            {/* SVG Donut Circle */}
+            <div className="relative w-40 h-40 shrink-0">
+              <svg width="100%" height="100%" viewBox="0 0 42 42" className="donut overflow-visible">
+                <circle className="donut-hole" cx="21" cy="21" r="15.915" fill="transparent" />
+                <circle className="donut-ring" cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--color-border-light)" strokeWidth="4.5" />
+
+                {/* Segment 1: Baseline */}
+                <circle
+                  cx="21"
+                  cy="21"
+                  r="15.915"
+                  fill="transparent"
+                  stroke="#94a3b8"
+                  strokeWidth="4.5"
+                  strokeDasharray={`${pctBase} ${100 - pctBase}`}
+                  strokeDashoffset="25"
+                />
+
+                {/* Segment 2: Snowball */}
+                <circle
+                  cx="21"
+                  cy="21"
+                  r="15.915"
+                  fill="transparent"
+                  stroke="#3b82f6"
+                  strokeWidth="4.5"
+                  strokeDasharray={`${pctSnow} ${100 - pctSnow}`}
+                  strokeDashoffset={125 - pctBase}
+                />
+
+                {/* Segment 3: Avalanche */}
+                <circle
+                  cx="21"
+                  cy="21"
+                  r="15.915"
+                  fill="transparent"
+                  stroke="#10b981"
+                  strokeWidth="4.5"
+                  strokeDasharray={`${pctAval} ${100 - pctAval}`}
+                  strokeDashoffset={125 - pctBase - pctSnow}
+                />
+              </svg>
+              {/* Inner Label */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-tertiary)] font-bold">Total simulated</span>
+                <span className="text-sm font-black text-[var(--color-text-primary)]">Interest Split</span>
+              </div>
+            </div>
+
+            {/* Side Legend with Share info */}
+            <div className="space-y-3 text-xs w-full">
+              <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-slate-400 rounded-sm" />
+                  <span className="font-semibold">Baseline Plan</span>
+                </div>
+                <span className="font-bold text-[var(--color-text-primary)]">{pctBase.toFixed(0)}% share</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+                  <span className="font-semibold">Debt Snowball</span>
+                </div>
+                <span className="font-bold text-[var(--color-text-primary)]">{pctSnow.toFixed(0)}% share</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-emerald-500 rounded-sm" />
+                  <span className="font-semibold">Debt Avalanche</span>
+                </div>
+                <span className="font-bold text-[var(--color-text-primary)]">{pctAval.toFixed(0)}% share</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
