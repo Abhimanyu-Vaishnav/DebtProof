@@ -424,47 +424,47 @@ function PayoffChartsContainer({
         {chartFormat === "line" && (
           <div className="w-full">
             {/* Legend */}
-            <div className="flex items-center gap-5 mb-4 flex-wrap">
+            <div className="flex items-center gap-6 mb-4 flex-wrap">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-1 rounded-full bg-slate-400" />
+                <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#94a3b8" strokeWidth="2.5" /></svg>
                 <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">Baseline ({baselineMonths} mos)</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-1 rounded-full bg-blue-500" />
-                <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">Snowball ({snowballMonths} mos)</span>
+                <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#3b82f6" strokeWidth="2.5" strokeDasharray="4 2" /></svg>
+                <span className="text-[11px] font-bold text-blue-500">Snowball ({snowball?.months ?? 0} mos)</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-1 rounded-full bg-emerald-500" />
-                <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">Avalanche ({avalancheMonths} mos)</span>
+                <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#10b981" strokeWidth="2.5" /></svg>
+                <span className="text-[11px] font-bold text-emerald-500">Avalanche ({avalanche?.months ?? 0} mos)</span>
               </div>
             </div>
 
-            {/* SVG: viewBox 0 0 740 250 — chart area starts at x=70, ends at x=640, y from 10 to 210 */}
+            {/* SVG: viewBox 0 0 740 250 — chart area: x 70→640, y 10→210 */}
             <svg viewBox="0 0 740 250" className="w-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="lgBase" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.15" />
+                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.08" />
                   <stop offset="100%" stopColor="#94a3b8" stopOpacity="0" />
                 </linearGradient>
                 <linearGradient id="lgSnow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.12" />
                   <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
                 </linearGradient>
                 <linearGradient id="lgAval" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.15" />
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.12" />
                   <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
                 </linearGradient>
               </defs>
 
-              {/* Horizontal grid lines — chart spans y: 10 to 210 */}
+              {/* Horizontal grid lines */}
               {[10, 60, 110, 160, 210].map((y) => (
                 <line key={y} x1="70" y1={y} x2="640" y2={y}
                   stroke="var(--color-border-light)" strokeWidth="1"
-                  strokeDasharray={y === 210 ? "0" : "4 3"} opacity={y === 210 ? "0.6" : "0.35"}
+                  strokeDasharray={y === 210 ? "0" : "4 3"} opacity={y === 210 ? "0.7" : "0.35"}
                 />
               ))}
 
-              {/* Y-axis labels — chart spans maxOutstanding → 0 */}
+              {/* Y-axis labels */}
               <text x="62" y="14" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">{formatCurrency(maxOutstanding)}</text>
               <text x="62" y="114" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">{formatCurrency(maxOutstanding / 2)}</text>
               <text x="62" y="214" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">₹0</text>
@@ -472,15 +472,17 @@ function PayoffChartsContainer({
               {/* Y-axis line */}
               <line x1="66" y1="10" x2="66" y2="212" stroke="var(--color-border-light)" strokeWidth="1.5" opacity="0.5" />
 
-              {/* Fill areas under curves */}
+              {/* Fill areas — drawn bottom to top (baseline biggest area first) */}
               <path d={`M 70,210 L ${getSvgPoints(baseline.history)} L 640,210 Z`} fill="url(#lgBase)" />
               <path d={`M 70,210 L ${getSvgPoints(snowball.history)} L 640,210 Z`} fill="url(#lgSnow)" />
               <path d={`M 70,210 L ${getSvgPoints(avalanche.history)} L 640,210 Z`} fill="url(#lgAval)" />
 
-              {/* Strategy lines — drawn on top of fills */}
-              <polyline fill="none" stroke="#94a3b8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+              {/* Lines: Baseline solid thin, Snowball dashed blue (drawn AFTER fills), Avalanche solid green */}
+              <polyline fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                 points={getSvgPoints(baseline.history)} />
+              {/* Snowball — dashed so it shows through even if overlapping */}
               <polyline fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                strokeDasharray="8 4"
                 points={getSvgPoints(snowball.history)} />
               <polyline fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
                 points={getSvgPoints(avalanche.history)} />

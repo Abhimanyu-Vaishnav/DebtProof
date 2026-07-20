@@ -592,24 +592,6 @@ class LoanSimulationView(APIView):
                     'emi': emi
                 })
                 
-        def simulate_payoff(active_loans, extra_monthly_amount=0.0, sorting_key=None):
-            loans_state = []
-            for l in active_loans:
-                balance = float(l.outstanding_amount)
-                rate = (float(l.interest_rate) / 12.0 / 100.0)
-                emi = float(l.monthly_emi)
-                min_emi = balance * rate + 10.0
-                if emi < min_emi:
-                    emi = max(emi, min_emi + (balance * 0.01))
-                
-                loans_state.append({
-                    'id': str(l.id),
-                    'name': l.name,
-                    'balance': balance,
-                    'rate': rate,
-                    'emi': emi
-                })
-                
             months = 0
             total_interest = 0.0
             max_months = 360
