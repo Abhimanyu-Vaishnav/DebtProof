@@ -300,7 +300,7 @@ function PayoffScheduleTabs({ simulations }: { simulations: any }) {
   const schedule: ScheduleItem[] = simulations[activeTab]?.schedule || [];
 
   return (
-    <div className="card p-4 sm:p-6 border border-[var(--color-border-light)] space-y-4">
+    <div className="card p-4 sm:p-6 border border-[var(--color-border-light)] space-y-4 w-full max-w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[var(--color-border-light)] pb-4 gap-3">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-primary)]">Repayment Schedule Table</h3>
@@ -326,8 +326,8 @@ function PayoffScheduleTabs({ simulations }: { simulations: any }) {
       {schedule.length === 0 ? (
         <p className="text-xs text-[var(--color-text-tertiary)] text-center py-6">No schedule coordinates generated.</p>
       ) : (
-        <div className="overflow-x-auto max-h-[350px] overflow-y-auto pr-1">
-          <table className="w-full text-left border-collapse text-xs">
+        <div className="w-full max-w-full overflow-x-auto max-h-[350px] overflow-y-auto pr-1">
+          <table className="w-full min-w-[560px] text-left border-collapse text-xs">
             <thead className="sticky top-0 bg-[var(--color-surface)] shadow-xs">
               <tr className="border-b border-[var(--color-border-light)] text-[var(--color-text-tertiary)] bg-[var(--color-surface-secondary)] whitespace-nowrap">
                 <th className="py-2.5 px-3 font-bold uppercase text-[10px] whitespace-nowrap">Month</th>
@@ -405,7 +405,7 @@ function PayoffChartsContainer({
   const pctAval = (avalInt / totalDebtSplit) * 100;
 
   return (
-    <div className="card p-4 sm:p-6 border border-[var(--color-border-light)] space-y-4">
+    <div className="card p-4 sm:p-6 border border-[var(--color-border-light)] space-y-4 w-full max-w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[var(--color-border-light)] pb-3 gap-3">
         <div>
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-primary)]">Visual Analytics</h3>
