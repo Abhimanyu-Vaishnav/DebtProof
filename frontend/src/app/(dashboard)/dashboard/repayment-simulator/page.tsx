@@ -139,7 +139,7 @@ export default function RepaymentSimulatorPage() {
                 type="button"
                 onClick={() => {
                   setExtraMonthly(amt);
-                  triggerSimulation(amt);
+                  fetchSimulation(amt);
                 }}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-lg shrink-0 transition-all border ${
                   extraMonthly === amt

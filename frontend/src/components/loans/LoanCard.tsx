@@ -1,12 +1,13 @@
 /**
  * DebtProof — Loan Card Component
  */
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Loan, LOAN_TYPE_LABELS } from "@/types";
 import { formatCurrency, formatDate, highlightMatch } from "@/utils/formatters";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LoanStatusBadge } from "./LoanStatusBadge";
+import { P2PContractModal } from "./P2PContractModal";
 
 interface LoanCardProps {
   loan: Loan;
