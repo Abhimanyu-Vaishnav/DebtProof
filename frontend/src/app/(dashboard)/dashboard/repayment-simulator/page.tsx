@@ -466,9 +466,9 @@ function PayoffChartsContainer({
               </div>
             </div>
 
-            {/* SVG Chart Container with Horizontal Scroll fallback on very small screens */}
-            <div className="overflow-x-auto">
-              <svg viewBox="0 0 740 260" className="w-full min-w-[550px] sm:min-w-0" xmlns="http://www.w3.org/2000/svg">
+            {/* SVG Chart Container — scalable 100% width on any device */}
+            <div className="w-full">
+              <svg viewBox="0 0 740 260" className="w-full h-auto" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="lgBase" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.1" />
@@ -486,28 +486,28 @@ function PayoffChartsContainer({
 
                 {/* Horizontal grid lines */}
                 {[15, 65, 115, 165, 215].map((y) => (
-                  <line key={y} x1="95" y1={y} x2="710" y2={y}
+                  <line key={y} x1="55" y1={y} x2="720" y2={y}
                     stroke="var(--color-border-light)" strokeWidth="1"
                     strokeDasharray={y === 215 ? "0" : "4 3"} opacity={y === 215 ? "0.8" : "0.4"}
                   />
                 ))}
 
-                {/* Y-axis labels with ample padding inside SVG boundary */}
-                <text x="88" y="19" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">
+                {/* Y-axis labels */}
+                <text x="48" y="19" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">
                   {maxOutstanding >= 100000 ? `₹${(maxOutstanding / 100000).toFixed(1)}L` : `₹${Math.round(maxOutstanding / 1000)}k`}
                 </text>
-                <text x="88" y="119" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">
+                <text x="48" y="119" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">
                   {maxOutstanding >= 100000 ? `₹${(maxOutstanding / 200000).toFixed(1)}L` : `₹${Math.round(maxOutstanding / 2000)}k`}
                 </text>
-                <text x="88" y="219" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">₹0</text>
+                <text x="48" y="219" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">₹0</text>
 
                 {/* Y-axis line */}
-                <line x1="93" y1="15" x2="93" y2="217" stroke="var(--color-border-light)" strokeWidth="1.5" opacity="0.6" />
+                <line x1="52" y1="15" x2="52" y2="217" stroke="var(--color-border-light)" strokeWidth="1.5" opacity="0.6" />
 
                 {/* Fill areas */}
-                <path d={`M 95,215 L ${getSvgPoints(baseline.history)} L 710,215 Z`} fill="url(#lgBase)" />
-                <path d={`M 95,215 L ${getSvgPoints(snowball.history)} L 710,215 Z`} fill="url(#lgSnow)" />
-                <path d={`M 95,215 L ${getSvgPoints(avalanche.history)} L 710,215 Z`} fill="url(#lgAval)" />
+                <path d={`M 55,215 L ${getSvgPoints(baseline.history)} L 720,215 Z`} fill="url(#lgBase)" />
+                <path d={`M 55,215 L ${getSvgPoints(snowball.history)} L 720,215 Z`} fill="url(#lgSnow)" />
+                <path d={`M 55,215 L ${getSvgPoints(avalanche.history)} L 720,215 Z`} fill="url(#lgAval)" />
 
                 {/* Lines */}
                 <polyline fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
@@ -519,9 +519,9 @@ function PayoffChartsContainer({
                   points={getSvgPoints(avalanche.history)} />
 
                 {/* X-axis labels */}
-                <text x="95" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Start</text>
-                <text x="402" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Month {Math.round(maxMonths / 2)}</text>
-                <text x="710" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Month {maxMonths}</text>
+                <text x="55" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Start</text>
+                <text x="387" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Month {Math.round(maxMonths / 2)}</text>
+                <text x="720" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Month {maxMonths}</text>
               </svg>
             </div>
           </div>
