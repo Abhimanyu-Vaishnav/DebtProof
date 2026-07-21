@@ -7,6 +7,7 @@ import { formatCurrency } from "@/utils/formatters";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type { EMIEvent, CalendarData, CalendarMonthSummary } from "@/types";
 import { LOAN_TYPE_LABELS } from "@/types";
+import { downloadEMICalendarICS } from "@/utils/icsExport";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -262,7 +263,16 @@ export function CalendarClient() {
             </svg>
           </button>
         </div>
-        <button onClick={goToToday} className="btn btn-secondary btn-sm">Today</button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => downloadEMICalendarICS(calendarData?.events || [])}
+            className="btn btn-primary btn-sm flex items-center gap-1.5 font-bold text-xs"
+          >
+            <span>📅</span> Export to iCal / Google
+          </button>
+          <button onClick={goToToday} className="btn btn-secondary btn-sm font-bold text-xs">Today</button>
+        </div>
       </div>
 
       {/* ── Summary Bar ─────────────────────────────────── */}
