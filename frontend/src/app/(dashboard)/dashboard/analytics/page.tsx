@@ -14,6 +14,7 @@ import type { DashboardData } from "@/types";
 import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculator";
 import { InteractiveChart } from "@/components/analytics/InteractiveChart";
 import { RefinancingCalculatorModal } from "@/components/analytics/RefinancingCalculatorModal";
+import { DebtBattleSimulator } from "@/components/analytics/DebtBattleSimulator";
 
 // ── Donut Chart (SVG) ─────────────────────────────────────────
 const DONUT_COLORS = [
@@ -281,6 +282,9 @@ export default function AnalyticsPage() {
 
         {/* Income Tax Savings Calculator Widget */}
         <TaxSavingsCalculator />
+
+        {/* Debt Battle Simulator */}
+        {data && <DebtBattleSimulator data={data} />}
 
         {/* Blockchain Readiness Card */}
         <div className="card p-8 border border-emerald-500/30 bg-[var(--color-surface-secondary)] relative overflow-hidden">
