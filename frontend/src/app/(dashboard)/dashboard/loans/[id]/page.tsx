@@ -22,6 +22,8 @@ import { formatCurrency, formatDate } from "@/utils/formatters";
 import { LOAN_TYPE_LABELS, PAYMENT_METHOD_LABELS } from "@/types";
 import type { Loan, Payment } from "@/types";
 
+import { ForeclosureCalculatorModal } from "@/components/loans/ForeclosureCalculatorModal";
+
 export default function LoanDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -36,6 +38,7 @@ export default function LoanDetailPage() {
   const [deletingPayment, setDeletingPayment] = useState(false);
   const [deleteLoanModal, setDeleteLoanModal] = useState(false);
   const [deletingLoan, setDeletingLoan] = useState(false);
+  const [showForeclosureModal, setShowForeclosureModal] = useState(false);
   
   const [escrowActionLoading, setEscrowActionLoading] = useState(false);
   const { walletAddress, connectWallet, withdrawEscrowPrincipal, repayEscrowLoan } = useWallet();
@@ -176,6 +179,12 @@ export default function LoanDetailPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowForeclosureModal(true)}
+              className="btn btn-secondary btn-sm font-bold flex items-center gap-1 text-xs"
+            >
+              ⚡ Foreclose / Part-Pay
+            </button>
             <Link href={`/dashboard/loans/${id}/payments/new`} className="btn btn-accent btn-sm">
               + Record Payment
             </Link>
@@ -368,6 +377,14 @@ export default function LoanDetailPage() {
           Are you sure you want to delete <strong>{loan.name}</strong>? Loans with payment records cannot be deleted.
         </p>
       </Modal>
+
+      {/* Foreclosure / Part-Pay Calculator Modal */}
+      {showForeclosureModal && (
+        <ForeclosureCalculatorModal
+          loan={loan}
+          onClose={() => setShowForeclosureModal(false)}
+        />
+      )}
     </>
   );
 }
