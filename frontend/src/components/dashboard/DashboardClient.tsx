@@ -12,7 +12,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { PaymentCard } from "@/components/payments/PaymentCard";
 import { OverviewCard } from "@/components/dashboard/OverviewCard";
 import { WalletCard } from "@/components/dashboard/WalletCard";
-import type { DashboardData, LOAN_TYPE_LABELS } from "@/types";
+import type { DashboardData, Loan } from "@/types";
 import { LOAN_TYPE_LABELS as LABELS } from "@/types";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
@@ -85,12 +85,23 @@ const QUICK_ACTIONS = [
 export function DashboardClient() {
   const { format } = useCurrency();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [loansList, setLoansList] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loansService.getDashboard()
-      .then(setData)
+    Promise.all([
+      loansService.getDashboard(),
+      loansService.getLoans({ page_size: 50 }).catch(() => null)
+    ])
+      .then(([dashData, loansRes]) => {
+        setData(dashData);
+        if (loansRes && "results" in loansRes && Array.isArray(loansRes.results)) {
+          setLoansList(loansRes.results);
+        } else if (Array.isArray(loansRes)) {
+          setLoansList(loansRes as unknown as Loan[]);
+        }
+      })
       .catch(() => setError("Failed to load dashboard data."))
       .finally(() => setLoading(false));
   }, []);
@@ -390,26 +401,26 @@ export function DashboardClient() {
 
       {/* Bottom Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
-        {/* Loan type distribution — mini chart */}
+        {/* Loan Portfolio — Individual Loan Progress Bars */}
         <section className="lg:col-span-2 flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-              Loan Portfolio
+            <h2 className="text-[13px] font-extrabold uppercase tracking-widest text-[var(--color-text-primary)] flex items-center gap-2">
+              <span>📊</span> Loan Portfolio Repayment Progress ({loansList.length})
             </h2>
-            <Link href="/dashboard/loans" className="text-xs text-[var(--color-primary-light)] hover:underline">
-              View all →
+            <Link href="/dashboard/loans" className="text-xs font-bold text-[var(--color-primary-light)] hover:underline flex items-center gap-1">
+              View all loans ({data.total_loans}) →
             </Link>
           </div>
-          <div className="card p-5 flex-1 flex flex-col justify-between">
-            {data.total_loans === 0 ? (
+          <div className="card p-5 flex-1 flex flex-col justify-between bg-[var(--color-surface)] border border-[var(--color-border)]">
+            {loansList.length === 0 && data.total_loans === 0 ? (
               <div className="text-center py-10">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                   </svg>
                 </div>
-                <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">No loans yet</p>
-                <p className="text-xs text-[var(--color-text-secondary)] mb-4">
+                <p className="text-sm font-bold text-[var(--color-text-primary)] mb-1">No loans yet</p>
+                <p className="text-xs text-[var(--color-text-secondary)] mb-4 font-medium">
                   Add your first loan to start tracking repayments.
                 </p>
                 <Link href="/dashboard/loans/new" className="btn btn-primary btn-sm">
@@ -417,48 +428,108 @@ export function DashboardClient() {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-3">
-                {data.type_distribution.map((item) => {
-                  const pct = Math.round((item.count / data.total_loans) * 100);
-                  return (
-                    <div key={item.loan_type}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-[var(--color-text-primary)]">
-                          {LABELS[item.loan_type as keyof typeof LABELS] ?? item.loan_type}
-                        </span>
-                        <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
-                          {item.count} loan{item.count !== 1 ? "s" : ""} ({pct}%)
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-[var(--color-surface-tertiary)] overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-[var(--color-primary)] transition-all duration-700"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-                {/* Payment trend mini bars */}
-                {data.monthly_trend.length > 0 && (
-                  <div className="pt-4 mt-4 border-t border-[var(--color-border-light)]">
-                    <p className="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-3">
-                      Monthly Payments
-                    </p>
-                    <div className="flex items-end gap-1 h-16">
-                      {(() => {
-                        const max = Math.max(...data.monthly_trend.map((m) => m.total));
-                        return data.monthly_trend.map((m) => (
-                          <div key={m.month} className="flex-1 flex flex-col items-center gap-1" title={`${m.month}: ${formatCurrency(m.total)}`}>
-                            <div
-                              className="w-full rounded-t-sm bg-[var(--color-accent)] opacity-80 hover:opacity-100 transition-opacity"
-                              style={{ height: `${max > 0 ? Math.max(4, (m.total / max) * 56) : 4}px` }}
-                            />
-                            <span className="text-[9px] text-[var(--color-text-tertiary)]">
-                              {m.month.slice(5)}
+              <div className="space-y-4">
+                {/* Visual Legend */}
+                <div className="flex items-center justify-between text-xs pb-2 border-b border-[var(--color-border)]">
+                  <span className="font-bold text-[var(--color-text-secondary)]">Click any loan bar to open details</span>
+                  <div className="flex items-center gap-3 text-[11px] font-bold">
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Completed (Green)</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Remaining (Red)</span>
+                  </div>
+                </div>
+
+                {/* Individual Loan Bars */}
+                <div className="space-y-3">
+                  {loansList.map((loan) => {
+                    const principal = parseFloat(loan.principal_amount) || 1;
+                    const outstanding = parseFloat(loan.outstanding_amount) || 0;
+                    const paid = parseFloat(loan.paid_amount) || Math.max(0, principal - outstanding);
+                    const paidPct = Math.min(100, Math.max(0, (paid / principal) * 100));
+                    const remainingPct = Math.max(0, 100 - paidPct);
+
+                    return (
+                      <Link
+                        key={loan.id}
+                        href="/dashboard/loans"
+                        className="block group p-3.5 rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] transition-all cursor-pointer relative"
+                      >
+                        {/* Loan Header info */}
+                        <div className="flex items-center justify-between mb-1.5 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors text-sm">
+                              {loan.name}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                              {loan.lender_name}
                             </span>
                           </div>
-                        ));
+                          <div className="text-right">
+                            <span className="font-black text-emerald-700 dark:text-emerald-400">
+                              {paidPct.toFixed(1)}% Completed
+                            </span>
+                            <span className="text-[11px] text-[var(--color-text-secondary)] font-medium ml-2">
+                              ({format(outstanding)} left of {format(principal)})
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Dual-segment Bar: Green (Paid) vs Red (Remaining) */}
+                        <div className="h-3.5 w-full rounded-full bg-rose-500/20 overflow-hidden flex border border-[var(--color-border)] relative">
+                          <div
+                            className="h-full bg-emerald-500 transition-all duration-700 relative"
+                            style={{ width: `${paidPct}%` }}
+                          />
+                          <div
+                            className="h-full bg-rose-500 transition-all duration-700 relative"
+                            style={{ width: `${remainingPct}%` }}
+                          />
+                        </div>
+
+                        {/* Rich Hover Tooltip */}
+                        <div className="absolute left-1/2 -top-12 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-30 shadow-xl">
+                          <div className="bg-slate-900 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 whitespace-nowrap flex items-center gap-2">
+                            <span>🏦 {loan.name} ({loan.lender_name})</span>
+                            <span className="text-slate-500">|</span>
+                            <span className="text-emerald-400">Paid: {format(paid)} ({paidPct.toFixed(1)}%)</span>
+                            <span className="text-slate-500">|</span>
+                            <span className="text-rose-400">Remaining: {format(outstanding)}</span>
+                          </div>
+                          <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Monthly Payments trend chart */}
+                {data.monthly_trend.length > 0 && (
+                  <div className="pt-4 mt-4 border-t border-[var(--color-border)]">
+                    <p className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-widest mb-3">
+                      Monthly Payment History
+                    </p>
+                    <div className="flex items-end gap-1.5 h-16">
+                      {(() => {
+                        const max = Math.max(...data.monthly_trend.map((m) => m.total));
+                        return data.monthly_trend.map((point) => {
+                          const heightPct = max > 0 ? (point.total / max) * 100 : 0;
+                          return (
+                            <div
+                              key={point.month}
+                              className="flex-1 flex flex-col items-center gap-1 group/bar"
+                              title={`${point.month}: ${format(point.total)} (${point.count} payments)`}
+                            >
+                              <div className="w-full bg-[var(--color-surface-tertiary)] rounded-t-md overflow-hidden h-full flex items-end">
+                                <div
+                                  className="w-full bg-[var(--color-primary)] group-hover/bar:bg-[var(--color-primary-light)] transition-all duration-300 rounded-t-md"
+                                  style={{ height: `${Math.max(heightPct, 8)}%` }}
+                                />
+                              </div>
+                              <span className="text-[10px] text-[var(--color-text-secondary)] font-bold">
+                                {point.month.slice(-2)}
+                              </span>
+                            </div>
+                          );
+                        });
                       })()}
                     </div>
                   </div>
