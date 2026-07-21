@@ -90,26 +90,26 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
     {
       label: "Total Paid",
       value: data.total_paid_active,
-      color: "text-emerald-400",
+      color: "text-emerald-700 dark:text-emerald-400",
       icon: "✅",
     },
     {
       label: "Interest Paid",
       value: data.total_interest_paid,
-      color: "text-purple-400",
+      color: "text-purple-700 dark:text-purple-400",
       icon: "💸",
     },
   ], [data]);
 
   return (
-    <div className="card p-6">
+    <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-yellow-400 to-emerald-500" />
           <div>
             <h3 className="text-sm font-bold text-[var(--color-text-primary)]">Multi-Currency Tracker 💱</h3>
-            <p className="text-[11px] text-[var(--color-text-tertiary)]">
+            <p className="text-[11px] text-[var(--color-text-secondary)] font-medium">
               {ratesLoaded && lastUpdated ? `Live rates · ${lastUpdated}` : "Fallback rates (INR base)"}
             </p>
           </div>
@@ -117,7 +117,7 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
         <button
           onClick={fetchRates}
           title="Refresh live rates"
-          className="text-[10px] font-semibold text-[var(--color-primary-light)] hover:underline flex items-center gap-1"
+          className="text-[10px] font-bold text-[var(--color-primary-light)] hover:underline flex items-center gap-1 cursor-pointer"
         >
           🔄 Refresh
         </button>
@@ -129,10 +129,10 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
           <button
             key={cur.code}
             onClick={() => setSelectedCurrency(cur.code)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
               selectedCurrency === cur.code
                 ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
-                : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] border-[var(--color-border-light)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                : "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] hover:border-[var(--color-primary)]"
             }`}
           >
             <span>{cur.flag}</span>
@@ -143,12 +143,12 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
 
       {/* Rate Strip */}
       {selectedCurrency !== "INR" && (
-        <div className="flex items-center gap-2 bg-[var(--color-surface-secondary)] rounded-xl px-4 py-2 mb-5 text-xs">
-          <span className="text-[var(--color-text-tertiary)]">1 INR =</span>
+        <div className="flex items-center gap-2 bg-[var(--color-surface-secondary)] rounded-xl px-4 py-2 mb-5 text-xs border border-[var(--color-border)]">
+          <span className="text-[var(--color-text-secondary)] font-medium">1 INR =</span>
           <span className="font-black text-[var(--color-primary)]">
             {rate.toFixed(rate < 0.01 ? 6 : rate < 1 ? 4 : 2)} {currentCurrency.symbol} {selectedCurrency}
           </span>
-          <span className="text-[var(--color-text-tertiary)] ml-auto">{currentCurrency.flag} {currentCurrency.name}</span>
+          <span className="text-[var(--color-text-secondary)] font-medium ml-auto">{currentCurrency.flag} {currentCurrency.name}</span>
         </div>
       )}
 
@@ -157,17 +157,17 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="bg-[var(--color-surface-secondary)] rounded-xl p-4 border border-[var(--color-border-light)]"
+            className="bg-[var(--color-surface-secondary)] rounded-xl p-4 border border-[var(--color-border)]"
           >
             <div className="flex items-center gap-1.5 mb-2">
               <span className="text-base">{m.icon}</span>
-              <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-wide">{m.label}</span>
+              <span className="text-[10px] font-extrabold text-[var(--color-text-secondary)] uppercase tracking-wide">{m.label}</span>
             </div>
             <p className={`text-base font-black ${m.color} leading-tight`}>
               {formatAmount(convert(m.value), selectedCurrency, currentCurrency.symbol)}
             </p>
             {selectedCurrency !== "INR" && (
-              <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">
+              <p className="text-[10px] text-[var(--color-text-secondary)] font-medium mt-0.5">
                 ≈ ₹{m.value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
               </p>
             )}

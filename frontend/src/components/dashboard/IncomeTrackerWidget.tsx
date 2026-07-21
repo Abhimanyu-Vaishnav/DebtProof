@@ -167,63 +167,67 @@ export function IncomeTrackerWidget({ monthlyEmiTotal = 68800, monthlySipTotal =
       {/* Income vs Outflow Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Income Card */}
-        <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Total Monthly Income</span>
-          <p className="text-2xl font-black text-[var(--color-text-primary)] mt-1">{format(totalMonthlyIncome)}</p>
-          <span className="text-[11px] text-[var(--color-text-tertiary)]">Across {incomes.length} income streams</span>
+        <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Total Monthly Income</span>
+            <p className="text-2xl font-black text-[var(--color-text-primary)] mt-1">{format(totalMonthlyIncome)}</p>
+          </div>
+          <span className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-2">Across {incomes.length} income stream(s)</span>
         </div>
 
         {/* Total EMI & Outflow Card */}
-        <div className="p-4 rounded-xl bg-blue-950/20 border border-blue-500/20">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Total Monthly Commitments</span>
-          <p className="text-2xl font-black text-blue-400 mt-1">{format(totalMonthlyOutflow)}</p>
-          <span className="text-[11px] text-[var(--color-text-tertiary)]">
+        <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">Total Monthly Commitments</span>
+            <p className="text-2xl font-black text-blue-700 dark:text-blue-400 mt-1">{format(totalMonthlyOutflow)}</p>
+          </div>
+          <span className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-2">
             EMI: {format(monthlyEmiTotal)} · SIPs: {format(monthlySipTotal)}
           </span>
         </div>
 
         {/* Net Free Cashflow */}
-        <div className={`p-4 rounded-xl border ${
-          remainingCashflow >= 0 ? "bg-emerald-950/20 border-emerald-500/20" : "bg-rose-950/20 border-rose-500/20"
-        }`}>
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${remainingCashflow >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-            Net Free Cash Flow
-          </span>
-          <p className={`text-2xl font-black mt-1 ${remainingCashflow >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-            {format(remainingCashflow)}
-          </p>
-          <span className="text-[11px] text-[var(--color-text-tertiary)]">Available for living expenses & savings</span>
+        <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm flex flex-col justify-between">
+          <div>
+            <span className={`text-xs font-black uppercase tracking-wider ${remainingCashflow >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
+              Net Free Cash Flow
+            </span>
+            <p className={`text-2xl font-black mt-1 ${remainingCashflow >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
+              {format(remainingCashflow)}
+            </p>
+          </div>
+          <span className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-2">Available for living expenses & savings</span>
         </div>
       </div>
 
       {/* Safety Gauge Alert Banner */}
       <div className={`p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-        statusColor === "emerald" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300" :
-        statusColor === "amber" ? "bg-amber-500/10 border-amber-500/20 text-amber-300" : "bg-rose-500/10 border-rose-500/20 text-rose-300"
+        statusColor === "emerald" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-900 dark:text-emerald-200" :
+        statusColor === "amber" ? "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-200" : "bg-rose-500/15 border-rose-500/30 text-rose-900 dark:text-rose-200"
       }`}>
         <div className="flex items-start gap-3">
           <div className="text-2xl shrink-0">
             {statusColor === "emerald" ? "🛡️" : statusColor === "amber" ? "⚡" : "🚨"}
           </div>
           <div>
-            <h3 className="text-sm font-extrabold">{statusTitle}</h3>
-            <p className="text-xs opacity-90 mt-0.5">{statusDesc}</p>
+            <h3 className="text-sm font-extrabold text-[var(--color-text-primary)]">{statusTitle}</h3>
+            <p className="text-xs font-medium text-[var(--color-text-primary)] mt-0.5">{statusDesc}</p>
           </div>
         </div>
 
         <div className="text-left sm:text-right shrink-0">
-          <span className="text-[10px] font-bold uppercase tracking-wider block">Debt-To-Income (DTI) Ratio</span>
-          <span className="text-xl font-black">{dtiRatio.toFixed(1)}%</span>
+          <span className="text-[10px] font-black uppercase tracking-wider block text-[var(--color-text-secondary)]">Debt-To-Income (DTI) Ratio</span>
+          <span className="text-xl font-black text-[var(--color-text-primary)]">{dtiRatio.toFixed(1)}%</span>
         </div>
       </div>
 
       {/* Visual DTI Bar Meter */}
       <div className="space-y-1.5">
-        <div className="flex justify-between text-xs font-semibold text-[var(--color-text-tertiary)]">
+        <div className="flex justify-between text-xs font-bold text-[var(--color-text-secondary)]">
           <span>Monthly Income Distribution</span>
           <span>{totalOutflowRatio.toFixed(1)}% Committed</span>
         </div>
-        <div className="h-4 rounded-xl bg-[var(--color-surface-tertiary)] overflow-hidden flex">
+        <div className="h-4 rounded-xl bg-[var(--color-surface-tertiary)] overflow-hidden flex border border-[var(--color-border)]">
           <div
             className="h-full bg-rose-500 transition-all duration-500"
             style={{ width: `${Math.min(dtiRatio, 100)}%` }}
@@ -236,45 +240,45 @@ export function IncomeTrackerWidget({ monthlyEmiTotal = 68800, monthlySipTotal =
           />
           <div className="h-full bg-emerald-500 flex-1 transition-all duration-500" title="Free Cashflow" />
         </div>
-        <div className="flex items-center gap-4 text-[10px] text-[var(--color-text-tertiary)] pt-1">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> EMI Debt ({dtiRatio.toFixed(1)}%)</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> SIPs & Investments</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Free Living Cash</span>
+        <div className="flex items-center gap-4 text-[11px] font-semibold text-[var(--color-text-secondary)] pt-1">
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> EMI Debt ({dtiRatio.toFixed(1)}%)</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> SIPs & Investments</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Free Living Cash</span>
         </div>
       </div>
 
       {/* Income Streams Breakdown Table */}
       <div className="space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
+        <h3 className="text-xs font-black uppercase tracking-wider text-[var(--color-text-primary)]">
           Your Active Income Streams ({incomes.length})
         </h3>
         <div className="divide-y divide-[var(--color-border)] border border-[var(--color-border)] rounded-xl overflow-hidden">
           {incomes.length === 0 ? (
-            <p className="p-4 text-center text-xs text-[var(--color-text-tertiary)]">No income streams added yet.</p>
+            <p className="p-4 text-center text-xs text-[var(--color-text-secondary)] font-medium">No income streams added yet.</p>
           ) : (
             incomes.map((inc) => (
               <div key={inc.id} className="p-3.5 flex items-center justify-between bg-[var(--color-surface)] hover:bg-[var(--color-surface-secondary)] text-xs">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-secondary)] flex items-center justify-center text-base">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border)] flex items-center justify-center text-base">
                     {inc.category === "salary" ? "💼" : inc.category === "rental" ? "🏠" : inc.category === "freelance" ? "💻" : "📈"}
                   </div>
                   <div>
-                    <strong className="text-sm font-semibold text-[var(--color-text-primary)] block">{inc.sourceName}</strong>
-                    <span className="text-[10px] text-[var(--color-text-tertiary)]">{inc.categoryLabel}</span>
+                    <strong className="text-sm font-bold text-[var(--color-text-primary)] block">{inc.sourceName}</strong>
+                    <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">{inc.categoryLabel}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-extrabold text-emerald-400">+{format(inc.monthlyAmount)}<span className="text-[10px] font-normal text-[var(--color-text-tertiary)]"> /mo</span></span>
+                  <span className="text-sm font-black text-emerald-700 dark:text-emerald-400">+{format(inc.monthlyAmount)}<span className="text-[10px] font-semibold text-[var(--color-text-secondary)]"> /mo</span></span>
                   <button
                     onClick={() => openEditModal(inc)}
-                    className="text-[11px] font-bold text-blue-400 hover:underline px-1"
+                    className="text-[11px] font-extrabold text-blue-700 dark:text-blue-400 hover:underline px-1 cursor-pointer"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteIncome(inc.id)}
-                    className="text-[11px] font-bold text-red-400 hover:underline px-1"
+                    className="text-[11px] font-extrabold text-red-700 dark:text-red-400 hover:underline px-1 cursor-pointer"
                   >
                     Del
                   </button>

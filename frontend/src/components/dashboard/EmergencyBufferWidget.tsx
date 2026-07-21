@@ -16,24 +16,24 @@ export function EmergencyBufferWidget({ data }: EmergencyBufferWidgetProps) {
   const runwayMonths = monthlyTotalEmi > 0 ? (currentSavings / monthlyTotalEmi) : 0;
 
   const getRunwayHealth = () => {
-    if (runwayMonths >= 6) return { label: "Fully Protected (6+ Months Buffer) 🟢", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/30" };
-    if (runwayMonths >= 3) return { label: "Safe Runway (3 to 6 Months Buffer) 🟡", color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/30" };
-    return { label: "Low Emergency Cushion (< 3 Months) 🔴", color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/30" };
+    if (runwayMonths >= 6) return { label: "Fully Protected (6+ Months Buffer) 🟢", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30" };
+    if (runwayMonths >= 3) return { label: "Safe Runway (3 to 6 Months Buffer) 🟡", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-500/15 border-amber-500/30" };
+    return { label: "Low Emergency Cushion (< 3 Months) 🔴", color: "text-rose-700 dark:text-rose-400", bg: "bg-rose-500/15 border-rose-500/30" };
   };
 
   const health = getRunwayHealth();
 
   return (
-    <div className="card p-5 border border-[var(--color-border-light)] space-y-4 bg-[var(--color-surface)]">
-      <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-3">
+    <div className="card p-5 border border-[var(--color-border)] space-y-4 bg-[var(--color-surface)]">
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">🛡️</span>
           <div>
             <h3 className="text-sm font-bold text-[var(--color-text-primary)]">Emergency EMI Buffer Reserve Tracker</h3>
-            <p className="text-[11px] text-[var(--color-text-tertiary)]">Job security & emergency payment protection runway</p>
+            <p className="text-[11px] text-[var(--color-text-secondary)] font-medium">Job security & emergency payment protection runway</p>
           </div>
         </div>
-        <span className={`text-xs font-bold ${health.color}`}>{health.label}</span>
+        <span className={`text-xs font-black ${health.color}`}>{health.label}</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
