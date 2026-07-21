@@ -6,6 +6,7 @@ import { formatCurrency } from "@/utils/formatters";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type { CreditCard, CreditCardSummary, CreditCardPayment } from "@/types";
 import { CreditCardPaymentModal } from "./CreditCardPaymentModal";
+import { CreditCardTrapCalculator } from "./CreditCardTrapCalculator";
 
 // Helper for card styling gradients
 function getCardGradient(idx: number) {
@@ -259,6 +260,9 @@ export function CreditCardsClient() {
           <h3 className="text-xl sm:text-2xl font-bold text-amber-500 mt-2">{s.overall_utilization.toFixed(1)}%</h3>
         </div>
       </section>
+
+      {/* Credit Card Minimum Payment Trap Calculator Widget */}
+      <CreditCardTrapCalculator />
 
       {/* Title & Add card trigger */}
       <div className="flex items-center justify-between">
