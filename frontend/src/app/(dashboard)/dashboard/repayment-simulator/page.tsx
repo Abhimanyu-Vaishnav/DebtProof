@@ -80,10 +80,10 @@ export default function RepaymentSimulatorPage() {
     1000
   );
 
-  // Generate SVG Points — chart area: x: 70→670, y: 10→210
-  const CHART_LEFT = 70;
-  const CHART_WIDTH = 570;
-  const CHART_TOP = 10;
+  // Generate SVG Points — chart area: x: 95→710, y: 15→215
+  const CHART_LEFT = 95;
+  const CHART_WIDTH = 615;
+  const CHART_TOP = 15;
   const CHART_HEIGHT = 200;
 
   const getSvgPoints = (historyList: any[]) => {
@@ -440,88 +440,102 @@ function PayoffChartsContainer({
 
         {/* ── 1. LINE CHART (TIMELINE PROGRESSION) ───────────────────────────── */}
         {chartFormat === "line" && (
-          <div className="w-full">
-            {/* Legend */}
-            <div className="flex items-center gap-6 mb-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#94a3b8" strokeWidth="2.5" /></svg>
-                <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">Baseline ({baselineMonths} mos)</span>
+          <div className="w-full space-y-3">
+            {/* Responsive Legend */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
+              <div className="flex items-center justify-between sm:justify-start gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-slate-400 shrink-0" />
+                  <span className="text-[11px] font-bold text-[var(--color-text-secondary)]">Baseline</span>
+                </div>
+                <span className="text-xs font-black text-[var(--color-text-primary)]">{baselineMonths} mos</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#3b82f6" strokeWidth="2.5" strokeDasharray="4 2" /></svg>
-                <span className="text-[11px] font-bold text-blue-500">Snowball ({snowball?.months ?? 0} mos)</span>
+              <div className="flex items-center justify-between sm:justify-start gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-blue-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-blue-500">Snowball</span>
+                </div>
+                <span className="text-xs font-black text-blue-500">{snowball?.months ?? 0} mos</span>
               </div>
-              <div className="flex items-center gap-2">
-                <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#10b981" strokeWidth="2.5" /></svg>
-                <span className="text-[11px] font-bold text-emerald-500">Avalanche ({avalanche?.months ?? 0} mos)</span>
+              <div className="flex items-center justify-between sm:justify-start gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-emerald-500">Avalanche</span>
+                </div>
+                <span className="text-xs font-black text-emerald-500">{avalanche?.months ?? 0} mos</span>
               </div>
             </div>
 
-            {/* SVG: viewBox 0 0 740 250 — chart area: x 70→640, y 10→210 */}
-            <svg viewBox="0 0 740 250" className="w-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="lgBase" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.08" />
-                  <stop offset="100%" stopColor="#94a3b8" stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id="lgSnow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.12" />
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id="lgAval" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.12" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                </linearGradient>
-              </defs>
+            {/* SVG Chart Container with Horizontal Scroll fallback on very small screens */}
+            <div className="overflow-x-auto">
+              <svg viewBox="0 0 740 260" className="w-full min-w-[550px] sm:min-w-0" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="lgBase" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="#94a3b8" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="lgSnow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="lgAval" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
 
-              {/* Horizontal grid lines */}
-              {[10, 60, 110, 160, 210].map((y) => (
-                <line key={y} x1="70" y1={y} x2="640" y2={y}
-                  stroke="var(--color-border-light)" strokeWidth="1"
-                  strokeDasharray={y === 210 ? "0" : "4 3"} opacity={y === 210 ? "0.7" : "0.35"}
-                />
-              ))}
+                {/* Horizontal grid lines */}
+                {[15, 65, 115, 165, 215].map((y) => (
+                  <line key={y} x1="95" y1={y} x2="710" y2={y}
+                    stroke="var(--color-border-light)" strokeWidth="1"
+                    strokeDasharray={y === 215 ? "0" : "4 3"} opacity={y === 215 ? "0.8" : "0.4"}
+                  />
+                ))}
 
-              {/* Y-axis labels */}
-              <text x="62" y="14" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">{formatCurrency(maxOutstanding)}</text>
-              <text x="62" y="114" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">{formatCurrency(maxOutstanding / 2)}</text>
-              <text x="62" y="214" textAnchor="end" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">₹0</text>
+                {/* Y-axis labels with ample padding inside SVG boundary */}
+                <text x="88" y="19" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">
+                  {maxOutstanding >= 100000 ? `₹${(maxOutstanding / 100000).toFixed(1)}L` : `₹${Math.round(maxOutstanding / 1000)}k`}
+                </text>
+                <text x="88" y="119" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">
+                  {maxOutstanding >= 100000 ? `₹${(maxOutstanding / 200000).toFixed(1)}L` : `₹${Math.round(maxOutstanding / 2000)}k`}
+                </text>
+                <text x="88" y="219" textAnchor="end" fontSize="11" fontWeight="700" fill="var(--color-text-secondary)">₹0</text>
 
-              {/* Y-axis line */}
-              <line x1="66" y1="10" x2="66" y2="212" stroke="var(--color-border-light)" strokeWidth="1.5" opacity="0.5" />
+                {/* Y-axis line */}
+                <line x1="93" y1="15" x2="93" y2="217" stroke="var(--color-border-light)" strokeWidth="1.5" opacity="0.6" />
 
-              {/* Fill areas — drawn bottom to top (baseline biggest area first) */}
-              <path d={`M 70,210 L ${getSvgPoints(baseline.history)} L 640,210 Z`} fill="url(#lgBase)" />
-              <path d={`M 70,210 L ${getSvgPoints(snowball.history)} L 640,210 Z`} fill="url(#lgSnow)" />
-              <path d={`M 70,210 L ${getSvgPoints(avalanche.history)} L 640,210 Z`} fill="url(#lgAval)" />
+                {/* Fill areas */}
+                <path d={`M 95,215 L ${getSvgPoints(baseline.history)} L 710,215 Z`} fill="url(#lgBase)" />
+                <path d={`M 95,215 L ${getSvgPoints(snowball.history)} L 710,215 Z`} fill="url(#lgSnow)" />
+                <path d={`M 95,215 L ${getSvgPoints(avalanche.history)} L 710,215 Z`} fill="url(#lgAval)" />
 
-              {/* Lines: Baseline solid thin, Snowball dashed blue (drawn AFTER fills), Avalanche solid green */}
-              <polyline fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                points={getSvgPoints(baseline.history)} />
-              {/* Snowball — dashed so it shows through even if overlapping */}
-              <polyline fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-                strokeDasharray="8 4"
-                points={getSvgPoints(snowball.history)} />
-              <polyline fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-                points={getSvgPoints(avalanche.history)} />
+                {/* Lines */}
+                <polyline fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  points={getSvgPoints(baseline.history)} />
+                <polyline fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                  strokeDasharray="8 4"
+                  points={getSvgPoints(snowball.history)} />
+                <polyline fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                  points={getSvgPoints(avalanche.history)} />
 
-              {/* X-axis labels */}
-              <text x="70" y="232" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">Start</text>
-              <text x="355" y="232" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">Month {Math.round(maxMonths / 2)}</text>
-              <text x="640" y="232" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--color-text-tertiary)">Month {maxMonths}</text>
-            </svg>
+                {/* X-axis labels */}
+                <text x="95" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Start</text>
+                <text x="402" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Month {Math.round(maxMonths / 2)}</text>
+                <text x="710" y="242" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-text-tertiary)">Month {maxMonths}</text>
+              </svg>
+            </div>
           </div>
         )}
 
         {/* ── 2. BAR CHART (INTEREST PAYABLE COMPARISON) ─────────────────── */}
         {chartFormat === "bar" && (
-          <div className="w-full max-w-md space-y-6 pt-4">
+          <div className="w-full max-w-lg space-y-5 pt-2">
             <div className="space-y-4">
               {/* Baseline Bar */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-[var(--color-text-secondary)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-bold text-[var(--color-text-secondary)] gap-1">
                   <span>Baseline (No Extra Contribution)</span>
-                  <span className="text-rose-500">{formatCurrency(baseInt)}</span>
+                  <span className="text-rose-500 font-extrabold">{formatCurrency(baseInt)}</span>
                 </div>
                 <div className="h-6 w-full bg-[var(--color-surface-tertiary)] rounded-md overflow-hidden border border-[var(--color-border-light)]">
                   <div className="h-full bg-slate-400 rounded-md transition-all duration-700" style={{ width: "100%" }} />
@@ -530,12 +544,12 @@ function PayoffChartsContainer({
 
               {/* Snowball Bar */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-[var(--color-text-secondary)]">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-bold text-[var(--color-text-secondary)] gap-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span>Debt Snowball</span>
-                    <span className="text-[9px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">Saves {formatCurrency(interestSavedSnowball)}</span>
+                    <span className="text-[9px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold">Saves {formatCurrency(interestSavedSnowball)}</span>
                   </div>
-                  <span className="text-[var(--color-text-primary)]">{formatCurrency(snowInt)}</span>
+                  <span className="text-[var(--color-text-primary)] font-extrabold">{formatCurrency(snowInt)}</span>
                 </div>
                 <div className="h-6 w-full bg-[var(--color-surface-tertiary)] rounded-md overflow-hidden border border-[var(--color-border-light)]">
                   <div
@@ -547,12 +561,12 @@ function PayoffChartsContainer({
 
               {/* Avalanche Bar */}
               <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-[var(--color-text-secondary)]">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-bold text-[var(--color-text-secondary)] gap-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span>Debt Avalanche</span>
-                    <span className="text-[9px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">Saves {formatCurrency(interestSavedAvalanche)}</span>
+                    <span className="text-[9px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold">Saves {formatCurrency(interestSavedAvalanche)}</span>
                   </div>
-                  <span className="text-[var(--color-text-primary)]">{formatCurrency(avalInt)}</span>
+                  <span className="text-[var(--color-text-primary)] font-extrabold">{formatCurrency(avalInt)}</span>
                 </div>
                 <div className="h-6 w-full bg-[var(--color-surface-tertiary)] rounded-md overflow-hidden border border-[var(--color-border-light)]">
                   <div
@@ -562,7 +576,7 @@ function PayoffChartsContainer({
                 </div>
               </div>
             </div>
-            <p className="text-[10px] text-[var(--color-text-tertiary)] text-center font-semibold uppercase">Lower interest is better</p>
+            <p className="text-[10px] text-[var(--color-text-tertiary)] text-center font-semibold uppercase tracking-wider">Lower interest bar is better</p>
           </div>
         )}
 
