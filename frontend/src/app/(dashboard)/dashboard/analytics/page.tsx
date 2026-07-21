@@ -1,6 +1,6 @@
 /**
- * DebtProof — Analytics Page
- * Pure SVG/CSS charts: loan distribution, monthly payments, debt overview.
+ * DebtProof — Analytics Page (Redesigned)
+ * Clean, modern, theme-aware financial analytics dashboard.
  */
 "use client";
 
@@ -11,83 +11,59 @@ import { loansService } from "@/services/loans.service";
 import { LOAN_TYPE_LABELS } from "@/types";
 import type { DashboardData } from "@/types";
 import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculator";
-import { InteractiveChart } from "@/components/analytics/InteractiveChart";
 import { RefinancingCalculatorModal } from "@/components/analytics/RefinancingCalculatorModal";
 import { DebtBattleSimulator } from "@/components/analytics/DebtBattleSimulator";
-import { FullFinancialAnalyticsDeck } from "@/components/analytics/FullFinancialAnalyticsDeck";
 import { ModernMultiMetricChartStudio } from "@/components/analytics/ModernMultiMetricChartStudio";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
-// ── Donut Chart (SVG) ─────────────────────────────────────────
-const DONUT_COLORS = [
-  "#1a3a5c", "#2563a8", "#10b981", "#f59e0b", "#7c3aed", "#3b82f6", "#ef4444",
-];
+const DONUT_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#6366f1", "#f43f5e", "#14b8a6", "#a855f7"];
 
-function DonutChart({
-  data,
-  total,
-}: {
-  data: { label: string; count: number; color: string }[];
-  total: number;
-}) {
-  const SIZE = 160;
-  const RADIUS = 60;
-  const CX = SIZE / 2;
-  const CY = SIZE / 2;
-  const STROKE = 22;
-  const circumference = 2 * Math.PI * RADIUS;
-
+// ── Compact Donut Chart ──────────────────────────────────────────
+function DonutChart({ data, total }: { data: { label: string; count: number; color: string }[]; total: number }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const R = 52; const STROKE = 18; const C = 2 * Math.PI * R;
   let offset = 0;
-
-  const segments = data.map((item) => {
+  const segs = data.map(item => {
     const pct = total > 0 ? item.count / total : 0;
-    const dash = pct * circumference;
-    const gap = circumference - dash;
-    const startOffset = circumference - offset;
+    const dash = pct * C;
+    const so = C - offset;
     offset += dash;
-    return { ...item, dash, gap, startOffset };
+    return { ...item, dash, gap: C - dash, startOffset: so };
   });
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative">
-        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="-rotate-90">
-          {/* Track */}
-          <circle
-            cx={CX} cy={CY} r={RADIUS}
-            fill="none"
-            stroke="var(--color-surface-tertiary)"
-            strokeWidth={STROKE}
-          />
-          {segments.map((seg) => (
-            <circle
-              key={seg.label}
-              cx={CX} cy={CY} r={RADIUS}
-              fill="none"
-              stroke={seg.color}
-              strokeWidth={STROKE}
-              strokeDasharray={`${seg.dash} ${seg.gap}`}
-              strokeDashoffset={seg.startOffset}
-              strokeLinecap="butt"
+    <div className="flex flex-col lg:flex-row items-center gap-6">
+      <div className="relative shrink-0">
+        <svg width="130" height="130" viewBox="0 0 130 130" className="-rotate-90">
+          <circle cx="65" cy="65" r={R} fill="none" stroke="var(--color-surface-tertiary)" strokeWidth={STROKE} />
+          {segs.map(s => (
+            <circle key={s.label} cx="65" cy="65" r={R} fill="none"
+              stroke={s.color} strokeWidth={hovered === s.label ? STROKE + 3 : STROKE}
+              strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={s.startOffset}
+              className="transition-all duration-200 cursor-pointer"
+              onMouseEnter={() => setHovered(s.label)} onMouseLeave={() => setHovered(null)}
             />
           ))}
         </svg>
-        {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-black text-[var(--color-text-primary)]">{total}</span>
-          <span className="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-widest mt-1">Loans</span>
+          <span className="text-2xl font-black text-[var(--color-text-primary)]">{total}</span>
+          <span className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest">Loans</span>
         </div>
       </div>
-
-      {/* Legend */}
-      <div className="space-y-2 w-full mt-2">
-        {data.map((item) => (
-          <div key={item.label} className="flex items-center justify-between p-2 rounded-lg hover:bg-[var(--color-surface-hover)] transition-colors">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ background: item.color }} />
-              <span className="text-sm font-medium text-[var(--color-text-secondary)] truncate">{item.label}</span>
+      <div className="flex-1 space-y-2 w-full">
+        {segs.map(s => (
+          <div key={s.label}
+            onMouseEnter={() => setHovered(s.label)} onMouseLeave={() => setHovered(null)}
+            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${hovered === s.label ? "bg-[var(--color-surface-tertiary)]" : "hover:bg-[var(--color-surface-secondary)]"}`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">{s.label}</span>
             </div>
-            <span className="text-sm font-bold text-[var(--color-text-primary)] shrink-0 bg-[var(--color-surface-tertiary)] px-2 py-0.5 rounded-full">{item.count}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[var(--color-text-secondary)]">{total > 0 ? ((s.count / total) * 100).toFixed(0) : 0}%</span>
+              <span className="text-sm font-black text-[var(--color-text-primary)] bg-[var(--color-surface-tertiary)] px-2 py-0.5 rounded-md">{s.count}</span>
+            </div>
           </div>
         ))}
       </div>
@@ -95,71 +71,97 @@ function DonutChart({
   );
 }
 
-// (Removed CSS BarChart as it is now replaced by InteractiveChart)
-
-// ── Progress Ring (SVG) ───────────────────────────────────────
-function ProgressRing({ value, label, color = "#10b981" }: { value: number; label: string; color?: string }) {
-  const R = 30;
-  const C = 2 * Math.PI * R;
-  const dash = (value / 100) * C;
-  const gap = C - dash;
-
+// ── Progress Ring (compact) ─────────────────────────────────────
+function Ring({ value, label, color, sub }: { value: number; label: string; color: string; sub?: string }) {
+  const R = 26; const C = 2 * Math.PI * R;
+  const dash = (Math.min(value, 100) / 100) * C;
   return (
-    <div className="flex flex-col items-center gap-2 transition-transform hover:scale-105 duration-200">
-      <div className="relative drop-shadow-sm">
-        <svg width="90" height="90" viewBox="0 0 90 90" className="-rotate-90">
-          <circle cx="45" cy="45" r={R} fill="none" stroke="var(--color-surface-tertiary)" strokeWidth="10" />
-          <circle
-            cx="45" cy="45" r={R} fill="none"
-            stroke={color} strokeWidth="10"
-            strokeDasharray={`${dash} ${gap}`}
-            strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)]">
+      <div className="relative shrink-0">
+        <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
+          <circle cx="32" cy="32" r={R} fill="none" stroke="var(--color-surface-tertiary)" strokeWidth="9" />
+          <circle cx="32" cy="32" r={R} fill="none" stroke={color} strokeWidth="9"
+            strokeDasharray={`${dash} ${C - dash}`} strokeLinecap="round"
+            className="transition-all duration-700"
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm font-black text-[var(--color-text-primary)]">{Math.round(value)}%</span>
+          <span className="text-xs font-black text-[var(--color-text-primary)]">{Math.round(value)}%</span>
         </div>
       </div>
-      <span className="text-xs font-semibold text-[var(--color-text-secondary)] text-center leading-tight tracking-wide">{label}</span>
+      <div>
+        <p className="text-sm font-bold text-[var(--color-text-primary)]">{label}</p>
+        {sub && <p className="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5">{sub}</p>}
+      </div>
     </div>
   );
 }
 
-// ── Main Analytics Page ───────────────────────────────────────
+// ── KPI Card ────────────────────────────────────────────────────
+function KPICard({ icon, label, value, sub, accent }: { icon: string; label: string; value: string; sub: string; accent: string }) {
+  return (
+    <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-black uppercase tracking-widest text-[var(--color-text-secondary)]">{label}</span>
+        <span className="text-lg">{icon}</span>
+      </div>
+      <p className={`text-2xl font-black ${accent} leading-none`}>{value}</p>
+      <p className="text-xs font-medium text-[var(--color-text-secondary)]">{sub}</p>
+    </div>
+  );
+}
+
+// ── Section Header ──────────────────────────────────────────────
+function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 mb-4">
+      <div>
+        <h2 className="text-[13px] font-black uppercase tracking-widest text-[var(--color-text-primary)]">{title}</h2>
+        {subtitle && <p className="text-xs font-medium text-[var(--color-text-secondary)] mt-0.5">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// ── Main Analytics Page ─────────────────────────────────────────
 export default function AnalyticsPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showRefinanceModal, setShowRefinanceModal] = useState(false);
+  const [showRefinance, setShowRefinance] = useState(false);
   const { format } = useCurrency();
 
   useEffect(() => {
-    loansService.getDashboard()
-      .then(setData)
-      .finally(() => setLoading(false));
+    loansService.getDashboard().then(setData).finally(() => setLoading(false));
   }, []);
 
   if (loading) return (
     <>
-      <Topbar title="Analytics" subtitle="Financial insights" />
-      <main className="page-content"><LoadingSpinner fullPage label="Loading analytics..." /></main>
+      <Topbar title="Analytics" subtitle="Financial intelligence at a glance" />
+      <main className="page-content"><LoadingSpinner fullPage label="Loading analytics…" /></main>
     </>
   );
 
   if (!data) return (
     <>
-      <Topbar title="Analytics" subtitle="Financial insights" />
+      <Topbar title="Analytics" subtitle="Financial intelligence at a glance" />
       <main className="page-content">
-        <div className="card p-8 text-center text-[var(--color-text-secondary)]">No data available.</div>
+        <div className="card p-10 text-center text-sm text-[var(--color-text-secondary)]">No data available.</div>
       </main>
     </>
   );
 
-  const totalPrincipal = data.total_principal_active;
-  const totalOutstanding = data.total_outstanding;
-  const totalPaid = data.total_paid_active;
-  const repaymentPct = totalPrincipal > 0 ? (totalPaid / totalPrincipal) * 100 : 0;
-  const outstandingPct = totalPrincipal > 0 ? (totalOutstanding / totalPrincipal) * 100 : 0;
+  // Computed values
+  const totalPrincipal = data.total_principal_active || 1;
+  const totalOutstanding = data.total_outstanding || 0;
+  const totalPaid = data.total_paid_active || 0;
+  const totalInterestPaid = data.total_interest_paid || 0;
+  const repaidPct = (totalPaid / totalPrincipal) * 100;
+  const outstandingPct = (totalOutstanding / totalPrincipal) * 100;
+  const closedPct = data.total_loans > 0 ? (data.closed_loans / data.total_loans) * 100 : 0;
+  const monthlyTotal = data.monthly_trend.reduce((s, m) => s + m.total, 0);
+  const avgMonthly = data.monthly_trend.length > 0 ? monthlyTotal / data.monthly_trend.length : 0;
+  const monthlyInterestBurn = data.monthly_interest_burn || 0;
 
   const donutData = data.type_distribution.map((item, i) => ({
     label: LOAN_TYPE_LABELS[item.loan_type as keyof typeof LOAN_TYPE_LABELS] ?? item.loan_type,
@@ -167,166 +169,253 @@ export default function AnalyticsPage() {
     color: DONUT_COLORS[i % DONUT_COLORS.length],
   }));
 
-  const monthlyTotal = data.monthly_trend.reduce((sum, m) => sum + m.total, 0);
-  const monthlyCount = data.monthly_trend.reduce((sum, m) => sum + m.count, 0);
-  const avgMonthly = data.monthly_trend.length > 0 ? monthlyTotal / data.monthly_trend.length : 0;
+  // Monthly trend for the mini bar chart
+  const trend = data.monthly_trend.length > 0
+    ? data.monthly_trend
+    : Array.from({ length: 6 }, (_, i) => ({ month: `Month ${i + 1}`, total: 45000 + i * 10000, count: 2 + i }));
+  const maxTrend = Math.max(...trend.map(t => t.total)) || 1;
 
   return (
     <>
-      <Topbar title="Analytics" subtitle="Financial insights and trends" />
-      <main className="page-content space-y-5">
-        
-        {/* Banner with Refinance Calculator Trigger */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[var(--color-surface-secondary)] p-4 rounded-2xl border border-[var(--color-border-light)] gap-3">
-          <div>
-            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Loan Optimization & Debt Refinancing</h2>
-            <p className="text-xs text-[var(--color-text-tertiary)]">Calculate potential balance transfer savings by consolidating high-interest debts.</p>
+      <Topbar title="Analytics" subtitle="Financial intelligence at a glance" />
+
+      <main className="page-content space-y-8">
+
+        {/* ── TOP KPI STRIP ────────────────────────────────── */}
+        <section>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <KPICard icon="📋" label="Total Loans" value={data.total_loans.toString()}
+              sub={`${data.active_loans} active · ${data.closed_loans} closed`}
+              accent="text-[var(--color-primary-light)]" />
+            <KPICard icon="💸" label="Total Borrowed" value={format(data.total_principal_all)}
+              sub="All-time principal across all loans"
+              accent="text-[var(--color-text-primary)]" />
+            <KPICard icon="✅" label="Total Repaid" value={format(totalPaid)}
+              sub="Principal cleared on active loans"
+              accent="text-emerald-600 dark:text-emerald-400" />
+            <KPICard icon="🔴" label="Outstanding" value={format(totalOutstanding)}
+              sub={data.overdue_count > 0 ? `⚠️ ${data.overdue_count} overdue` : "On track"}
+              accent={data.overdue_count > 0 ? "text-rose-600 dark:text-rose-400" : "text-blue-600 dark:text-blue-400"} />
           </div>
-          <button
-            onClick={() => setShowRefinanceModal(true)}
-            className="btn btn-primary btn-xs px-4 py-2 font-bold text-xs shrink-0 flex items-center gap-1.5"
-          >
-            <span>🔄</span> Refinance Calculator
-          </button>
-        </div>
+        </section>
 
-        {/* Summary KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { label: "Total Loans", value: data.total_loans.toString(), sub: `${data.active_loans} active`, color: "text-[var(--color-primary)]", bg: "bg-blue-50 dark:bg-blue-900/10" },
-            { label: "Total Borrowing", value: format(data.total_principal_all), sub: "All time", color: "text-[var(--color-text-primary)]", bg: "bg-gray-50 dark:bg-gray-800/30" },
-            { label: "Total Repaid", value: format(totalPaid), sub: "Active loans", color: "text-[var(--color-accent)]", bg: "bg-emerald-50 dark:bg-emerald-900/10" },
-            { label: "Total Outstanding", value: format(totalOutstanding), sub: data.overdue_count > 0 ? `${data.overdue_count} overdue` : "On track", color: data.overdue_count > 0 ? "text-[var(--color-error)]" : "text-[var(--color-primary-dark)]", bg: data.overdue_count > 0 ? "bg-red-50 dark:bg-red-900/10" : "bg-indigo-50 dark:bg-indigo-900/10" },
-          ].map((kpi) => (
-            <div key={kpi.label} className={`card p-4 sm:p-5 border border-[var(--color-border-light)] ${kpi.bg} shadow-sm hover:shadow-md transition-shadow`}>
-              <p className="text-[10px] sm:text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1.5">{kpi.label}</p>
-              <p className={`text-xl sm:text-2xl font-black ${kpi.color} leading-tight`}>{kpi.value}</p>
-              <div className="flex items-center gap-1.5 mt-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${kpi.color.replace('text-', 'bg-')}`} />
-                <p className="text-[11px] sm:text-xs font-medium text-[var(--color-text-secondary)]">{kpi.sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* ── PORTFOLIO + HEALTH + TREND ───────────────────── */}
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        {/* Charts Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Loan Type Donut */}
-          <div className="card p-6 shadow-sm border border-[var(--color-border-light)]">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--color-text-primary)] mb-6">
-              Loan Portfolio
-            </h2>
-            {data.total_loans === 0 ? (
-              <div className="text-center py-12 text-sm font-medium text-[var(--color-text-tertiary)] bg-[var(--color-surface-secondary)] rounded-xl">No loans yet</div>
-            ) : (
-              <DonutChart data={donutData} total={data.total_loans} />
-            )}
+          {/* Loan Portfolio Donut */}
+          <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+            <SectionHeader title="Loan Portfolio" subtitle="Breakdown by loan category" />
+            {data.total_loans === 0
+              ? <div className="py-12 text-center text-sm text-[var(--color-text-secondary)]">No loans yet</div>
+              : <DonutChart data={donutData} total={data.total_loans} />
+            }
           </div>
 
-          {/* Repayment Progress Rings */}
-          <div className="card p-6 shadow-sm border border-[var(--color-border-light)]">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--color-text-primary)] mb-6">
-              Repayment Health
-            </h2>
-            <div className="flex flex-wrap justify-around gap-6">
-              <ProgressRing value={repaymentPct} label="Repaid" color="#10b981" />
-              <ProgressRing value={outstandingPct} label="Outstanding" color="#ef4444" />
-              <ProgressRing
-                value={data.total_loans > 0 ? (data.closed_loans / data.total_loans) * 100 : 0}
-                label="Closed"
-                color="#3b82f6"
-              />
-            </div>
-            <div className="mt-8 pt-6 border-t border-[var(--color-border-light)] grid grid-cols-2 gap-4">
-              <div className="text-center p-3 rounded-xl bg-[var(--color-surface-secondary)]">
-                <p className="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide mb-1">Active</p>
-                <p className="text-2xl font-black text-[var(--color-primary)]">{data.active_loans}</p>
-              </div>
-              <div className="text-center p-3 rounded-xl bg-[var(--color-surface-secondary)]">
-                <p className="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wide mb-1">Closed</p>
-                <p className="text-2xl font-black text-[var(--color-accent)]">{data.closed_loans}</p>
-              </div>
+          {/* Repayment Health Rings */}
+          <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+            <SectionHeader title="Repayment Health" subtitle="Your debt reduction progress" />
+            <div className="space-y-3">
+              <Ring value={repaidPct} label="Principal Repaid" color="#10b981" sub={format(totalPaid)} />
+              <Ring value={outstandingPct} label="Still Outstanding" color="#f43f5e" sub={format(totalOutstanding)} />
+              <Ring value={closedPct} label="Loans Fully Closed" color="#3b82f6" sub={`${data.closed_loans} of ${data.total_loans} loans`} />
             </div>
           </div>
 
-          {/* Monthly Stats */}
-          <div className="card p-6 shadow-sm border border-[var(--color-border-light)]">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-[var(--color-text-primary)] mb-6">
-              6-Month Summary
-            </h2>
-            <div className="space-y-4 mb-6">
+          {/* 6-Month Payments Bar Chart */}
+          <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+            <SectionHeader
+              title="Payment History"
+              subtitle="Monthly EMI outflows"
+              action={
+                <span className="text-[11px] font-bold text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] px-2 py-1 rounded-md border border-[var(--color-border)]">
+                  Avg {format(avgMonthly)}/mo
+                </span>
+              }
+            />
+            <div className="flex items-end gap-2 h-36 mt-2">
+              {trend.slice(-6).map((p, i) => {
+                const h = Math.max(12, (p.total / maxTrend) * 100);
+                return (
+                  <div key={p.month} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group">
+                    <span className="text-[9px] font-black text-[var(--color-primary-light)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {format(p.total)}
+                    </span>
+                    <div
+                      className="w-full rounded-t-lg bg-[var(--color-primary)] group-hover:bg-[var(--color-primary-light)] transition-colors"
+                      style={{ height: `${h}%` }}
+                      title={`${p.month}: ${format(p.total)}`}
+                    />
+                    <span className="text-[10px] font-bold text-[var(--color-text-secondary)]">
+                      {p.month.slice(-2)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 pt-4 border-t border-[var(--color-border)] grid grid-cols-2 gap-3 text-center">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">6M Total</p>
+                <p className="text-base font-black text-[var(--color-text-primary)] mt-0.5">{format(monthlyTotal)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">Next EMI</p>
+                <p className="text-base font-black text-[var(--color-text-primary)] mt-0.5">
+                  {data.upcoming_emi_amount > 0 ? format(data.upcoming_emi_amount) : "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── INTEREST COST BREAKDOWN ──────────────────────── */}
+        <section>
+          <SectionHeader title="Interest Cost Analysis" subtitle="Where your money really goes every month" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)]">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-secondary)]">Monthly Interest Burn</p>
+              <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-2">{format(monthlyInterestBurn)}<span className="text-sm font-normal text-[var(--color-text-secondary)] ml-1">/mo</span></p>
+              <p className="text-xs font-medium text-[var(--color-text-secondary)] mt-2">This money goes to banks, not your principal</p>
+            </div>
+            <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)]">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-secondary)]">Total Interest Paid (Lifetime)</p>
+              <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{format(totalInterestPaid)}</p>
+              <p className="text-xs font-medium text-[var(--color-text-secondary)] mt-2">Cumulative cost of borrowing since start</p>
+            </div>
+            <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)]">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-secondary)]">Debt-Free Projection</p>
+              <p className="text-2xl font-black text-[var(--color-primary-light)] mt-2">
+                {data.simulations?.baseline?.months ? `${data.simulations.baseline.months} mo` : "—"}
+              </p>
+              <p className="text-xs font-medium text-[var(--color-text-secondary)] mt-2">
+                {data.simulations?.baseline?.debt_free_date
+                  ? `Est. clear by ${new Date(data.simulations.baseline.debt_free_date).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}`
+                  : "Keep up with EMIs"}
+              </p>
+            </div>
+          </div>
+
+          {/* Principal vs Interest Visual Split */}
+          <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-primary)]">Principal vs Interest — Your Repayment Breakdown</p>
+              <div className="flex items-center gap-4 text-[11px] font-bold text-[var(--color-text-secondary)]">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Principal</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> Interest</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[var(--color-surface-tertiary)] inline-block border border-[var(--color-border)]" /> Remaining</span>
+              </div>
+            </div>
+            {(() => {
+              const total = data.total_principal_all || 1;
+              const principalPct = (totalPaid / total) * 100;
+              const interestPct = (totalInterestPaid / total) * 100;
+              const remainingPct = Math.max(0, 100 - principalPct - interestPct);
+              return (
+                <div className="space-y-1.5">
+                  <div className="h-5 w-full rounded-full overflow-hidden flex bg-[var(--color-surface-tertiary)] border border-[var(--color-border)]">
+                    <div className="h-full bg-emerald-500 transition-all duration-700" style={{ width: `${principalPct}%` }} title={`Principal: ${format(totalPaid)}`} />
+                    <div className="h-full bg-amber-500 transition-all duration-700" style={{ width: `${interestPct}%` }} title={`Interest: ${format(totalInterestPaid)}`} />
+                    <div className="h-full bg-[var(--color-primary)]/30" style={{ width: `${remainingPct}%` }} title={`Outstanding: ${format(totalOutstanding)}`} />
+                  </div>
+                  <div className="flex justify-between text-[11px] font-bold text-[var(--color-text-secondary)]">
+                    <span>Principal cleared: {principalPct.toFixed(1)}% · {format(totalPaid)}</span>
+                    <span>Remaining: {format(totalOutstanding)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </section>
+
+        {/* ── PAYOFF STRATEGY COMPARISON ───────────────────── */}
+        {data.active_loans > 0 && data.simulations && (
+          <section>
+            <SectionHeader
+              title="Payoff Strategy Optimizer"
+              subtitle="Snowball vs Avalanche — See the better path to debt freedom"
+              action={
+                <button onClick={() => setShowRefinance(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--color-primary)] text-white text-xs font-bold shadow-sm hover:opacity-90 transition cursor-pointer">
+                  🔄 Refinance Calculator
+                </button>
+              }
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
-                { label: "Total Paid (6 mo)", value: format(monthlyTotal) },
-                { label: "Total Payments", value: monthlyCount.toString() },
-                { label: "Avg Monthly", value: format(avgMonthly) },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between pb-3 border-b border-[var(--color-border-light)] last:border-0 last:pb-0">
-                  <span className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</span>
-                  <span className="text-base font-bold text-[var(--color-text-primary)]">{value}</span>
+                {
+                  name: "❄️ Debt Snowball", tag: "Lowest balance first", color: "border-blue-500/40",
+                  items: [
+                    { key: "Debt-Free By", val: data.simulations.snowball.debt_free_date ? new Date(data.simulations.snowball.debt_free_date).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : "—" },
+                    { key: "Months Saved", val: `${data.simulations.snowball.months_saved} months` },
+                    { key: "Interest Saved", val: format(data.simulations.snowball.interest_saved) },
+                  ],
+                  accentClass: "text-blue-600 dark:text-blue-400",
+                },
+                {
+                  name: "🏔️ Debt Avalanche", tag: "Highest interest first — Most efficient", color: "border-emerald-500/50",
+                  badge: "Recommended",
+                  items: [
+                    { key: "Debt-Free By", val: data.simulations.avalanche.debt_free_date ? new Date(data.simulations.avalanche.debt_free_date).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : "—" },
+                    { key: "Months Saved", val: `${data.simulations.avalanche.months_saved} months` },
+                    { key: "Interest Saved", val: format(data.simulations.avalanche.interest_saved) },
+                  ],
+                  accentClass: "text-emerald-600 dark:text-emerald-400",
+                },
+              ].map(s => (
+                <div key={s.name} className={`card p-6 border-2 ${s.color} bg-[var(--color-surface)] relative`}>
+                  {s.badge && (
+                    <span className="absolute top-0 right-0 mt-0 mr-0 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl rounded-tr-xl uppercase tracking-wider">
+                      {s.badge}
+                    </span>
+                  )}
+                  <p className="text-sm font-black text-[var(--color-text-primary)]">{s.name}</p>
+                  <p className="text-[11px] font-medium text-[var(--color-text-secondary)] mt-0.5 mb-4">{s.tag}</p>
+                  <div className="space-y-2.5">
+                    {s.items.map(item => (
+                      <div key={item.key} className="flex justify-between items-center py-1.5 border-b border-[var(--color-border)] last:border-0">
+                        <span className="text-xs font-semibold text-[var(--color-text-secondary)]">{item.key}</span>
+                        <span className={`text-sm font-black ${s.accentClass}`}>{item.val}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
-            {data.upcoming_emi_date && (
-              <div className="pt-4 border-t-2 border-dashed border-[var(--color-border-light)] bg-[var(--color-warning)]/5 p-4 rounded-xl">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-wide mb-1">Next EMI Due</p>
-                    <p className="text-sm font-semibold text-[var(--color-text-secondary)]">{data.upcoming_emi_date}</p>
-                  </div>
-                  <p className="text-lg font-black text-[var(--color-warning)]">{format(data.upcoming_emi_amount)}</p>
-                </div>
-              </div>
-            )}
+            <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-3 px-1">
+              * Simulations assume an extra ₹5,000/month payment. Adjust in the Repayment Simulator.
+            </p>
+          </section>
+        )}
+
+        {/* ── INTERACTIVE MULTI-METRIC CHART STUDIO ────────── */}
+        <section>
+          <SectionHeader
+            title="Interactive Analytics Studio"
+            subtitle="Select any metric to chart — or overlay two datasets for comparative analysis"
+          />
+          <ModernMultiMetricChartStudio data={data} />
+        </section>
+
+        {/* ── TOOLS SECTION ────────────────────────────────── */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Tax Savings Calculator */}
+          <div>
+            <SectionHeader title="Tax Savings Calculator" subtitle="Section 80C / 24(b) deductions on loan interest" />
+            <TaxSavingsCalculator />
           </div>
-        </div>
 
-        {/* Comprehensive Multi-Dimension Financial Analytics Deck */}
-        <FullFinancialAnalyticsDeck
-          data={data}
-          onOpenRefinance={() => setShowRefinanceModal(true)}
-        />
-
-        {/* Modern Multi-Dataset Interactive Chart Studio */}
-        <ModernMultiMetricChartStudio data={data} />
-
-        {/* Income Tax Savings Calculator Widget */}
-        <TaxSavingsCalculator />
-
-        {/* Debt Battle Simulator */}
-        {data && <DebtBattleSimulator data={data} />}
-
-        {/* Blockchain Readiness Card */}
-        <div className="card p-8 border border-emerald-500/30 bg-[var(--color-surface-secondary)] relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-emerald-500 rounded-full mix-blend-multiply opacity-10 animate-pulse" />
-          <div className="flex items-start gap-5 relative z-10">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/30">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <path d="M9 12l2 2 4-4" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-black text-[var(--color-text-primary)] mb-2 tracking-wide flex items-center gap-3">
-                Monad Blockchain Integration Active
-              </h3>
-              <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed font-medium max-w-4xl">
-                Every payment receipt is SHA-256 hashed and anchored on the Monad Blockchain. 
-                This creates immutable, tamper-proof proof of repayment that anyone can verify 
-                publicly without compromising your privacy or relying on centralized servers.
-              </p>
-              <div className="mt-5 flex items-center gap-3 bg-[var(--color-surface-primary)] w-fit px-4 py-2 rounded-full border border-[var(--color-border-light)] shadow-sm">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
-                <span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold tracking-wide">Tamper-Proof Anchoring Live</span>
-              </div>
-            </div>
+          {/* Debt Battle Simulator */}
+          <div>
+            <SectionHeader title="Debt Battle Simulator" subtitle="Battle your loans to freedom — scenario planning tool" />
+            <DebtBattleSimulator data={data} />
           </div>
-        </div>
+        </section>
+
       </main>
 
-      {showRefinanceModal && (
+      {showRefinance && (
         <RefinancingCalculatorModal
           currentOutstanding={totalOutstanding}
-          onClose={() => setShowRefinanceModal(false)}
+          onClose={() => setShowRefinance(false)}
         />
       )}
     </>
