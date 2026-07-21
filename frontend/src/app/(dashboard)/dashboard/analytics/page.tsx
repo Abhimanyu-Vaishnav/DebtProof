@@ -12,6 +12,7 @@ import { formatCurrency } from "@/utils/formatters";
 import { LOAN_TYPE_LABELS } from "@/types";
 import type { DashboardData } from "@/types";
 import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculator";
+import { InteractiveChart } from "@/components/analytics/InteractiveChart";
 
 // ── Donut Chart (SVG) ─────────────────────────────────────────
 const DONUT_COLORS = [
