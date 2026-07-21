@@ -15,6 +15,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { loansService } from "@/services/loans.service";
+import { CibilParserModal } from "@/components/loans/CibilParserModal";
 import type { Loan } from "@/types";
 
 const STATUS_FILTERS = [
@@ -115,6 +116,8 @@ export default function LoansPage() {
     }
   };
 
+  const [showCibilModal, setShowCibilModal] = useState(false);
+
   return (
     <>
       <Topbar title="My Loans" subtitle={`${totalCount} total loan${totalCount !== 1 ? "s" : ""}`} />
@@ -135,6 +138,12 @@ export default function LoansPage() {
                   Clear Filters
                 </button>
               )}
+              <button
+                onClick={() => setShowCibilModal(true)}
+                className="btn btn-secondary btn-sm shrink-0 font-bold flex items-center gap-1 text-xs"
+              >
+                <span>📄</span> Import CIBIL Report
+              </button>
               <Link href="/dashboard/loans/new" className="btn btn-primary btn-sm shrink-0 font-bold shadow-sm shadow-[var(--color-primary)]/10 hover:shadow-md transition-all">
                 + New Loan
               </Link>
@@ -289,6 +298,13 @@ export default function LoansPage() {
           Loans with payments cannot be deleted.
         </p>
       </Modal>
+
+      {showCibilModal && (
+        <CibilParserModal
+          onClose={() => setShowCibilModal(false)}
+          onSuccess={fetchLoans}
+        />
+      )}
     </>
   );
 }

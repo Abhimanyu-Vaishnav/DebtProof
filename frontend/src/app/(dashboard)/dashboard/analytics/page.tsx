@@ -11,7 +11,7 @@ import { loansService } from "@/services/loans.service";
 import { formatCurrency } from "@/utils/formatters";
 import { LOAN_TYPE_LABELS } from "@/types";
 import type { DashboardData } from "@/types";
-import { InteractiveChart } from "@/components/analytics/InteractiveChart";
+import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculator";
 
 // ── Donut Chart (SVG) ─────────────────────────────────────────
 const DONUT_COLORS = [
@@ -260,6 +260,9 @@ export default function AnalyticsPage() {
 
         {/* Advanced Interactive Chart */}
         <InteractiveChart />
+
+        {/* Income Tax Savings Calculator Widget */}
+        <TaxSavingsCalculator />
 
         {/* Blockchain Readiness Card */}
         <div className="card p-8 border border-emerald-500/30 bg-[var(--color-surface-secondary)] relative overflow-hidden">
