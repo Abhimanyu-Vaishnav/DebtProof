@@ -8,14 +8,35 @@ import React from "react";
  * Default: Indian Rupee (for backward compat). 
  * Prefer useCurrency().format() in React components for global currency support.
  */
-export function formatCurrency(amount: number | string, currencyCode = "INR", locale = "en-IN"): string {
+export function formatCurrency(amount: number | string, currencyCode?: string, locale?: string): string {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  if (isNaN(num)) return "₹0";
+  if (isNaN(num)) return "0";
+
+  let code = currencyCode;
+  let loc = locale;
+
+  if (!code && typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("debtproof_settings");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.currencyCode) {
+          code = parsed.currencyCode;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  code = code || "INR";
+  loc = loc || (code === "INR" ? "en-IN" : code === "USD" ? "en-US" : "en-US");
+
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(loc, {
       style: "currency",
-      currency: currencyCode,
-      maximumFractionDigits: 0,
+      currency: code,
+      maximumFractionDigits: code === "JPY" || code === "KRW" ? 0 : 0,
     }).format(num);
   } catch {
     return `${num.toLocaleString()}`;

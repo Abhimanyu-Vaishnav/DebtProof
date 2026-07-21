@@ -14,6 +14,7 @@ import { OverviewCard } from "@/components/dashboard/OverviewCard";
 import { WalletCard } from "@/components/dashboard/WalletCard";
 import type { DashboardData, LOAN_TYPE_LABELS } from "@/types";
 import { LOAN_TYPE_LABELS as LABELS } from "@/types";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 import { PayoffMilestonesWidget } from "@/components/analytics/PayoffMilestonesWidget";
 import { AIDebtAdvisorWidget } from "@/components/dashboard/AIDebtAdvisorWidget";
@@ -81,6 +82,7 @@ const QUICK_ACTIONS = [
 ];
 
 export function DashboardClient() {
+  const { format } = useCurrency();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -136,8 +138,8 @@ export function DashboardClient() {
     {
       id: "outstanding",
       title: "Total Outstanding",
-      value: formatCurrency(data.total_outstanding),
-      subtitle: `${formatCurrency(data.total_paid_active)} principal · ${formatCurrency(data.total_interest_paid)} interest`,
+      value: format(data.total_outstanding),
+      subtitle: `${format(data.total_paid_active)} principal · ${format(data.total_interest_paid)} interest`,
       bg: "bg-[var(--color-error)]",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -148,7 +150,7 @@ export function DashboardClient() {
     {
       id: "upcoming-emi",
       title: data.overdue_count > 0 ? "Overdue EMI" : "Upcoming EMI",
-      value: data.upcoming_emi_amount > 0 ? formatCurrency(data.upcoming_emi_amount) : "—",
+      value: data.upcoming_emi_amount > 0 ? format(data.upcoming_emi_amount) : "—",
       subtitle: data.upcoming_emi_date 
         ? `${data.overdue_count > 0 ? "Overdue since" : "Due"} ${formatDate(data.upcoming_emi_date)}` 
         : "No upcoming EMI",
