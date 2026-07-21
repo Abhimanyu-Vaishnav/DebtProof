@@ -127,6 +127,7 @@ function ProgressRing({ value, label, color = "#10b981" }: { value: number; labe
 export default function AnalyticsPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showRefinanceModal, setShowRefinanceModal] = useState(false);
 
   useEffect(() => {
     loansService.getDashboard()
@@ -165,8 +166,6 @@ export default function AnalyticsPage() {
   const monthlyTotal = data.monthly_trend.reduce((sum, m) => sum + m.total, 0);
   const monthlyCount = data.monthly_trend.reduce((sum, m) => sum + m.count, 0);
   const avgMonthly = data.monthly_trend.length > 0 ? monthlyTotal / data.monthly_trend.length : 0;
-
-  const [showRefinanceModal, setShowRefinanceModal] = useState(false);
 
   return (
     <>
