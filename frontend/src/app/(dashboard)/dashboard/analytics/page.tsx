@@ -14,6 +14,7 @@ import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculato
 import { InteractiveChart } from "@/components/analytics/InteractiveChart";
 import { RefinancingCalculatorModal } from "@/components/analytics/RefinancingCalculatorModal";
 import { DebtBattleSimulator } from "@/components/analytics/DebtBattleSimulator";
+import { FullFinancialAnalyticsDeck } from "@/components/analytics/FullFinancialAnalyticsDeck";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 // ── Donut Chart (SVG) ─────────────────────────────────────────
@@ -277,6 +278,12 @@ export default function AnalyticsPage() {
             )}
           </div>
         </div>
+
+        {/* Comprehensive Multi-Dimension Financial Analytics Deck */}
+        <FullFinancialAnalyticsDeck
+          data={data}
+          onOpenRefinance={() => setShowRefinanceModal(true)}
+        />
 
         {/* Advanced Interactive Chart */}
         <InteractiveChart />
