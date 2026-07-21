@@ -96,8 +96,8 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-light)]">
-        <div className="text-xs text-[var(--color-text-tertiary)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--color-border-light)]">
+        <div className="text-[11px] sm:text-xs text-[var(--color-text-tertiary)]">
           {loan.next_emi_date ? (
             <>
               Next EMI:{" "}
@@ -109,23 +109,23 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
             <span>No upcoming EMI</span>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <Link
             href={`/dashboard/loans/${loan.id}`}
-            className="btn btn-ghost btn-sm py-1 px-2 text-xs"
+            className="btn btn-ghost btn-sm py-1 px-2 text-xs font-semibold"
           >
             View
           </Link>
           <Link
             href={`/dashboard/loans/${loan.id}/edit`}
-            className="btn btn-ghost btn-sm py-1 px-2 text-xs"
+            className="btn btn-ghost btn-sm py-1 px-2 text-xs font-semibold"
           >
             Edit
           </Link>
           {onDelete && (
             <button
               onClick={() => onDelete(loan.id)}
-              className="btn btn-ghost btn-sm py-1 px-2 text-xs text-[var(--color-error)] hover:bg-red-50"
+              className="btn btn-ghost btn-sm py-1 px-2 text-xs font-semibold text-[var(--color-error)] hover:bg-red-50"
             >
               Delete
             </button>

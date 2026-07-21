@@ -70,14 +70,14 @@ function ItemRow({ name, sublabel, badge, badgeColor, value, onEdit, onDelete, i
       </span>
       <p className="text-sm font-bold text-[var(--color-text-primary)] ml-2">{formatCurrency(value)}</p>
       {(onEdit || onDelete) && (
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
           {onEdit && (
-            <button onClick={onEdit} className="text-[10px] text-[var(--color-primary-light)] hover:underline px-1">
+            <button onClick={onEdit} className="text-[10px] font-bold text-[var(--color-primary-light)] hover:underline px-1">
               Edit
             </button>
           )}
           {onDelete && (
-            <button onClick={onDelete} className="text-[10px] text-[var(--color-error)] hover:underline px-1">
+            <button onClick={onDelete} className="text-[10px] font-bold text-[var(--color-error)] hover:underline px-1">
               Del
             </button>
           )}

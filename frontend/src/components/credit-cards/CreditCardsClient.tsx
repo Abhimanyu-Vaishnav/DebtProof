@@ -241,68 +241,68 @@ export function CreditCardsClient() {
   return (
     <div className="space-y-6">
       {/* Metrics Row */}
-      <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card p-5 border-l-4 border-rose-500">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4 sm:p-5 border-l-4 border-rose-500">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Total CC Debt</p>
-          <h2 className="text-3xl font-extrabold text-rose-500 mt-2">{formatCurrency(s.total_outstanding)}</h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-rose-500 mt-2">{formatCurrency(s.total_outstanding)}</h2>
         </div>
-        <div className="card p-5 border-l-4 border-slate-500">
+        <div className="card p-4 sm:p-5 border-l-4 border-slate-500">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Total Credit Limit</p>
-          <h3 className="text-2xl font-bold text-[var(--color-text-primary)] mt-2">{formatCurrency(s.total_limit)}</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] mt-2">{formatCurrency(s.total_limit)}</h3>
         </div>
-        <div className="card p-5 border-l-4 border-emerald-500">
+        <div className="card p-4 sm:p-5 border-l-4 border-emerald-500">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Available Credit</p>
-          <h3 className="text-2xl font-bold text-emerald-500 mt-2">{formatCurrency(s.available_limit)}</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-emerald-500 mt-2">{formatCurrency(s.available_limit)}</h3>
         </div>
-        <div className="card p-5 border-l-4 border-amber-500">
+        <div className="card p-4 sm:p-5 border-l-4 border-amber-500">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Overall Utilization</p>
-          <h3 className="text-2xl font-bold text-amber-500 mt-2">{s.overall_utilization.toFixed(1)}%</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-amber-500 mt-2">{s.overall_utilization.toFixed(1)}%</h3>
         </div>
       </section>
 
       {/* Title & Add card trigger */}
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--color-text-secondary)]">My Credit Cards ({cards.length})</h3>
-        <button onClick={openAddModal} className="btn btn-primary btn-sm flex items-center gap-1.5">
+        <button onClick={openAddModal} className="btn btn-primary btn-sm flex items-center gap-1.5 font-bold">
           <span>+ Add Card</span>
         </button>
       </div>
 
       {/* Cards List Grid */}
       {cards.length === 0 ? (
-        <div className="card p-12 text-center max-w-xl mx-auto space-y-3">
+        <div className="card p-8 sm:p-12 text-center max-w-xl mx-auto space-y-3">
           <span className="text-4xl">💳</span>
           <h4 className="text-base font-bold">No Credit Cards Tracked</h4>
           <p className="text-xs text-[var(--color-text-secondary)]">Add your credit cards to monitor limits, monthly statement dues, interest rates and utilization rates dynamically.</p>
-          <button onClick={openAddModal} className="btn btn-primary btn-sm">Add First Card</button>
+          <button onClick={openAddModal} className="btn btn-primary btn-sm font-bold">Add First Card</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {cards.map((card, idx) => (
             <div
               key={card.id}
-              className={`rounded-2xl border p-6 bg-gradient-to-br text-white shadow-xl relative overflow-hidden flex flex-col justify-between h-56 transition-transform hover:-translate-y-1 ${getCardGradient(idx)}`}
+              className={`rounded-2xl border p-5 sm:p-6 bg-gradient-to-br text-white shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[230px] transition-transform hover:-translate-y-1 ${getCardGradient(idx)}`}
             >
               {/* Card Header */}
               <div>
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-2">
                   <div>
                     <h4 className="font-extrabold text-base tracking-wide leading-tight">{card.card_name}</h4>
                     <p className="text-[10px] text-slate-300 font-semibold">{card.bank_name}</p>
                   </div>
-                  <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${getUtilizationColor(card.utilization_rate)}`}>
+                  <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border shrink-0 ${getUtilizationColor(card.utilization_rate)}`}>
                     {card.utilization_rate.toFixed(0)}% Util
                   </span>
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   <p className="text-[9px] uppercase tracking-wider text-slate-300 font-semibold">Outstanding Balance</p>
-                  <p className="text-2xl font-black tracking-tight text-white">{formatCurrency(card.current_outstanding)}</p>
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">{formatCurrency(card.current_outstanding)}</p>
                 </div>
               </div>
 
               {/* Limit progress */}
-              <div>
+              <div className="mt-3">
                 <div className="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden mb-1.5">
                   <div
                     className={`h-full ${getUtilizationBarColor(card.utilization_rate)}`}
@@ -316,18 +316,18 @@ export function CreditCardsClient() {
               </div>
 
               {/* Action and cycle days footer */}
-              <div className="flex items-center justify-between border-t border-slate-700/50 pt-2 text-[10px]">
-                <div className="flex gap-2.5">
+              <div className="flex flex-wrap items-center justify-between border-t border-slate-700/50 pt-2 text-[10px] gap-2 mt-3">
+                <div className="flex gap-2 text-slate-300">
                   <span>Stmt: <b>{card.statement_date}</b></span>
                   <span>Due: <b>{card.due_date}</b></span>
                 </div>
-                <div className="flex gap-2.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <button onClick={() => handlePayOpen(card)} className="text-emerald-400 hover:text-emerald-300 font-bold bg-slate-800/60 px-2 py-0.5 rounded">Pay</button>
                   <button onClick={() => selectCardForHistory(card.id)} className="text-blue-300 hover:text-blue-200 font-bold bg-slate-800/60 px-2 py-0.5 rounded">
                     {selectedCardId === card.id ? "Hide Tx" : "Tx History"}
                   </button>
-                  <button onClick={() => openEditModal(card)} className="text-slate-300 hover:text-white font-bold">Edit</button>
-                  <button onClick={() => handleDelete(card.id)} className="text-rose-400 hover:text-rose-300 font-bold">Delete</button>
+                  <button onClick={() => openEditModal(card)} className="text-slate-300 hover:text-white font-bold px-1">Edit</button>
+                  <button onClick={() => handleDelete(card.id)} className="text-rose-400 hover:text-rose-300 font-bold px-1">Delete</button>
                 </div>
               </div>
             </div>
@@ -337,12 +337,12 @@ export function CreditCardsClient() {
 
       {/* Payment History Log */}
       {selectedCardId && (
-        <div className="card p-6 shadow-sm border border-[var(--color-border-light)] space-y-4">
+        <div className="card p-4 sm:p-6 shadow-sm border border-[var(--color-border-light)] space-y-4">
           <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-3">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-primary)]">
+            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--color-text-primary)]">
               Payment History for Selected Card
             </h4>
-            <button onClick={() => setSelectedCardId(null)} className="text-xs text-[var(--color-text-tertiary)] hover:underline">
+            <button onClick={() => setSelectedCardId(null)} className="text-xs text-[var(--color-text-tertiary)] hover:underline font-semibold">
               Close
             </button>
           </div>
@@ -355,9 +355,9 @@ export function CreditCardsClient() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-[var(--color-border-light)] text-[var(--color-text-tertiary)]">
-                    <th className="py-2 font-bold uppercase">Date</th>
-                    <th className="py-2 font-bold uppercase">Amount</th>
+                  <tr className="border-b border-[var(--color-border-light)] text-[var(--color-text-tertiary)] whitespace-nowrap">
+                    <th className="py-2 px-3 font-bold uppercase whitespace-nowrap">Date</th>
+                    <th className="py-2 px-3 font-bold uppercase whitespace-nowrap">Amount</th>
                     <th className="py-2 font-bold uppercase">Method</th>
                     <th className="py-2 font-bold uppercase">Ref No.</th>
                     <th className="py-2 font-bold uppercase">Notes</th>

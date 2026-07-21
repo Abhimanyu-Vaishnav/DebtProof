@@ -169,19 +169,19 @@ export default function AnalyticsPage() {
       <Topbar title="Analytics" subtitle="Financial insights and trends" />
       <main className="page-content space-y-5">
         {/* Summary KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: "Total Loans", value: data.total_loans.toString(), sub: `${data.active_loans} active`, color: "text-[var(--color-primary)]", bg: "bg-blue-50 dark:bg-blue-900/10" },
             { label: "Total Borrowing", value: formatCurrency(data.total_principal_all), sub: "All time", color: "text-[var(--color-text-primary)]", bg: "bg-gray-50 dark:bg-gray-800/30" },
             { label: "Total Repaid", value: formatCurrency(totalPaid), sub: "Active loans", color: "text-[var(--color-accent)]", bg: "bg-emerald-50 dark:bg-emerald-900/10" },
             { label: "Total Outstanding", value: formatCurrency(totalOutstanding), sub: data.overdue_count > 0 ? `${data.overdue_count} overdue` : "On track", color: data.overdue_count > 0 ? "text-[var(--color-error)]" : "text-[var(--color-primary-dark)]", bg: data.overdue_count > 0 ? "bg-red-50 dark:bg-red-900/10" : "bg-indigo-50 dark:bg-indigo-900/10" },
           ].map((kpi) => (
-            <div key={kpi.label} className={`card p-5 border border-[var(--color-border-light)] ${kpi.bg} shadow-sm hover:shadow-md transition-shadow`}>
-              <p className="text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1.5">{kpi.label}</p>
-              <p className={`text-2xl font-black ${kpi.color} leading-tight`}>{kpi.value}</p>
+            <div key={kpi.label} className={`card p-4 sm:p-5 border border-[var(--color-border-light)] ${kpi.bg} shadow-sm hover:shadow-md transition-shadow`}>
+              <p className="text-[10px] sm:text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1.5">{kpi.label}</p>
+              <p className={`text-xl sm:text-2xl font-black ${kpi.color} leading-tight`}>{kpi.value}</p>
               <div className="flex items-center gap-1.5 mt-2">
                 <div className={`w-1.5 h-1.5 rounded-full ${kpi.color.replace('text-', 'bg-')}`} />
-                <p className="text-xs font-medium text-[var(--color-text-secondary)]">{kpi.sub}</p>
+                <p className="text-[11px] sm:text-xs font-medium text-[var(--color-text-secondary)]">{kpi.sub}</p>
               </div>
             </div>
           ))}

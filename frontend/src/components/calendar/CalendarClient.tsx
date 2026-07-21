@@ -139,7 +139,7 @@ function CalendarGrid({
       {/* Day cells */}
       <div className="grid grid-cols-7 gap-1">
         {cells.map((day, idx) => {
-          if (!day) return <div key={`blank-${idx}`} className="h-16 rounded-lg" />;
+          if (!day) return <div key={`blank-${idx}`} className="min-h-[46px] sm:min-h-[64px] rounded-lg" />;
           const dayEvents = eventsByDay[day] || [];
           const hasOverdue = dayEvents.some(e => e.status === "overdue");
           const hasPaid = dayEvents.some(e => e.status === "paid");
@@ -150,7 +150,7 @@ function CalendarGrid({
             <button
               key={day}
               onClick={() => onSelectDay(day)}
-              className={`h-16 rounded-xl flex flex-col items-center pt-1.5 gap-1 transition-all border text-left px-1
+              className={`min-h-[46px] sm:min-h-[64px] rounded-xl flex flex-col items-center justify-start pt-1 sm:pt-1.5 gap-0.5 sm:gap-1 transition-all border text-left p-0.5 sm:px-1 cursor-pointer
                 ${isSelected
                   ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10"
                   : isToday(day)
@@ -158,7 +158,7 @@ function CalendarGrid({
                     : "border-transparent hover:border-[var(--color-border-light)] hover:bg-[var(--color-surface-secondary)]"
                 }`}
             >
-              <span className={`text-xs font-bold leading-none
+              <span className={`text-[10px] sm:text-xs font-bold leading-none
                 ${isToday(day) ? "text-[var(--color-primary-light)]" : "text-[var(--color-text-secondary)]"}`}>
                 {day}
               </span>
@@ -172,7 +172,7 @@ function CalendarGrid({
               )}
               {/* EMI count badge */}
               {dayEvents.length > 0 && (
-                <span className={`text-[8px] font-bold px-1 rounded-full leading-tight ${
+                <span className={`text-[7px] sm:text-[8px] font-bold px-1 rounded-full leading-tight hidden xs:inline-block ${
                   hasOverdue ? "bg-rose-500/20 text-rose-500" :
                   hasPaid ? "bg-emerald-500/20 text-emerald-500" :
                   "bg-blue-500/20 text-blue-500"

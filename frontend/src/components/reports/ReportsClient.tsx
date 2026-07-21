@@ -84,19 +84,19 @@ export function ReportsClient() {
   return (
     <div className="space-y-6">
       {/* Visual Report Cards Summary */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card p-5 bg-gradient-to-br from-indigo-950/20 to-slate-900 border border-[var(--color-border-light)] relative overflow-hidden">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="card p-4 sm:p-5 bg-gradient-to-br from-indigo-950/20 to-slate-900 border border-[var(--color-border-light)] relative overflow-hidden">
           <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)] tracking-wider">Asset Equity Coverage</p>
-          <p className="text-2xl font-extrabold text-blue-400 mt-2">{formatCurrency(totalAssetsVal)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-blue-400 mt-2">{formatCurrency(totalAssetsVal)}</p>
           <div className="mt-3 w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
             <div className="bg-blue-400 h-full" style={{ width: totalAssetsVal > 0 ? "100%" : "0%" }} />
           </div>
           <span className="text-[9px] text-[var(--color-text-tertiary)] mt-2 block">Total capital resources tracked.</span>
         </div>
 
-        <div className="card p-5 bg-gradient-to-br from-rose-950/20 to-slate-900 border border-[var(--color-border-light)] relative overflow-hidden">
+        <div className="card p-4 sm:p-5 bg-gradient-to-br from-rose-950/20 to-slate-900 border border-[var(--color-border-light)] relative overflow-hidden">
           <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)] tracking-wider">Active Liabilities Load</p>
-          <p className="text-2xl font-extrabold text-rose-400 mt-2">{formatCurrency(totalOutstandingLiabs)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-rose-400 mt-2">{formatCurrency(totalOutstandingLiabs)}</p>
           <div className="mt-3 w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
             <div
               className="bg-rose-400 h-full"
@@ -110,9 +110,9 @@ export function ReportsClient() {
           </span>
         </div>
 
-        <div className="card p-5 bg-gradient-to-br from-emerald-950/20 to-slate-900 border border-[var(--color-border-light)] relative overflow-hidden">
+        <div className="card p-4 sm:p-5 bg-gradient-to-br from-emerald-950/20 to-slate-900 border border-[var(--color-border-light)] relative overflow-hidden">
           <p className="text-[10px] uppercase font-bold text-[var(--color-text-tertiary)] tracking-wider">Actual Asset Cover</p>
-          <p className={`text-2xl font-extrabold mt-2 ${netWorthVal >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+          <p className={`text-xl sm:text-2xl font-extrabold mt-2 ${netWorthVal >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
             {formatCurrency(netWorthVal)}
           </p>
           <div className="mt-3 w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -129,7 +129,7 @@ export function ReportsClient() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left Side: Advance Parameters Filter Panel */}
-        <div className="card p-6 space-y-4 border border-[var(--color-border-light)] lg:col-span-1">
+        <div className="card p-4 sm:p-6 space-y-4 border border-[var(--color-border-light)] lg:col-span-1">
           <div className="border-b border-[var(--color-border-light)] pb-2.5">
             <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Payments Custom Filter</h4>
             <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">Applies exclusively to payments history exports below</p>
@@ -152,7 +152,7 @@ export function ReportsClient() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-1">Start Date</label>
                 <input
@@ -209,7 +209,7 @@ export function ReportsClient() {
           
           <div className="space-y-4">
             {modules.map((mod) => (
-              <div key={mod.type} className="card p-5 border border-[var(--color-border-light)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--color-surface-secondary)]">
+              <div key={mod.type} className="card p-4 sm:p-5 border border-[var(--color-border-light)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--color-surface-secondary)]">
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{mod.icon}</span>
@@ -219,27 +219,27 @@ export function ReportsClient() {
                     {mod.desc}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2 shrink-0">
+                <div className="flex items-center gap-2 flex-wrap shrink-0">
                   <button
                     onClick={() => triggerUnifiedExport(mod.type, "csv")}
                     disabled={downloading !== null}
-                    className="btn btn-secondary btn-sm px-3 text-[11px]"
+                    className="btn btn-secondary btn-sm px-3 text-[11px] font-semibold flex-1 sm:flex-none text-center"
                   >
                     {downloading === `${mod.type}-csv` ? "..." : "CSV"}
                   </button>
                   <button
                     onClick={() => triggerUnifiedExport(mod.type, "xls")}
                     disabled={downloading !== null}
-                    className="btn btn-secondary btn-sm px-3 text-[11px]"
+                    className="btn btn-secondary btn-sm px-3 text-[11px] font-semibold flex-1 sm:flex-none text-center"
                   >
-                    {downloading === `${mod.type}-xls` ? "..." : "XLS / Excel"}
+                    {downloading === `${mod.type}-xls` ? "..." : "XLS"}
                   </button>
                   <button
                     onClick={() => triggerUnifiedExport(mod.type, "pdf")}
                     disabled={downloading !== null}
-                    className="btn btn-primary btn-sm px-3 text-[11px]"
+                    className="btn btn-primary btn-sm px-3 text-[11px] font-bold flex-1 sm:flex-none text-center"
                   >
-                    {downloading === `${mod.type}-pdf` ? "..." : "PDF / Print"}
+                    {downloading === `${mod.type}-pdf` ? "..." : "PDF"}
                   </button>
                 </div>
               </div>

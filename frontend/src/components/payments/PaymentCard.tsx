@@ -172,60 +172,60 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
           </p>
         </div>
       )}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
         {/* Left Side: Icon + Details */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
             </svg>
           </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-[var(--color-text-primary)] truncate">
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] sm:text-sm font-semibold text-[var(--color-text-primary)] truncate">
               {showLoan ? localPayment.loan_name : "Repayment"}
             </p>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+            <p className="text-[11px] sm:text-xs text-[var(--color-text-secondary)] mt-0.5">
               {formatDate(localPayment.payment_date)} · {PAYMENT_METHOD_LABELS[localPayment.payment_method]}
             </p>
           </div>
         </div>
 
         {/* Right Side: Amount + Status Badge */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="text-right">
-            <p className="text-[15px] font-bold text-[var(--color-text-primary)]">
+        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--color-border-light)]">
+          <div className="text-left sm:text-right">
+            <p className="text-sm sm:text-[15px] font-bold text-[var(--color-text-primary)]">
               {formatCurrency(parseFloat(localPayment.amount))}
             </p>
-            <div className="flex items-center gap-1.5 justify-end mt-1">
-              <span className={`${className} text-[9px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-md`}>
-                {label}
-              </span>
-              {receipt && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className={`p-1 rounded-md transition-all ${isVerifiedOnchain ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 border border-[var(--color-border-light)]'} cursor-pointer`}
-                  title={isVerifiedOnchain ? "Verified On-chain" : "Has Receipt"}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    {isVerifiedOnchain && <path d="m9 15 2 2 4-4" stroke="currentColor" strokeWidth="2.5" />}
-                  </svg>
-                </button>
-              )}
-            </div>
           </div>
-          {onDelete && (
-            <button
-              onClick={() => onDelete(localPayment.id)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-red-50/50 border border-transparent hover:border-[var(--color-border-light)] transition-all cursor-pointer shrink-0"
-              aria-label="Delete payment"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-              </svg>
-            </button>
-          )}
+          <div className="flex items-center gap-1.5 justify-end">
+            <span className={`${className} text-[9px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-md`}>
+              {label}
+            </span>
+            {receipt && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className={`p-1 rounded-md transition-all ${isVerifiedOnchain ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-400 border border-[var(--color-border-light)]'} cursor-pointer`}
+                title={isVerifiedOnchain ? "Verified On-chain" : "Has Receipt"}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  {isVerifiedOnchain && <path d="m9 15 2 2 4-4" stroke="currentColor" strokeWidth="2.5" />}
+                </svg>
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(localPayment.id)}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-red-50/50 border border-transparent hover:border-[var(--color-border-light)] transition-all cursor-pointer shrink-0"
+                aria-label="Delete payment"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

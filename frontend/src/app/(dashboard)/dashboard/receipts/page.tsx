@@ -66,20 +66,20 @@ export default function ReceiptsPage() {
               
               return (
                 <div key={p.id} className="card p-5 space-y-4 hover:border-[var(--color-accent)] transition-all">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-[var(--color-primary)] truncate">
                         {p.loan_name}
                       </p>
-                      <h3 className="text-sm font-bold text-[var(--color-text-primary)] mt-0.5">
+                      <h3 className="text-sm sm:text-base font-bold text-[var(--color-text-primary)] mt-0.5">
                         {formatCurrency(parseFloat(p.amount))}
                       </h3>
-                      <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+                      <p className="text-[11px] sm:text-xs text-[var(--color-text-tertiary)] mt-0.5">
                         Paid on {formatDate(p.payment_date)}
                       </p>
                     </div>
 
-                    <span className={`badge text-xs px-2.5 py-1 rounded-full font-semibold ${
+                    <span className={`badge text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-semibold self-start shrink-0 ${
                       isVerified 
                         ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
                         : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
