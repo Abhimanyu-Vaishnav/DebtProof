@@ -168,7 +168,21 @@ export function formatAmountWithCurrency(
 
 // ── Context ──────────────────────────────────────────────────────────────────
 
-interface AppSettings {
+export interface DashboardWidgetSettings {
+  showOverviewCards: boolean;
+  showIncomeTracker: boolean;
+  showPayoffMilestones: boolean;
+  showLoanPortfolio: boolean;
+  showAiAdvisor: boolean;
+  showCreditUtilization: boolean;
+  showEmergencyBuffer: boolean;
+  showEmiBounceProtection: boolean;
+  showMultiCurrency: boolean;
+  showQuickActions: boolean;
+  showProjections: boolean;
+}
+
+export interface AppSettings {
   currencyCode: string;
   compactNumbers: boolean;
   dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
@@ -176,6 +190,7 @@ interface AppSettings {
   emiReminderDays: number;
   overdueAlerts: boolean;
   paymentConfirmation: boolean;
+  dashboardWidgets: DashboardWidgetSettings;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -186,6 +201,19 @@ const DEFAULT_SETTINGS: AppSettings = {
   emiReminderDays: 3,
   overdueAlerts: true,
   paymentConfirmation: true,
+  dashboardWidgets: {
+    showOverviewCards: true,
+    showIncomeTracker: true,
+    showPayoffMilestones: true,
+    showLoanPortfolio: true,
+    showAiAdvisor: true,
+    showCreditUtilization: true,
+    showEmergencyBuffer: true,
+    showEmiBounceProtection: true,
+    showMultiCurrency: true,
+    showQuickActions: true,
+    showProjections: true,
+  },
 };
 
 const STORAGE_KEY = "debtproof_settings";

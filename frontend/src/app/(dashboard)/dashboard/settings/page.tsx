@@ -9,11 +9,12 @@ import { Topbar } from "@/components/layout/Topbar";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { useToast } from "@/components/ui/Toast";
 
-type SettingsTab = "currency" | "appearance" | "notifications" | "privacy" | "about";
+type SettingsTab = "currency" | "appearance" | "dashboard" | "notifications" | "privacy" | "about";
 
 const TABS: { id: SettingsTab; label: string; icon: string }[] = [
   { id: "currency",      label: "Currency & Region",  icon: "💰" },
-  { id: "appearance",    label: "Appearance",          icon: "🎨" },
+  { id: "appearance",    label: "Appearance & Theme",  icon: "🎨" },
+  { id: "dashboard",     label: "Dashboard Widgets",   icon: "🎛️" },
   { id: "notifications", label: "Notifications",       icon: "🔔" },
   { id: "privacy",       label: "Privacy & Security",  icon: "🔒" },
   { id: "about",         label: "About",               icon: "ℹ️" },
@@ -370,6 +371,167 @@ export default function SettingsPage() {
                       id="compact-numbers-display"
                       checked={settings.compactNumbers}
                       onChange={(v) => updateSettings({ compactNumbers: v })}
+                    />
+                  </SettingRow>
+                </SectionCard>
+              </>
+            )}
+
+            {/* ── Dashboard Customization ─────────────────────────────────── */}
+            {activeTab === "dashboard" && (
+              <>
+                <SectionCard title="Dashboard Widgets Customization" icon="🎛️">
+                  <p className="text-xs text-[var(--color-text-secondary)] font-medium pt-3 pb-2 border-b border-[var(--color-border-light)]">
+                    Control which cards, meters, and tools appear on your main Dashboard (`/dashboard`). Turn off any section you don&apos;t need for a cleaner workspace.
+                  </p>
+
+                  <SettingRow
+                    label="Financial Overview Metric Cards"
+                    desc="Show Total Loans, Total Outstanding, Upcoming EMI, and Status cards"
+                  >
+                    <ToggleSwitch
+                      id="widget-overview-cards"
+                      checked={settings.dashboardWidgets?.showOverviewCards ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showOverviewCards: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Monthly Income & Outflow Safety Meter"
+                    desc="Show Income tracking, monthly commitments, and DTI ratio safety gauge"
+                  >
+                    <ToggleSwitch
+                      id="widget-income-tracker"
+                      checked={settings.dashboardWidgets?.showIncomeTracker ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showIncomeTracker: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Individual Loan Repayment Progress"
+                    desc="Show progress bars for each active loan with green paid / red remaining breakdown"
+                  >
+                    <ToggleSwitch
+                      id="widget-loan-portfolio"
+                      checked={settings.dashboardWidgets?.showLoanPortfolio ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showLoanPortfolio: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Debt Reduction Velocity & Milestones"
+                    desc="Show 25%, 50%, 75%, 100% payoff milestone badges"
+                  >
+                    <ToggleSwitch
+                      id="widget-payoff-milestones"
+                      checked={settings.dashboardWidgets?.showPayoffMilestones ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showPayoffMilestones: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="AI Financial Payoff Assistant"
+                    desc="Show AI advisor widget with automated payoff tips"
+                  >
+                    <ToggleSwitch
+                      id="widget-ai-advisor"
+                      checked={settings.dashboardWidgets?.showAiAdvisor ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showAiAdvisor: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Credit Card Utilization Meter"
+                    desc="Show 30% recommended credit card limit utilization gauge"
+                  >
+                    <ToggleSwitch
+                      id="widget-credit-utilization"
+                      checked={settings.dashboardWidgets?.showCreditUtilization ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showCreditUtilization: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Emergency EMI Buffer Reserve Tracker"
+                    desc="Show emergency cushion runway tracker"
+                  >
+                    <ToggleSwitch
+                      id="widget-emergency-buffer"
+                      checked={settings.dashboardWidgets?.showEmergencyBuffer ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showEmergencyBuffer: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="EMI Auto-Debits Bank Balance Health"
+                    desc="Show 7-day upcoming debit bounce risk checker"
+                  >
+                    <ToggleSwitch
+                      id="widget-bounce-protection"
+                      checked={settings.dashboardWidgets?.showEmiBounceProtection ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showEmiBounceProtection: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Multi-Currency Tracker"
+                    desc="Show live exchange rates and currency converter widget"
+                  >
+                    <ToggleSwitch
+                      id="widget-multi-currency"
+                      checked={settings.dashboardWidgets?.showMultiCurrency ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showMultiCurrency: val },
+                        })
+                      }
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Payoff Accelerator Simulator & Projections"
+                    desc="Show Snowball vs Avalanche payoff simulations"
+                  >
+                    <ToggleSwitch
+                      id="widget-projections"
+                      checked={settings.dashboardWidgets?.showProjections ?? true}
+                      onChange={(val) =>
+                        updateSettings({
+                          dashboardWidgets: { ...(settings.dashboardWidgets || {}), showProjections: val },
+                        })
+                      }
                     />
                   </SettingRow>
                 </SectionCard>

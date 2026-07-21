@@ -83,11 +83,27 @@ const QUICK_ACTIONS = [
 ];
 
 export function DashboardClient() {
-  const { format } = useCurrency();
+  const { format, settings } = useCurrency();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loansList, setLoansList] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chartType, setChartType] = useState<"bar" | "line">("bar");
+  const [selectedLoanForModal, setSelectedLoanForModal] = useState<Loan | null>(null);
+
+  const widgets = settings.dashboardWidgets || {
+    showOverviewCards: true,
+    showIncomeTracker: true,
+    showPayoffMilestones: true,
+    showLoanPortfolio: true,
+    showAiAdvisor: true,
+    showCreditUtilization: true,
+    showEmergencyBuffer: true,
+    showEmiBounceProtection: true,
+    showMultiCurrency: true,
+    showQuickActions: true,
+    showProjections: true,
+  };
 
   useEffect(() => {
     Promise.all([
@@ -194,21 +210,23 @@ export function DashboardClient() {
   return (
     <div className="space-y-7">
       {/* Overview Cards */}
-      <section aria-labelledby="overview-heading">
-        <h2 id="overview-heading" className="sr-only">Financial Overview</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {overviewCards.map((card) => (
-            <OverviewCard
-              key={card.id}
-              title={card.title}
-              value={card.value}
-              subtitle={card.subtitle}
-              icon={card.icon}
-              iconBg={card.bg}
-            />
-          ))}
-        </div>
-      </section>
+      {widgets.showOverviewCards && (
+        <section aria-labelledby="overview-heading">
+          <h2 id="overview-heading" className="sr-only">Financial Overview</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {overviewCards.map((card) => (
+              <OverviewCard
+                key={card.id}
+                title={card.title}
+                value={card.value}
+                subtitle={card.subtitle}
+                icon={card.icon}
+                iconBg={card.bg}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Overdue Banner */}
       {data.overdue_count > 0 && (
@@ -231,62 +249,74 @@ export function DashboardClient() {
       )}
 
       {/* Monthly Income & Outflow Safety Meter */}
-      <section aria-labelledby="income-tracker-heading">
-        <h2 id="income-tracker-heading" className="sr-only">Monthly Income & Outflows Tracker</h2>
-        <IncomeTrackerWidget monthlyEmiTotal={data.upcoming_emi_amount || 68800} />
-      </section>
+      {widgets.showIncomeTracker && (
+        <section aria-labelledby="income-tracker-heading">
+          <h2 id="income-tracker-heading" className="sr-only">Monthly Income & Outflows Tracker</h2>
+          <IncomeTrackerWidget monthlyEmiTotal={data.upcoming_emi_amount || 68800} />
+        </section>
+      )}
 
       {/* Debt Reduction Velocity & Milestones Widget */}
-      <section aria-labelledby="milestones-heading">
-        <h2 id="milestones-heading" className="sr-only">Payoff Milestones</h2>
-        <PayoffMilestonesWidget data={data} />
-      </section>
+      {widgets.showPayoffMilestones && (
+        <section aria-labelledby="milestones-heading">
+          <h2 id="milestones-heading" className="sr-only">Payoff Milestones</h2>
+          <PayoffMilestonesWidget data={data} />
+        </section>
+      )}
 
       {/* AI Debt Advisor & Credit Utilization Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <AIDebtAdvisorWidget data={data} />
+      {(widgets.showAiAdvisor || widgets.showCreditUtilization) && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {widgets.showAiAdvisor && (
+            <div className={widgets.showCreditUtilization ? "lg:col-span-2" : "lg:col-span-3"}>
+              <AIDebtAdvisorWidget data={data} />
+            </div>
+          )}
+          {widgets.showCreditUtilization && (
+            <div className={widgets.showAiAdvisor ? "lg:col-span-1" : "lg:col-span-3"}>
+              <CreditUtilizationMeter />
+            </div>
+          )}
         </div>
-        <div>
-          <CreditUtilizationMeter />
-        </div>
-      </div>
+      )}
 
       {/* Emergency EMI Reserve Buffer Tracker */}
-      <EmergencyBufferWidget data={data} />
+      {widgets.showEmergencyBuffer && <EmergencyBufferWidget data={data} />}
 
       {/* EMI Auto-Debits Bank Account Health Checker */}
-      <EMIBounceProtectionWidget data={data} />
+      {widgets.showEmiBounceProtection && <EMIBounceProtectionWidget data={data} />}
 
       {/* Multi-Currency Tracker */}
-      <MultiCurrencyWidget data={data} />
+      {widgets.showMultiCurrency && <MultiCurrencyWidget data={data} />}
 
       {/* Quick Actions */}
-      <section aria-labelledby="quick-actions-heading">
-        <h2 id="quick-actions-heading" className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {QUICK_ACTIONS.map((action) => (
-            <Link
-              key={action.id}
-              href={action.href}
-              className="card p-4 hover:shadow-md transition-all hover:-translate-y-0.5 text-left group"
-            >
-              <div className={`w-10 h-10 rounded-xl ${action.bg} flex items-center justify-center text-white mb-3`}>
-                {action.icon}
-              </div>
-              <p className="text-[13px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors">
-                {action.label}
-              </p>
-              <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{action.description}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {widgets.showQuickActions && (
+        <section aria-labelledby="quick-actions-heading">
+          <h2 id="quick-actions-heading" className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {QUICK_ACTIONS.map((action) => (
+              <Link
+                key={action.id}
+                href={action.href}
+                className="card p-4 hover:shadow-md transition-all hover:-translate-y-0.5 text-left group"
+              >
+                <div className={`w-10 h-10 rounded-xl ${action.bg} flex items-center justify-center text-white mb-3`}>
+                  {action.icon}
+                </div>
+                <p className="text-[13px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors">
+                  {action.label}
+                </p>
+                <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{action.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Projections & Simulations Section */}
-      {data.active_loans > 0 && (
+      {widgets.showProjections && data.active_loans > 0 && (
         <section aria-labelledby="projections-heading" className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Financial Freedom Widget */}
           <div className="card p-5 flex flex-col justify-between border-l-4 border-[var(--color-primary)] bg-gradient-to-r from-[var(--color-surface-secondary)] to-[var(--color-surface)]">
@@ -400,194 +430,362 @@ export function DashboardClient() {
       )}
 
       {/* Bottom Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
-        {/* Loan Portfolio — Individual Loan Progress Bars */}
-        <section className="lg:col-span-2 flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[13px] font-extrabold uppercase tracking-widest text-[var(--color-text-primary)] flex items-center gap-2">
-              <span>📊</span> Loan Portfolio Repayment Progress ({loansList.length})
-            </h2>
-            <Link href="/dashboard/loans" className="text-xs font-bold text-[var(--color-primary-light)] hover:underline flex items-center gap-1">
-              View all loans ({data.total_loans}) →
-            </Link>
-          </div>
-          <div className="card p-5 flex-1 flex flex-col justify-between bg-[var(--color-surface)] border border-[var(--color-border)]">
-            {loansList.length === 0 && data.total_loans === 0 ? (
-              <div className="text-center py-10">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                </div>
-                <p className="text-sm font-bold text-[var(--color-text-primary)] mb-1">No loans yet</p>
-                <p className="text-xs text-[var(--color-text-secondary)] mb-4 font-medium">
-                  Add your first loan to start tracking repayments.
-                </p>
-                <Link href="/dashboard/loans/new" className="btn btn-primary btn-sm">
-                  + Add First Loan
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Visual Legend */}
-                <div className="flex items-center justify-between text-xs pb-2 border-b border-[var(--color-border)]">
-                  <span className="font-bold text-[var(--color-text-secondary)]">Click any loan bar to open details</span>
-                  <div className="flex items-center gap-3 text-[11px] font-bold">
-                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Completed (Green)</span>
-                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Remaining (Red)</span>
-                  </div>
-                </div>
-
-                {/* Individual Loan Bars */}
-                <div className="space-y-3">
-                  {loansList.map((loan) => {
-                    const principal = parseFloat(loan.principal_amount) || 1;
-                    const outstanding = parseFloat(loan.outstanding_amount) || 0;
-                    const paid = parseFloat(loan.paid_amount) || Math.max(0, principal - outstanding);
-                    const paidPct = Math.min(100, Math.max(0, (paid / principal) * 100));
-                    const remainingPct = Math.max(0, 100 - paidPct);
-
-                    return (
-                      <Link
-                        key={loan.id}
-                        href="/dashboard/loans"
-                        className="block group p-3.5 rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] transition-all cursor-pointer relative"
-                      >
-                        {/* Loan Header info */}
-                        <div className="flex items-center justify-between mb-1.5 text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors text-sm">
-                              {loan.name}
-                            </span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
-                              {loan.lender_name}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-black text-emerald-700 dark:text-emerald-400">
-                              {paidPct.toFixed(1)}% Completed
-                            </span>
-                            <span className="text-[11px] text-[var(--color-text-secondary)] font-medium ml-2">
-                              ({format(outstanding)} left of {format(principal)})
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Dual-segment Bar: Green (Paid) vs Red (Remaining) */}
-                        <div className="h-3.5 w-full rounded-full bg-rose-500/20 overflow-hidden flex border border-[var(--color-border)] relative">
-                          <div
-                            className="h-full bg-emerald-500 transition-all duration-700 relative"
-                            style={{ width: `${paidPct}%` }}
-                          />
-                          <div
-                            className="h-full bg-rose-500 transition-all duration-700 relative"
-                            style={{ width: `${remainingPct}%` }}
-                          />
-                        </div>
-
-                        {/* Rich Hover Tooltip */}
-                        <div className="absolute left-1/2 -top-12 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-30 shadow-xl">
-                          <div className="bg-slate-900 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 whitespace-nowrap flex items-center gap-2">
-                            <span>🏦 {loan.name} ({loan.lender_name})</span>
-                            <span className="text-slate-500">|</span>
-                            <span className="text-emerald-400">Paid: {format(paid)} ({paidPct.toFixed(1)}%)</span>
-                            <span className="text-slate-500">|</span>
-                            <span className="text-rose-400">Remaining: {format(outstanding)}</span>
-                          </div>
-                          <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700" />
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-
-                {/* Monthly Payments trend chart */}
-                {(() => {
-                  const trendPoints = (data.monthly_trend && data.monthly_trend.length > 0)
-                    ? data.monthly_trend
-                    : [
-                        { month: "2026-02", total: 45000, count: 2 },
-                        { month: "2026-03", total: 45000, count: 2 },
-                        { month: "2026-04", total: 68800, count: 3 },
-                        { month: "2026-05", total: 68800, count: 3 },
-                        { month: "2026-06", total: 91508, count: 4 },
-                        { month: "2026-07", total: 91508, count: 4 },
-                      ];
-                  const max = Math.max(...trendPoints.map((m) => m.total));
-
-                  return (
-                    <div className="pt-4 mt-4 border-t border-[var(--color-border)]">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-widest flex items-center gap-1.5">
-                          <span>📅</span> Monthly Payment History
-                        </p>
-                        <span className="text-[10px] font-bold text-[var(--color-text-secondary)]">Last 6 Months Trend</span>
-                      </div>
-                      <div className="flex items-end gap-2 h-20 pt-2">
-                        {trendPoints.map((point) => {
-                          const heightPct = max > 0 ? (point.total / max) * 100 : 0;
-                          return (
-                            <div
-                              key={point.month}
-                              className="flex-1 flex flex-col items-center gap-1 group/bar relative"
-                            >
-                              {/* Hover Tooltip for monthly payment bar */}
-                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover/bar:block bg-slate-900 text-white text-[10px] font-extrabold px-2 py-1 rounded-md shadow-lg border border-slate-700 whitespace-nowrap z-20">
-                                {point.month}: {format(point.total)} ({point.count} payments)
-                              </div>
-                              <div className="w-full bg-[var(--color-surface-tertiary)] rounded-t-lg overflow-hidden h-full flex items-end border border-[var(--color-border)] p-0.5">
-                                <div
-                                  className="w-full bg-gradient-to-t from-[var(--color-primary-dark)] to-[var(--color-primary-light)] group-hover/bar:from-emerald-600 group-hover/bar:to-emerald-400 transition-all duration-500 rounded-t-md"
-                                  style={{ height: `${Math.max(heightPct, 12)}%` }}
-                                />
-                              </div>
-                              <span className="text-[10px] text-[var(--color-text-primary)] font-bold">
-                                {point.month.slice(-2)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Right Column: Wallet and Recent Payments stacked */}
-        <div className="space-y-5">
-          <WalletCard />
-
-          <section>
+      {widgets.showLoanPortfolio && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
+          {/* Loan Portfolio — Individual Loan Progress Bars */}
+          <section className="lg:col-span-2 flex flex-col">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                Recent Payments
+              <h2 className="text-[13px] font-extrabold uppercase tracking-widest text-[var(--color-text-primary)] flex items-center gap-2">
+                <span>📊</span> Loan Portfolio Repayment Progress ({loansList.length})
               </h2>
-              <Link href="/dashboard/payments" className="text-xs text-[var(--color-primary-light)] hover:underline">
-                View all →
+              <Link href="/dashboard/loans" className="text-xs font-bold text-[var(--color-primary-light)] hover:underline flex items-center gap-1">
+                View all loans ({data.total_loans}) →
               </Link>
             </div>
-            <div className="space-y-3">
-              {data.recent_payments.length === 0 ? (
-                <div className="card p-8 text-center">
-                  <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+            <div className="card p-5 flex-1 flex flex-col justify-between bg-[var(--color-surface)] border border-[var(--color-border)]">
+              {loansList.length === 0 && data.total_loans === 0 ? (
+                <div className="text-center py-10">
+                  <div className="w-12 h-12 rounded-2xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                     </svg>
                   </div>
-                  <p className="text-sm text-[var(--color-text-secondary)]">No payments yet</p>
+                  <p className="text-sm font-bold text-[var(--color-text-primary)] mb-1">No loans yet</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mb-4 font-medium">
+                    Add your first loan to start tracking repayments.
+                  </p>
+                  <Link href="/dashboard/loans/new" className="btn btn-primary btn-sm">
+                    + Add First Loan
+                  </Link>
                 </div>
               ) : (
-                data.recent_payments.slice(0, 6).map((payment) => (
-                  <PaymentCard key={payment.id} payment={payment} showLoan />
-                ))
+                <div className="space-y-4">
+                  {/* Visual Legend */}
+                  <div className="flex items-center justify-between text-xs pb-2 border-b border-[var(--color-border)]">
+                    <span className="font-bold text-[var(--color-text-secondary)]">Click any loan bar to inspect details</span>
+                    <div className="flex items-center gap-3 text-[11px] font-bold">
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Completed (Green)</span>
+                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Remaining (Red)</span>
+                    </div>
+                  </div>
+
+                  {/* Individual Loan Bars */}
+                  <div className="space-y-3">
+                    {loansList.map((loan) => {
+                      const principal = parseFloat(loan.principal_amount) || 1;
+                      const outstanding = parseFloat(loan.outstanding_amount) || 0;
+                      const paid = parseFloat(loan.paid_amount) || Math.max(0, principal - outstanding);
+                      const paidPct = Math.min(100, Math.max(0, (paid / principal) * 100));
+                      const remainingPct = Math.max(0, 100 - paidPct);
+
+                      return (
+                        <div
+                          key={loan.id}
+                          onClick={() => setSelectedLoanForModal(loan)}
+                          className="block group p-3.5 rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] transition-all cursor-pointer relative"
+                        >
+                          {/* Loan Header info */}
+                          <div className="flex items-center justify-between mb-1.5 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors text-sm">
+                                {loan.name}
+                              </span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                                {loan.lender_name}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-black text-emerald-700 dark:text-emerald-400">
+                                {paidPct.toFixed(1)}% Completed
+                              </span>
+                              <span className="text-[11px] text-[var(--color-text-secondary)] font-medium ml-2">
+                                ({format(outstanding)} left of {format(principal)})
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Dual-segment Bar: Green (Paid) vs Red (Remaining) */}
+                          <div className="h-3.5 w-full rounded-full bg-rose-500/20 overflow-hidden flex border border-[var(--color-border)] relative">
+                            <div
+                              className="h-full bg-emerald-500 transition-all duration-700 relative"
+                              style={{ width: `${paidPct}%` }}
+                            />
+                            <div
+                              className="h-full bg-rose-500 transition-all duration-700 relative"
+                              style={{ width: `${remainingPct}%` }}
+                            />
+                          </div>
+
+                          {/* Rich Hover Tooltip */}
+                          <div className="absolute left-1/2 -top-12 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-30 shadow-xl">
+                            <div className="bg-slate-900 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 whitespace-nowrap flex items-center gap-2">
+                              <span>🏦 {loan.name} ({loan.lender_name})</span>
+                              <span className="text-slate-500">|</span>
+                              <span className="text-emerald-400">Paid: {format(paid)} ({paidPct.toFixed(1)}%)</span>
+                              <span className="text-slate-500">|</span>
+                              <span className="text-rose-400">Remaining: {format(outstanding)}</span>
+                            </div>
+                            <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Monthly Payments trend chart with Bar/Line Switcher & Deep Analytics link */}
+                  {(() => {
+                    const trendPoints = (data.monthly_trend && data.monthly_trend.length > 0)
+                      ? data.monthly_trend
+                      : [
+                          { month: "2026-02", total: 45000, count: 2 },
+                          { month: "2026-03", total: 45000, count: 2 },
+                          { month: "2026-04", total: 68800, count: 3 },
+                          { month: "2026-05", total: 68800, count: 3 },
+                          { month: "2026-06", total: 91508, count: 4 },
+                          { month: "2026-07", total: 91508, count: 4 },
+                        ];
+                    const max = Math.max(...trendPoints.map((m) => m.total)) || 1;
+
+                    return (
+                      <div className="pt-5 mt-5 border-t border-[var(--color-border)] space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-black text-[var(--color-text-primary)] uppercase tracking-widest flex items-center gap-1.5">
+                              <span>📈</span> Monthly Payment History
+                            </p>
+                            <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-0.5">
+                              Track payment velocity & compare high vs low monthly EMI outflow months
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Bar / Line Toggle Switcher */}
+                            <div className="flex items-center p-0.5 rounded-lg bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] text-xs">
+                              <button
+                                onClick={() => setChartType("bar")}
+                                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                                  chartType === "bar"
+                                    ? "bg-[var(--color-primary)] text-white shadow-sm"
+                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                }`}
+                              >
+                                📊 Bar
+                              </button>
+                              <button
+                                onClick={() => setChartType("line")}
+                                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                                  chartType === "line"
+                                    ? "bg-[var(--color-primary)] text-white shadow-sm"
+                                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                                }`}
+                              >
+                                📈 Line
+                              </button>
+                            </div>
+
+                            {/* Deep Analytics Link */}
+                            <Link
+                              href="/dashboard/analytics"
+                              className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-500/20 text-xs font-bold border border-blue-500/20 transition-all flex items-center gap-1 shrink-0"
+                            >
+                              Deep Analytics →
+                            </Link>
+                          </div>
+                        </div>
+
+                        {/* Chart Render Area */}
+                        {chartType === "bar" ? (
+                          <div className="grid grid-cols-6 gap-2 pt-2 items-end h-36">
+                            {trendPoints.map((point) => {
+                              const heightPct = Math.max(15, (point.total / max) * 100);
+                              return (
+                                <div key={point.month} className="flex flex-col items-center gap-1.5 h-full justify-end group/bar relative">
+                                  {/* Value label on top of bar */}
+                                  <span className="text-[10px] font-black text-blue-700 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 whitespace-nowrap">
+                                    {formatCurrency(point.total)}
+                                  </span>
+
+                                  {/* Bar Element */}
+                                  <div className="w-full bg-[var(--color-surface-tertiary)] rounded-t-xl overflow-hidden h-full flex items-end border border-[var(--color-border)] p-1">
+                                    <div
+                                      className="w-full bg-gradient-to-t from-blue-600 via-indigo-500 to-teal-400 group-hover/bar:from-emerald-600 group-hover/bar:to-emerald-400 transition-all duration-500 rounded-t-lg shadow-sm"
+                                      style={{ height: `${heightPct}%` }}
+                                    />
+                                  </div>
+
+                                  <span className="text-[10px] text-[var(--color-text-primary)] font-bold">
+                                    {point.month}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          /* Smooth SVG Line Chart */
+                          <div className="pt-2">
+                            <div className="relative h-36 w-full flex items-center">
+                              <svg className="w-full h-full overflow-visible" viewBox="0 0 600 120" preserveAspectRatio="none">
+                                <defs>
+                                  <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
+                                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                                  </linearGradient>
+                                </defs>
+                                {(() => {
+                                  const points = trendPoints.map((p, idx) => {
+                                    const x = (idx / (trendPoints.length - 1)) * 560 + 20;
+                                    const y = 100 - (p.total / max) * 80;
+                                    return { x, y, val: p.total, month: p.month };
+                                  });
+                                  const pathD = points.reduce((acc, p, i) => `${acc} ${i === 0 ? "M" : "L"} ${p.x} ${p.y}`, "");
+                                  const areaD = `${pathD} L ${points[points.length - 1].x} 110 L ${points[0].x} 110 Z`;
+
+                                  return (
+                                    <>
+                                      <path d={areaD} fill="url(#lineGrad)" />
+                                      <path d={pathD} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" />
+                                      {points.map((pt, i) => (
+                                        <g key={i}>
+                                          <circle cx={pt.x} cy={pt.y} r="5" fill="#1d4ed8" stroke="#ffffff" strokeWidth="2" />
+                                          <text x={pt.x} y={pt.y - 10} textAnchor="middle" fill="currentColor" className="text-[9px] font-bold fill-[var(--color-text-primary)]">
+                                            {formatCurrency(pt.val)}
+                                          </text>
+                                        </g>
+                                      ))}
+                                    </>
+                                  );
+                                })()}
+                              </svg>
+                            </div>
+                            <div className="flex justify-between text-[10px] font-bold text-[var(--color-text-primary)] px-2 pt-2 border-t border-[var(--color-border)]">
+                              {trendPoints.map(p => <span key={p.month}>{p.month}</span>)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
               )}
             </div>
           </section>
+
+          {/* Right Column: Wallet and Recent Payments stacked */}
+          <div className="space-y-5">
+            <WalletCard />
+
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
+                  Recent Payments
+                </h2>
+                <Link href="/dashboard/payments" className="text-xs text-[var(--color-primary-light)] hover:underline">
+                  View all →
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {data.recent_payments.length === 0 ? (
+                  <div className="card p-8 text-center">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                      </svg>
+                    </div>
+                    <p className="text-sm text-[var(--color-text-secondary)]">No payments yet</p>
+                  </div>
+                ) : (
+                  data.recent_payments.slice(0, 6).map((payment) => (
+                    <PaymentCard key={payment.id} payment={payment} showLoan />
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ── Specific Loan Details Modal (Opened on Loan Click) ── */}
+      {selectedLoanForModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-400 flex items-center justify-center text-xl font-bold">
+                  🏦
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-[var(--color-text-primary)]">{selectedLoanForModal.name}</h3>
+                  <span className="text-xs text-[var(--color-text-secondary)] font-medium">
+                    Lender: <strong>{selectedLoanForModal.lender_name}</strong> · Account #{selectedLoanForModal.account_number || "N/A"}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedLoanForModal(null)}
+                className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] rounded-xl text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Financial Stats */}
+            <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)]">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)] block">Principal Amount</span>
+                <span className="text-base font-black text-[var(--color-text-primary)]">{format(parseFloat(selectedLoanForModal.principal_amount))}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400 block">Remaining Outstanding</span>
+                <span className="text-base font-black text-rose-700 dark:text-rose-400">{format(parseFloat(selectedLoanForModal.outstanding_amount))}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">Repaid Amount</span>
+                <span className="text-base font-black text-emerald-700 dark:text-emerald-400">{format(parseFloat(selectedLoanForModal.paid_amount || "0"))}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 block">Monthly EMI</span>
+                <span className="text-base font-black text-blue-700 dark:text-blue-400">{format(parseFloat(selectedLoanForModal.monthly_emi))}/mo</span>
+              </div>
+            </div>
+
+            {/* Interest & Schedule Details */}
+            <div className="space-y-2 text-xs text-[var(--color-text-secondary)] font-medium">
+              <div className="flex justify-between py-1 border-b border-[var(--color-border)]">
+                <span>Interest Rate</span>
+                <strong className="text-[var(--color-text-primary)]">{selectedLoanForModal.interest_rate}% p.a.</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-[var(--color-border)]">
+                <span>Loan Start Date</span>
+                <strong className="text-[var(--color-text-primary)]">{selectedLoanForModal.start_date}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-[var(--color-border)]">
+                <span>Next EMI Due Date</span>
+                <strong className="text-blue-700 dark:text-blue-400 font-bold">{selectedLoanForModal.next_emi_date || "N/A"}</strong>
+              </div>
+              <div className="flex justify-between py-1">
+                <span>Repayment Completion</span>
+                <strong className="text-emerald-700 dark:text-emerald-400 font-bold">{selectedLoanForModal.repayment_progress_percent?.toFixed(1) || 0}%</strong>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-2">
+              <Link
+                href="/dashboard/loans"
+                className="flex-1 py-2.5 text-center rounded-xl bg-[var(--color-primary)] text-white font-extrabold text-xs shadow-sm"
+              >
+                Manage All Loans →
+              </Link>
+              <button
+                onClick={() => setSelectedLoanForModal(null)}
+                className="px-4 py-2.5 rounded-xl border border-[var(--color-border)] font-bold text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-surface-secondary)]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
