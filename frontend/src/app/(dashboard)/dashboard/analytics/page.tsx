@@ -13,6 +13,7 @@ import { LOAN_TYPE_LABELS } from "@/types";
 import type { DashboardData } from "@/types";
 import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculator";
 import { InteractiveChart } from "@/components/analytics/InteractiveChart";
+import { RefinancingCalculatorModal } from "@/components/analytics/RefinancingCalculatorModal";
 
 // ── Donut Chart (SVG) ─────────────────────────────────────────
 const DONUT_COLORS = [
@@ -165,10 +166,27 @@ export default function AnalyticsPage() {
   const monthlyCount = data.monthly_trend.reduce((sum, m) => sum + m.count, 0);
   const avgMonthly = data.monthly_trend.length > 0 ? monthlyTotal / data.monthly_trend.length : 0;
 
+  const [showRefinanceModal, setShowRefinanceModal] = useState(false);
+
   return (
     <>
       <Topbar title="Analytics" subtitle="Financial insights and trends" />
       <main className="page-content space-y-5">
+        
+        {/* Banner with Refinance Calculator Trigger */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[var(--color-surface-secondary)] p-4 rounded-2xl border border-[var(--color-border-light)] gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Loan Optimization & Debt Refinancing</h2>
+            <p className="text-xs text-[var(--color-text-tertiary)]">Calculate potential balance transfer savings by consolidating high-interest debts.</p>
+          </div>
+          <button
+            onClick={() => setShowRefinanceModal(true)}
+            className="btn btn-primary btn-xs px-4 py-2 font-bold text-xs shrink-0 flex items-center gap-1.5"
+          >
+            <span>🔄</span> Refinance Calculator
+          </button>
+        </div>
+
         {/* Summary KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
@@ -292,6 +310,13 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </main>
+
+      {showRefinanceModal && (
+        <RefinancingCalculatorModal
+          currentOutstanding={totalOutstanding}
+          onClose={() => setShowRefinanceModal(false)}
+        />
+      )}
     </>
   );
 }
