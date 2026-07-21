@@ -15,6 +15,7 @@ import { InteractiveChart } from "@/components/analytics/InteractiveChart";
 import { RefinancingCalculatorModal } from "@/components/analytics/RefinancingCalculatorModal";
 import { DebtBattleSimulator } from "@/components/analytics/DebtBattleSimulator";
 import { FullFinancialAnalyticsDeck } from "@/components/analytics/FullFinancialAnalyticsDeck";
+import { ModernMultiMetricChartStudio } from "@/components/analytics/ModernMultiMetricChartStudio";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 // ── Donut Chart (SVG) ─────────────────────────────────────────
@@ -285,8 +286,8 @@ export default function AnalyticsPage() {
           onOpenRefinance={() => setShowRefinanceModal(true)}
         />
 
-        {/* Advanced Interactive Chart */}
-        <InteractiveChart />
+        {/* Modern Multi-Dataset Interactive Chart Studio */}
+        <ModernMultiMetricChartStudio data={data} />
 
         {/* Income Tax Savings Calculator Widget */}
         <TaxSavingsCalculator />
