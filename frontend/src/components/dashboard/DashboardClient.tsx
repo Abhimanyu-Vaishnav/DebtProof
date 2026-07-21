@@ -18,6 +18,7 @@ import { LOAN_TYPE_LABELS as LABELS } from "@/types";
 import { PayoffMilestonesWidget } from "@/components/analytics/PayoffMilestonesWidget";
 import { AIDebtAdvisorWidget } from "@/components/dashboard/AIDebtAdvisorWidget";
 import { CreditUtilizationMeter } from "@/components/credit-cards/CreditUtilizationMeter";
+import { EmergencyBufferWidget } from "@/components/dashboard/EmergencyBufferWidget";
 
 function formatDebtFreeDate(dateStr: string | null) {
   if (!dateStr) return "No active debts!";
@@ -228,6 +229,9 @@ export function DashboardClient() {
           <CreditUtilizationMeter />
         </div>
       </div>
+
+      {/* Emergency EMI Reserve Buffer Tracker */}
+      <EmergencyBufferWidget data={data} />
 
       {/* Quick Actions */}
       <section aria-labelledby="quick-actions-heading">
