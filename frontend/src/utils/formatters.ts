@@ -4,16 +4,22 @@
 import React from "react";
 
 /**
- * Format a number as Indian Rupee currency.
+ * Format a number as currency.
+ * Default: Indian Rupee (for backward compat). 
+ * Prefer useCurrency().format() in React components for global currency support.
  */
-export function formatCurrency(amount: number | string): string {
+export function formatCurrency(amount: number | string, currencyCode = "INR", locale = "en-IN"): string {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
   if (isNaN(num)) return "₹0";
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(num);
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: currencyCode,
+      maximumFractionDigits: 0,
+    }).format(num);
+  } catch {
+    return `${num.toLocaleString()}`;
+  }
 }
 
 /**

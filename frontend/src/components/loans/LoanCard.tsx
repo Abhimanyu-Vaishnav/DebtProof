@@ -4,7 +4,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Loan, LOAN_TYPE_LABELS } from "@/types";
-import { formatCurrency, formatDate, highlightMatch } from "@/utils/formatters";
+import { formatDate, highlightMatch } from "@/utils/formatters";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LoanStatusBadge } from "./LoanStatusBadge";
 import { P2PContractModal } from "./P2PContractModal";
@@ -28,6 +29,7 @@ const LOAN_TYPE_ICONS: Record<string, string> = {
 };
 
 export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
+  const { format } = useCurrency();
   const progress = loan.repayment_progress_percent;
   const [showContractModal, setShowContractModal] = useState(false);
   const [showAmortizationModal, setShowAmortizationModal] = useState(false);
@@ -70,7 +72,7 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
               Outstanding
             </p>
             <p className="text-[15px] font-bold text-[var(--color-text-primary)]">
-              {formatCurrency(loan.outstanding_amount)}
+              {format(loan.outstanding_amount)}
             </p>
           </div>
           <div>
@@ -78,7 +80,7 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
               EMI
             </p>
             <p className="text-[15px] font-bold text-[var(--color-text-primary)]">
-              {formatCurrency(loan.monthly_emi)}
+              {format(loan.monthly_emi)}
             </p>
           </div>
         </div>
@@ -87,12 +89,12 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[11px] text-[var(--color-text-tertiary)] flex flex-col sm:flex-row sm:gap-2">
               <span>
-                <strong className="text-[var(--color-text-primary)]">{formatCurrency(loan.paid_amount)}</strong> paid
+                <strong className="text-[var(--color-text-primary)]">{format(loan.paid_amount)}</strong> paid
               </span>
               <span className="hidden sm:inline text-[var(--color-border)]">•</span>
               {loan.next_emi_date ? (
                 <span className={loan.is_overdue ? "text-[var(--color-error)] font-medium" : "text-[var(--color-text-secondary)]"}>
-                  {loan.is_overdue ? "Overdue" : "Upcoming"}: {formatCurrency(loan.monthly_emi)}
+                  {loan.is_overdue ? "Overdue" : "Upcoming"}: {format(loan.monthly_emi)}
                 </span>
               ) : (
                 <span>No active EMI</span>

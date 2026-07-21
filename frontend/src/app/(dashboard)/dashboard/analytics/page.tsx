@@ -8,13 +8,13 @@ import React, { useEffect, useState } from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { loansService } from "@/services/loans.service";
-import { formatCurrency } from "@/utils/formatters";
 import { LOAN_TYPE_LABELS } from "@/types";
 import type { DashboardData } from "@/types";
 import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculator";
 import { InteractiveChart } from "@/components/analytics/InteractiveChart";
 import { RefinancingCalculatorModal } from "@/components/analytics/RefinancingCalculatorModal";
 import { DebtBattleSimulator } from "@/components/analytics/DebtBattleSimulator";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 // ── Donut Chart (SVG) ─────────────────────────────────────────
 const DONUT_COLORS = [
@@ -129,6 +129,7 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRefinanceModal, setShowRefinanceModal] = useState(false);
+  const { format } = useCurrency();
 
   useEffect(() => {
     loansService.getDashboard()
@@ -191,9 +192,9 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: "Total Loans", value: data.total_loans.toString(), sub: `${data.active_loans} active`, color: "text-[var(--color-primary)]", bg: "bg-blue-50 dark:bg-blue-900/10" },
-            { label: "Total Borrowing", value: formatCurrency(data.total_principal_all), sub: "All time", color: "text-[var(--color-text-primary)]", bg: "bg-gray-50 dark:bg-gray-800/30" },
-            { label: "Total Repaid", value: formatCurrency(totalPaid), sub: "Active loans", color: "text-[var(--color-accent)]", bg: "bg-emerald-50 dark:bg-emerald-900/10" },
-            { label: "Total Outstanding", value: formatCurrency(totalOutstanding), sub: data.overdue_count > 0 ? `${data.overdue_count} overdue` : "On track", color: data.overdue_count > 0 ? "text-[var(--color-error)]" : "text-[var(--color-primary-dark)]", bg: data.overdue_count > 0 ? "bg-red-50 dark:bg-red-900/10" : "bg-indigo-50 dark:bg-indigo-900/10" },
+            { label: "Total Borrowing", value: format(data.total_principal_all), sub: "All time", color: "text-[var(--color-text-primary)]", bg: "bg-gray-50 dark:bg-gray-800/30" },
+            { label: "Total Repaid", value: format(totalPaid), sub: "Active loans", color: "text-[var(--color-accent)]", bg: "bg-emerald-50 dark:bg-emerald-900/10" },
+            { label: "Total Outstanding", value: format(totalOutstanding), sub: data.overdue_count > 0 ? `${data.overdue_count} overdue` : "On track", color: data.overdue_count > 0 ? "text-[var(--color-error)]" : "text-[var(--color-primary-dark)]", bg: data.overdue_count > 0 ? "bg-red-50 dark:bg-red-900/10" : "bg-indigo-50 dark:bg-indigo-900/10" },
           ].map((kpi) => (
             <div key={kpi.label} className={`card p-4 sm:p-5 border border-[var(--color-border-light)] ${kpi.bg} shadow-sm hover:shadow-md transition-shadow`}>
               <p className="text-[10px] sm:text-[11px] font-bold text-[var(--color-text-tertiary)] uppercase tracking-widest mb-1.5">{kpi.label}</p>
@@ -253,9 +254,9 @@ export default function AnalyticsPage() {
             </h2>
             <div className="space-y-4 mb-6">
               {[
-                { label: "Total Paid (6 mo)", value: formatCurrency(monthlyTotal) },
+                { label: "Total Paid (6 mo)", value: format(monthlyTotal) },
                 { label: "Total Payments", value: monthlyCount.toString() },
-                { label: "Avg Monthly", value: formatCurrency(avgMonthly) },
+                { label: "Avg Monthly", value: format(avgMonthly) },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between pb-3 border-b border-[var(--color-border-light)] last:border-0 last:pb-0">
                   <span className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</span>
@@ -270,7 +271,7 @@ export default function AnalyticsPage() {
                     <p className="text-xs font-bold text-[var(--color-text-tertiary)] uppercase tracking-wide mb-1">Next EMI Due</p>
                     <p className="text-sm font-semibold text-[var(--color-text-secondary)]">{data.upcoming_emi_date}</p>
                   </div>
-                  <p className="text-lg font-black text-[var(--color-warning)]">{formatCurrency(data.upcoming_emi_amount)}</p>
+                  <p className="text-lg font-black text-[var(--color-warning)]">{format(data.upcoming_emi_amount)}</p>
                 </div>
               </div>
             )}

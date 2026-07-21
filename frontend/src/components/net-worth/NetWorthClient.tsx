@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { assetsService, AssetFormData, LiabilityFormData } from "@/services/assets.service";
 import { formatCurrency } from "@/utils/formatters";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import type { Asset, Liability, NetWorthSummary, AssetType, LiabilityType } from "@/types";
 import {
@@ -56,6 +57,7 @@ interface ItemRowProps {
 }
 
 function ItemRow({ name, sublabel, badge, badgeColor, value, onEdit, onDelete, icon }: ItemRowProps) {
+  const { format } = useCurrency();
   return (
     <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-secondary)] border border-transparent hover:border-[var(--color-border-light)] transition-all group">
       <div className="w-9 h-9 rounded-xl bg-[var(--color-surface)] flex items-center justify-center flex-shrink-0">
@@ -68,7 +70,7 @@ function ItemRow({ name, sublabel, badge, badgeColor, value, onEdit, onDelete, i
       <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full hidden sm:block ${badgeColor}`}>
         {badge}
       </span>
-      <p className="text-sm font-bold text-[var(--color-text-primary)] ml-2">{formatCurrency(value)}</p>
+      <p className="text-sm font-bold text-[var(--color-text-primary)] ml-2">{format(value)}</p>
       {(onEdit || onDelete) && (
         <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
           {onEdit && (
@@ -97,6 +99,7 @@ interface SectionHeaderProps {
 }
 
 function SectionHeader({ title, total, color, badge, onAdd }: SectionHeaderProps) {
+  const { format } = useCurrency();
   return (
     <div className={`flex items-center justify-between px-4 py-2 rounded-lg border-l-4 ${color}`}>
       <div>
@@ -108,7 +111,7 @@ function SectionHeader({ title, total, color, badge, onAdd }: SectionHeaderProps
         )}
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-sm font-bold text-[var(--color-text-primary)]">{formatCurrency(total)}</span>
+        <span className="text-sm font-bold text-[var(--color-text-primary)]">{format(total)}</span>
         {onAdd && (
           <button
             onClick={onAdd}
@@ -225,6 +228,7 @@ function FormModal({ mode, isOpen, editing, onClose, onSubmit }: FormModalProps)
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function NetWorthClient() {
+  const { format } = useCurrency();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
   const [summary, setSummary] = useState<NetWorthSummary | null>(null);
@@ -321,25 +325,25 @@ export function NetWorthClient() {
         {/* Net Worth */}
         <div className="card p-5 flex flex-col justify-between border-l-4 border-[var(--color-primary)] bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-surface-secondary)]">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Actual Net Worth</p>
-          <h2 className={`text-3xl font-extrabold mt-2 ${netWorthColor}`}>{formatCurrency(s.net_worth)}</h2>
+          <h2 className={`text-3xl font-extrabold mt-2 ${netWorthColor}`}>{format(s.net_worth)}</h2>
           <p className="text-[10px] text-[var(--color-text-tertiary)] mt-2">Assets − All Liabilities (Loans + Custom)</p>
         </div>
         {/* Total Assets */}
         <div className="card p-5 border-l-4 border-blue-500">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Total Assets</p>
-          <h3 className="text-2xl font-bold text-blue-500 mt-2">{formatCurrency(s.total_assets)}</h3>
+          <h3 className="text-2xl font-bold text-blue-500 mt-2">{format(s.total_assets)}</h3>
           <div className="flex gap-3 mt-3 text-[10px]">
-            <span className="text-[var(--color-text-tertiary)]">Current: <b className="text-[var(--color-text-primary)]">{formatCurrency(s.current_assets)}</b></span>
-            <span className="text-[var(--color-text-tertiary)]">Fixed: <b className="text-[var(--color-text-primary)]">{formatCurrency(s.fixed_assets)}</b></span>
+            <span className="text-[var(--color-text-tertiary)]">Current: <b className="text-[var(--color-text-primary)]">{format(s.current_assets)}</b></span>
+            <span className="text-[var(--color-text-tertiary)]">Fixed: <b className="text-[var(--color-text-primary)]">{format(s.fixed_assets)}</b></span>
           </div>
         </div>
         {/* Total Liabilities */}
         <div className="card p-5 border-l-4 border-rose-500">
           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Total Liabilities</p>
-          <h3 className="text-2xl font-bold text-rose-500 mt-2">{formatCurrency(s.total_liabilities)}</h3>
+          <h3 className="text-2xl font-bold text-rose-500 mt-2">{format(s.total_liabilities)}</h3>
           <div className="flex gap-3 mt-3 text-[10px]">
-            <span className="text-[var(--color-text-tertiary)]">Short-term: <b className="text-[var(--color-text-primary)]">{formatCurrency(s.short_term_liabilities)}</b></span>
-            <span className="text-[var(--color-text-tertiary)]">Long-term: <b className="text-[var(--color-text-primary)]">{formatCurrency(s.long_term_liabilities)}</b></span>
+            <span className="text-[var(--color-text-tertiary)]">Short-term: <b className="text-[var(--color-text-primary)]">{format(s.short_term_liabilities)}</b></span>
+            <span className="text-[var(--color-text-tertiary)]">Long-term: <b className="text-[var(--color-text-primary)]">{format(s.long_term_liabilities)}</b></span>
           </div>
         </div>
       </section>

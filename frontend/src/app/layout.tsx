@@ -33,6 +33,7 @@ export const metadata: Metadata = {
 };
 
 import { ToastProvider } from "@/components/ui/Toast";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 
 export default function RootLayout({
   children,
@@ -46,9 +47,11 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <CurrencyProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </CurrencyProvider>
       </body>
     </html>
   );

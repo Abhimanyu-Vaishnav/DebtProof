@@ -6,7 +6,8 @@
 
 import React, { useState } from "react";
 import { Payment, PAYMENT_METHOD_LABELS } from "@/types";
-import { formatCurrency, formatDate } from "@/utils/formatters";
+import { formatDate } from "@/utils/formatters";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useWallet } from "@/hooks/useWallet";
 import { paymentsService } from "@/services/payments.service";
 import { useToast } from "@/components/ui/Toast";
@@ -33,6 +34,7 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
 
   const { showToast } = useToast();
   const wallet = useWallet();
+  const { format } = useCurrency();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isStoring, setIsStoring] = useState(false);
   const [localPayment, setLocalPayment] = useState<Payment>(payment);
@@ -194,7 +196,7 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
         <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--color-border-light)]">
           <div className="text-left sm:text-right">
             <p className="text-sm sm:text-[15px] font-bold text-[var(--color-text-primary)]">
-              {formatCurrency(parseFloat(localPayment.amount))}
+              {format(parseFloat(localPayment.amount))}
             </p>
           </div>
           <div className="flex items-center gap-1.5 justify-end">
