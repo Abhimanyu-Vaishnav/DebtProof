@@ -8,7 +8,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Topbar } from "@/components/layout/Topbar";
-import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LoanStatusBadge } from "@/components/loans/LoanStatusBadge";
 import { PaymentCard } from "@/components/payments/PaymentCard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -19,10 +18,131 @@ import { loansService } from "@/services/loans.service";
 import { paymentsService } from "@/services/payments.service";
 import { useWallet } from "@/hooks/useWallet";
 import { formatCurrency, formatDate } from "@/utils/formatters";
-import { LOAN_TYPE_LABELS, PAYMENT_METHOD_LABELS } from "@/types";
+import { LOAN_TYPE_LABELS } from "@/types";
 import type { Loan, Payment } from "@/types";
-
 import { ForeclosureCalculatorModal } from "@/components/loans/ForeclosureCalculatorModal";
+
+// ── EMI Repayment Progress Card ─────────────────────────────────
+function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[] }) {
+  const principal = parseFloat(loan.principal_amount) || 1;
+  const paid = parseFloat(loan.paid_amount) || 0;
+  const outstanding = parseFloat(loan.outstanding_amount) || 0;
+  const interestPaid = parseFloat(loan.interest_paid) || 0;
+  const progress = loan.repayment_progress_percent;
+
+  // Ring chart
+  const R = 54; const C = 2 * Math.PI * R;
+  const dash = (Math.min(progress, 100) / 100) * C;
+
+  // motivational messages
+  const msg =
+    progress >= 90 ? "🏆 Almost there! You're in the final stretch!" :
+    progress >= 70 ? "🔥 Great momentum! Over 70% done!" :
+    progress >= 50 ? "⚡ Halfway milestone reached! Keep going!" :
+    progress >= 25 ? "💪 Solid start! 25%+ paid off!" :
+    "🚀 Journey started. Every EMI brings you closer!";
+
+  // Build monthly payment bars from payment history
+  const monthlyMap = new Map<string, number>();
+  payments.forEach(p => {
+    const m = p.payment_date.slice(0, 7);
+    monthlyMap.set(m, (monthlyMap.get(m) || 0) + parseFloat(p.amount));
+  });
+  const sortedMonths = Array.from(monthlyMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-8);
+  const maxPayment = Math.max(...sortedMonths.map(([, v]) => v), 1);
+
+  return (
+    <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] space-y-5">
+      {/* Top Row: Ring + Key Numbers */}
+      <div className="flex flex-col sm:flex-row items-center gap-6">
+        {/* Circular Ring */}
+        <div className="relative shrink-0">
+          <svg width="140" height="140" viewBox="0 0 140 140" className="-rotate-90">
+            <circle cx="70" cy="70" r={R} fill="none" stroke="var(--color-surface-tertiary)" strokeWidth="14" />
+            <circle cx="70" cy="70" r={R} fill="none"
+              stroke={loan.is_overdue ? "#f43f5e" : progress >= 100 ? "#10b981" : "var(--color-primary)"}
+              strokeWidth="14"
+              strokeDasharray={`${dash} ${C - dash}`}
+              strokeLinecap="round"
+              className="transition-all duration-700"
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-black text-[var(--color-text-primary)]">{Math.round(progress)}%</span>
+            <span className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">Repaid</span>
+          </div>
+        </div>
+
+        {/* Numbers */}
+        <div className="flex-1 grid grid-cols-2 sm:grid-cols-2 gap-3 w-full">
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Principal Paid</p>
+            <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-1">{formatCurrency(paid)}</p>
+            <p className="text-[10px] font-medium text-emerald-700/70 dark:text-emerald-400/70 mt-0.5">{principal > 0 ? ((paid / principal) * 100).toFixed(1) : 0}% of principal</p>
+          </div>
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
+            <p className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">Still Outstanding</p>
+            <p className="text-lg font-black text-rose-700 dark:text-rose-400 mt-1">{formatCurrency(outstanding)}</p>
+            <p className="text-[10px] font-medium text-rose-700/70 dark:text-rose-400/70 mt-0.5">{loan.next_emi_date ? `Next EMI: ${formatDate(loan.next_emi_date)}` : "No upcoming EMI"}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">Interest Paid</p>
+            <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-1">{formatCurrency(interestPaid)}</p>
+            <p className="text-[10px] font-medium text-amber-700/70 dark:text-amber-400/70 mt-0.5">Cost of borrowing so far</p>
+          </div>
+          <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+            <p className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">Monthly EMI</p>
+            <p className="text-lg font-black text-blue-700 dark:text-blue-400 mt-1">{formatCurrency(parseFloat(loan.monthly_emi))}</p>
+            <p className="text-[10px] font-medium text-blue-700/70 dark:text-blue-400/70 mt-0.5">{loan.total_payments} payments made</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Paid vs Remaining stacked bar */}
+      <div>
+        <div className="flex justify-between text-[11px] font-bold text-[var(--color-text-secondary)] mb-1.5">
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Paid: {formatCurrency(paid)}</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" /> Remaining: {formatCurrency(outstanding)}</span>
+        </div>
+        <div className="h-4 w-full rounded-full overflow-hidden flex bg-[var(--color-surface-tertiary)] border border-[var(--color-border)]">
+          <div className="h-full bg-emerald-500 transition-all duration-700 rounded-l-full" style={{ width: `${Math.max(2, (paid / principal) * 100)}%` }} />
+          <div className="h-full bg-rose-500/70 flex-1 rounded-r-full" />
+        </div>
+      </div>
+
+      {/* Motivational message */}
+      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)]">
+        <span className="text-sm">{msg.split(' ')[0]}</span>
+        <p className="text-xs font-bold text-[var(--color-text-primary)]">{msg.slice(msg.indexOf(' ') + 1)}</p>
+      </div>
+
+      {/* Payment history mini bar chart */}
+      {sortedMonths.length > 0 && (
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">Payment History (Last {sortedMonths.length} Months)</p>
+          <div className="flex items-end gap-1.5 h-16">
+            {sortedMonths.map(([month, val]) => (
+              <div key={month} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                <div
+                  className="w-full rounded-t-md bg-[var(--color-primary)] group-hover:bg-[var(--color-primary-light)] transition-colors"
+                  style={{ height: `${Math.max(6, (val / maxPayment) * 100)}%` }}
+                  title={`${month}: ${formatCurrency(val)}`}
+                />
+                <span className="text-[9px] font-bold text-[var(--color-text-secondary)]">{month.slice(5)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Timeline */}
+      <div className="flex justify-between text-xs font-medium text-[var(--color-text-secondary)] pt-1 border-t border-[var(--color-border)]">
+        <span>Started: {formatDate(loan.start_date)}</span>
+        <span>Matures: {formatDate(loan.end_date)}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function LoanDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -156,11 +276,6 @@ export default function LoanDetailPage() {
   if (loadingLoan) return <LoadingSpinner fullPage label="Loading loan details..." />;
   if (!loan) return null;
 
-  const progress = loan.repayment_progress_percent;
-  const outstanding = parseFloat(loan.outstanding_amount);
-  const paid = parseFloat(loan.paid_amount);
-  const principal = parseFloat(loan.principal_amount);
-
   return (
     <>
       <Topbar
@@ -200,47 +315,8 @@ export default function LoanDetailPage() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          {[
-            { label: "Principal", value: formatCurrency(principal) },
-            { label: "Outstanding", value: formatCurrency(outstanding), highlight: true },
-            { label: "Principal Paid", value: formatCurrency(paid) },
-            { label: "Interest Paid", value: formatCurrency(loan.interest_paid) },
-            { label: "Monthly EMI", value: formatCurrency(loan.monthly_emi) },
-          ].map((stat) => (
-            <div key={stat.label} className="card p-4">
-              <p className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-wide mb-1">{stat.label}</p>
-              <p className={`text-[17px] font-bold ${stat.highlight ? "text-[var(--color-error)]" : "text-[var(--color-text-primary)]"}`}>
-                {stat.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Progress */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[13px] font-semibold text-[var(--color-text-primary)]">Repayment Progress</h2>
-            <span className="text-lg font-bold text-[var(--color-text-primary)]">{Math.round(progress)}%</span>
-          </div>
-          <ProgressBar
-            value={progress}
-            size="lg"
-            color={loan.is_overdue ? "error" : loan.status === "closed" ? "primary" : "accent"}
-            animate
-          />
-          <div className="flex items-center justify-between mt-3 text-xs text-[var(--color-text-tertiary)]">
-            <span>Start: {formatDate(loan.start_date)}</span>
-            {loan.next_emi_date && (
-              <span className={loan.is_overdue ? "text-[var(--color-error)] font-semibold" : ""}>
-                Next EMI: {formatDate(loan.next_emi_date)}
-                {loan.is_overdue && " (Overdue)"}
-              </span>
-            )}
-            <span>End: {formatDate(loan.end_date)}</span>
-          </div>
-        </div>
+        {/* ── Beautiful Repayment Progress Card ── */}
+        <LoanRepaymentCard loan={loan} payments={payments} />
 
         {/* Escrow Actions */}
         {loan.is_escrow && (

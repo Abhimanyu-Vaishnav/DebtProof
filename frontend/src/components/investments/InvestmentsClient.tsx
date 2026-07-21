@@ -544,6 +544,110 @@ export function InvestmentsClient() {
                 </div>
               </div>
 
+              {/* ── Mini Growth Chart: Invested vs Current Value ── */}
+              {(() => {
+                const invested = selectedItem.investedAmount;
+                const current = selectedItem.currentValue;
+                const gain = current - invested;
+                const gainPct = invested > 0 ? ((gain / invested) * 100) : 0;
+                const isPositive = gain >= 0;
+
+                // Build a 6-point growth curve from start to now
+                const startDate = new Date(selectedItem.startDate);
+                const now = new Date();
+                const months = Math.max(1, (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth()));
+                const points = Array.from({ length: 7 }, (_, i) => {
+                  const t = i / 6;
+                  const monthsIn = Math.floor(t * months);
+                  const r = (selectedItem.returnRate || 0) / 100;
+                  const investedAtT = invested + selectedItem.monthlyAmount * monthsIn;
+                  const valueAtT = invested * Math.pow(1 + r / 12, monthsIn) + (selectedItem.monthlyAmount > 0 && r > 0
+                    ? selectedItem.monthlyAmount * ((Math.pow(1 + r / 12, monthsIn) - 1) / (r / 12))
+                    : selectedItem.monthlyAmount * monthsIn);
+                  return { t, invested: investedAtT, value: valueAtT };
+                });
+
+                const maxVal = Math.max(...points.map(p => Math.max(p.invested, p.value)), 1);
+                const W = 400; const H = 80; const pad = 8;
+
+                const toY = (v: number) => H - pad - ((v / maxVal) * (H - 2 * pad));
+                const toX = (t: number) => pad + t * (W - 2 * pad);
+
+                const investedPath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.t)} ${toY(p.invested)}`).join(" ");
+                const valuePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${toX(p.t)} ${toY(p.value)}`).join(" ");
+                const valueArea = `${valuePath} L ${toX(1)} ${H} L ${toX(0)} ${H} Z`;
+
+                return (
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] overflow-hidden">
+                    {/* Header */}
+                    <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--color-border)]">
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-wider text-[var(--color-text-primary)]">📊 Investment Growth Chart</p>
+                        <p className="text-[10px] font-medium text-[var(--color-text-secondary)] mt-0.5">Invested amount vs current portfolio value over time</p>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-black ${isPositive ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-rose-500/15 text-rose-700 dark:text-rose-400"}`}>
+                        {isPositive ? "▲" : "▼"} {Math.abs(gainPct).toFixed(1)}% returns
+                      </div>
+                    </div>
+
+                    {/* Key numbers */}
+                    <div className="grid grid-cols-3 gap-3 px-4 py-3">
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">Invested</p>
+                        <p className="text-sm font-black text-[var(--color-text-primary)] mt-0.5">{format(invested)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">Current Value</p>
+                        <p className={`text-sm font-black mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>{format(current)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">Total Gain</p>
+                        <p className={`text-sm font-black mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          {isPositive ? "+" : ""}{format(gain)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* SVG Chart */}
+                    <div className="px-2 pb-3">
+                      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-20" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id={`gain-grad-${selectedItem.id}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={isPositive ? "#10b981" : "#f43f5e"} stopOpacity="0.3" />
+                            <stop offset="100%" stopColor={isPositive ? "#10b981" : "#f43f5e"} stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        {/* Grid lines */}
+                        {[0.25, 0.5, 0.75].map(pct => (
+                          <line key={pct} x1={pad} y1={toY(maxVal * pct)} x2={W - pad} y2={toY(maxVal * pct)}
+                            stroke="var(--color-border)" strokeDasharray="3 3" opacity="0.5" />
+                        ))}
+                        {/* Value area fill */}
+                        <path d={valueArea} fill={`url(#gain-grad-${selectedItem.id})`} />
+                        {/* Invested line (dashed grey) */}
+                        <path d={investedPath} fill="none" stroke="var(--color-text-tertiary)" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" />
+                        {/* Value line (solid) */}
+                        <path d={valuePath} fill="none" stroke={isPositive ? "#10b981" : "#f43f5e"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        {/* End dot */}
+                        <circle cx={toX(1)} cy={toY(points[6].value)} r="4" fill={isPositive ? "#10b981" : "#f43f5e"} />
+                      </svg>
+                      <div className="flex items-center justify-between px-2 mt-1">
+                        <span className="text-[9px] font-bold text-[var(--color-text-secondary)]">{selectedItem.startDate}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1 text-[9px] font-bold text-[var(--color-text-secondary)]">
+                            <span className="w-3 border-t border-dashed border-[var(--color-text-tertiary)] inline-block" /> Capital
+                          </span>
+                          <span className="flex items-center gap-1 text-[9px] font-bold text-[var(--color-text-secondary)]">
+                            <span className="w-3 border-t-2 inline-block" style={{ borderColor: isPositive ? "#10b981" : "#f43f5e" }} /> Value
+                          </span>
+                        </div>
+                        <span className="text-[9px] font-bold text-[var(--color-text-secondary)]">Today</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* ── Future Value Compound Wealth Predictor ── */}
               <div className="space-y-3 p-5 rounded-2xl bg-gradient-to-br from-[#0c1f38] to-[#122844] border border-blue-500/20 text-white shadow-md">
                 <div className="flex items-center justify-between">

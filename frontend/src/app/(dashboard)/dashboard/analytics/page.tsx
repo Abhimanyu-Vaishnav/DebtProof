@@ -5,11 +5,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Topbar } from "@/components/layout/Topbar";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { loansService } from "@/services/loans.service";
+import { assetsService } from "@/services/assets.service";
 import { LOAN_TYPE_LABELS } from "@/types";
-import type { DashboardData } from "@/types";
+import type { DashboardData, Loan, Asset } from "@/types";
 import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculator";
 import { RefinancingCalculatorModal } from "@/components/analytics/RefinancingCalculatorModal";
 import { DebtBattleSimulator } from "@/components/analytics/DebtBattleSimulator";
@@ -124,15 +126,26 @@ function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: 
   );
 }
 
-// ── Main Analytics Page ─────────────────────────────────────────
+// ── Main Analytics Page ──────────────────────────────────
 export default function AnalyticsPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRefinance, setShowRefinance] = useState(false);
   const { format } = useCurrency();
+  const router = useRouter();
 
   useEffect(() => {
-    loansService.getDashboard().then(setData).finally(() => setLoading(false));
+    Promise.all([
+      loansService.getDashboard(),
+      loansService.getLoans({ status: "active", page_size: 50 }),
+      assetsService.getAssets(),
+    ]).then(([dash, loanRes, assetRes]) => {
+      setData(dash);
+      setLoans(loanRes.results || []);
+      setAssets(assetRes || []);
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return (
@@ -266,6 +279,206 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </section>
+
+        {/* ── PER-LOAN BREAKDOWN ────────────────────────────── */}
+        {loans.length > 0 && (
+          <section>
+            <SectionHeader
+              title="Individual Loan Breakdown"
+              subtitle="Click any loan to see full detail, payments, and history"
+            />
+            <div className="space-y-3">
+              {loans.map((loan) => {
+                const principal = parseFloat(loan.principal_amount) || 1;
+                const paid = parseFloat(loan.paid_amount) || 0;
+                const outstanding = parseFloat(loan.outstanding_amount) || 0;
+                const interestPaid = parseFloat(loan.interest_paid) || 0;
+                const progress = loan.repayment_progress_percent;
+                const isOverdue = loan.is_overdue;
+                const COLORS = ["#3b82f6","#10b981","#f59e0b","#6366f1","#f43f5e","#14b8a6","#a855f7"];
+                const color = COLORS[Math.abs(loan.id.charCodeAt(loan.id.length - 1)) % COLORS.length];
+
+                return (
+                  <div
+                    key={loan.id}
+                    onClick={() => router.push(`/dashboard/loans/${loan.id}`)}
+                    className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-secondary)] cursor-pointer transition-all group"
+                  >
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 bg-[var(--color-surface-tertiary)] border border-[var(--color-border)]">
+                          {loan.loan_type === "home" ? "🏠" : loan.loan_type === "vehicle" ? "🚗" : loan.loan_type === "education" ? "🎓" : loan.loan_type === "business" ? "💼" : loan.loan_type === "personal" ? "👤" : "💳"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors">
+                            {loan.name}
+                          </p>
+                          <p className="text-[11px] font-medium text-[var(--color-text-secondary)]">
+                            {loan.lender_name} · {LOAN_TYPE_LABELS[loan.loan_type]} · {loan.interest_rate}% p.a.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          {isOverdue && <span className="text-[10px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-full">OVERDUE</span>}
+                          <span className="text-sm font-black" style={{ color }}>{Math.round(progress)}%</span>
+                          <svg className="w-4 h-4 text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </div>
+                        <p className="text-[10px] font-medium text-[var(--color-text-secondary)] mt-0.5">
+                          EMI {format(parseFloat(loan.monthly_emi))}/mo
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="h-3 w-full rounded-full overflow-hidden flex bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] mb-2">
+                      <div
+                        className="h-full rounded-l-full transition-all duration-700"
+                        style={{ width: `${Math.max(2, progress)}%`, backgroundColor: isOverdue ? "#f43f5e" : color }}
+                      />
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      {[
+                        { label: "Principal", val: format(principal), cls: "text-[var(--color-text-primary)]" },
+                        { label: "Paid", val: format(paid), cls: "text-emerald-600 dark:text-emerald-400" },
+                        { label: "Outstanding", val: format(outstanding), cls: "text-rose-600 dark:text-rose-400" },
+                        { label: "Interest Paid", val: format(interestPaid), cls: "text-amber-600 dark:text-amber-400" },
+                      ].map(s => (
+                        <div key={s.label}>
+                          <p className="text-[9px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">{s.label}</p>
+                          <p className={`text-xs font-black mt-0.5 ${s.cls}`}>{s.val}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ── INVESTMENT PORTFOLIO SECTION ─────────────────── */}
+        {assets.length > 0 && (() => {
+          const totalAssetValue = assets.reduce((s, a) => s + parseFloat(a.value), 0);
+          const investmentAssets = assets.filter(a =>
+            ["investment","stocks","crypto","fd","rd","real_estate","gold","receivable","loan_given_short","loan_given_long","p2p_given"].includes(a.asset_type)
+          );
+          const totalInvested = investmentAssets.reduce((s, a) => s + parseFloat(a.value), 0);
+          const ASSET_COLORS: Record<string, string> = {
+            investment: "#6366f1", stocks: "#10b981", crypto: "#f59e0b", fd: "#3b82f6",
+            real_estate: "#a855f7", gold: "#f97316", receivable: "#14b8a6",
+            loan_given_short: "#ec4899", loan_given_long: "#84cc16",
+          };
+
+          // Group by type for the stacked chart
+          const grouped = investmentAssets.reduce((acc, a) => {
+            const key = a.asset_type;
+            acc[key] = (acc[key] || 0) + parseFloat(a.value);
+            return acc;
+          }, {} as Record<string, number>);
+          const groupEntries = Object.entries(grouped).sort((a, b) => b[1] - a[1]);
+          const maxGroup = Math.max(...groupEntries.map(([,v]) => v), 1);
+
+          return (
+            <section>
+              <SectionHeader title="Investment Portfolio" subtitle="Your assets and holdings at a glance" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+                {/* Summary + Bar Chart */}
+                <div className="lg:col-span-2 card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+                  <div className="grid grid-cols-3 gap-4 mb-5">
+                    <div className="p-3 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-center">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">Total Net Worth</p>
+                      <p className="text-xl font-black text-[var(--color-text-primary)] mt-1">{format(totalAssetValue)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Investments</p>
+                      <p className="text-xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{format(totalInvested)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">Total Debt</p>
+                      <p className="text-xl font-black text-rose-700 dark:text-rose-400 mt-1">{format(totalOutstanding)}</p>
+                    </div>
+                  </div>
+
+                  {/* Horizontal bars by asset type */}
+                  <div className="space-y-2">
+                    {groupEntries.map(([type, val]) => {
+                      const pct = (val / maxGroup) * 100;
+                      const color = ASSET_COLORS[type] || "#94a3b8";
+                      const label = type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                      return (
+                        <div key={type} className="flex items-center gap-3">
+                          <span className="text-[11px] font-bold text-[var(--color-text-secondary)] w-28 shrink-0 text-right">{label}</span>
+                          <div className="flex-1 h-3 bg-[var(--color-surface-tertiary)] rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
+                          </div>
+                          <span className="text-xs font-black text-[var(--color-text-primary)] w-20 shrink-0">{format(val)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Asset breakdown donut mini */}
+                <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-[var(--color-text-primary)] mb-4">Portfolio Mix</p>
+                  {(() => {
+                    const R = 44; const C = 2 * Math.PI * R;
+                    let offset2 = 0;
+                    const segs2 = groupEntries.map(([type, val]) => {
+                      const pct = totalInvested > 0 ? val / totalInvested : 0;
+                      const dash = pct * C;
+                      const so = C - offset2;
+                      offset2 += dash;
+                      return { type, val, dash, gap: C - dash, startOffset: so, color: ASSET_COLORS[type] || "#94a3b8" };
+                    });
+                    return (
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="relative">
+                          <svg width="110" height="110" viewBox="0 0 110 110" className="-rotate-90">
+                            <circle cx="55" cy="55" r={R} fill="none" stroke="var(--color-surface-tertiary)" strokeWidth="14" />
+                            {segs2.map(s => (
+                              <circle key={s.type} cx="55" cy="55" r={R} fill="none"
+                                stroke={s.color} strokeWidth="14"
+                                strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={s.startOffset}
+                              />
+                            ))}
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-sm font-black text-[var(--color-text-primary)]">{investmentAssets.length}</span>
+                            <span className="text-[9px] font-bold text-[var(--color-text-secondary)] uppercase">Assets</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5 w-full">
+                          {segs2.slice(0, 5).map(s => {
+                            const pct = totalInvested > 0 ? (s.val / totalInvested * 100).toFixed(0) : 0;
+                            const label = s.type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                            return (
+                              <div key={s.type} className="flex items-center justify-between text-[11px]">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                                  <span className="font-medium text-[var(--color-text-primary)]">{label}</span>
+                                </div>
+                                <span className="font-black text-[var(--color-text-secondary)]">{pct}%</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+              </div>
+            </section>
+          );
+        })()}
 
         {/* ── INTEREST COST BREAKDOWN ──────────────────────── */}
         <section>
