@@ -11,6 +11,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useWallet } from "@/hooks/useWallet";
 import { paymentsService } from "@/services/payments.service";
 import { useToast } from "@/components/ui/Toast";
+import { TransactionReceiptModal } from "./TransactionReceiptModal";
 
 const STATUS_CONFIG = {
   confirmed: { label: "Confirmed", className: "badge badge-success" },
@@ -37,6 +38,7 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
   const { format } = useCurrency();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isStoring, setIsStoring] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [localPayment, setLocalPayment] = useState<Payment>(payment);
 
   const receipt = localPayment.receipt;
@@ -176,15 +178,20 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
       )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
         {/* Left Side: Icon + Details */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0">
+        <div 
+          onClick={() => setShowReceiptModal(true)}
+          className="flex items-center gap-3 min-w-0 cursor-pointer group/title flex-1"
+          title="Click to view full transaction voucher & receipt"
+        >
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0 group-hover/title:bg-[var(--color-primary)] group-hover/title:text-white transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
             </svg>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] sm:text-sm font-semibold text-[var(--color-text-primary)] truncate">
-              {showLoan ? localPayment.loan_name : "Repayment"}
+            <p className="text-[13px] sm:text-sm font-semibold text-[var(--color-text-primary)] truncate group-hover/title:text-[var(--color-primary)] transition-colors flex items-center gap-1.5">
+              <span>{showLoan ? localPayment.loan_name : "Repayment"}</span>
+              <span className="text-[10px] text-[var(--color-text-tertiary)] opacity-0 group-hover/title:opacity-100 transition-opacity">📄 Voucher</span>
             </p>
             <p className="text-[11px] sm:text-xs text-[var(--color-text-secondary)] mt-0.5">
               {formatDate(localPayment.payment_date)} · {PAYMENT_METHOD_LABELS[localPayment.payment_method]}
@@ -194,7 +201,11 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
 
         {/* Right Side: Amount + Status Badge */}
         <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-[var(--color-border-light)]">
-          <div className="text-left sm:text-right">
+          <div 
+            onClick={() => setShowReceiptModal(true)}
+            className="text-left sm:text-right cursor-pointer hover:opacity-80 transition-opacity"
+            title="Click to view full transaction receipt"
+          >
             <p className="text-sm sm:text-[15px] font-bold text-[var(--color-text-primary)]">
               {format(parseFloat(localPayment.amount))}
             </p>
@@ -342,6 +353,13 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
             </div>
           )}
         </div>
+      )}
+
+      {showReceiptModal && (
+        <TransactionReceiptModal
+          payment={localPayment}
+          onClose={() => setShowReceiptModal(false)}
+        />
       )}
     </div>
   );
