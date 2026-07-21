@@ -6,6 +6,8 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { loansService } from "@/services/loans.service";
 import { formatCurrency } from "@/utils/formatters";
 
+import { PayoffMethodComparisonModal } from "@/components/analytics/PayoffMethodComparisonModal";
+
 function formatDebtFreeDate(dateStr: string | null) {
   if (!dateStr) return "No active debts!";
   const [year, month] = dateStr.split("-");
@@ -18,6 +20,7 @@ export default function RepaymentSimulatorPage() {
   const [simData, setSimData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
 
   const fetchSimulation = async (value: number) => {
     try {
@@ -112,6 +115,13 @@ export default function RepaymentSimulatorPage() {
               <p className="text-xs text-[var(--color-text-secondary)]">Increase your monthly payoff amount to see how much interest and time you save.</p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowComparisonModal(true)}
+                className="btn btn-secondary btn-sm h-[40px] px-3 font-bold text-xs shrink-0 flex items-center gap-1"
+              >
+                ⚖️ Compare Strategies
+              </button>
               <form onSubmit={handleCustomInputSubmit} className="flex items-center gap-2">
                 <input
                   type="number"
@@ -279,6 +289,16 @@ export default function RepaymentSimulatorPage() {
         />
 
         <PayoffScheduleTabs simulations={simData} />
+
+        {showComparisonModal && (
+          <PayoffMethodComparisonModal
+            onClose={() => setShowComparisonModal(false)}
+            baselineData={baseline}
+            snowballData={snowball}
+            avalancheData={avalanche}
+            extraMonthly={extraMonthly}
+          />
+        )}
       </main>
     </>
   );
