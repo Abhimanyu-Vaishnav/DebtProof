@@ -115,7 +115,7 @@ export default function ReceiptsPage() {
                           Tx: <span className="font-mono text-[var(--color-text-secondary)]">{rec.blockchain_tx_hash.slice(0, 10)}...</span>
                         </span>
                         <a 
-                          href={`https://testnet.monadsv.com/tx/${rec.blockchain_tx_hash}`}
+                          href={`https://testnet.monadscan.com/tx/${rec.blockchain_tx_hash}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[var(--color-accent)] hover:underline inline-flex items-center gap-0.5"

@@ -15,7 +15,7 @@ export function ReceiptProofModal({ payment, onClose }: ReceiptProofModalProps) 
 
   const isVerified = rec.is_blockchain_verified;
   const txHash = rec.blockchain_tx_hash || `0x${rec.document_hash.slice(0, 40)}`;
-  const explorerUrl = `https://testnet.monadsv.com/tx/${txHash}`;
+  const explorerUrl = `https://testnet.monadscan.com/tx/${txHash}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">

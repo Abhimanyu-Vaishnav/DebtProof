@@ -323,7 +323,7 @@ export default function VerifyProofPage() {
                           {result.tx_hash}
                         </p>
                         <a
-                          href={`https://testnet.monadsv.com/tx/${result.tx_hash}`}
+                          href={`https://testnet.monadscan.com/tx/${result.tx_hash}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[var(--color-accent)] hover:underline inline-flex items-center gap-0.5 shrink-0"
