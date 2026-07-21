@@ -16,6 +16,8 @@ import type { DashboardData, LOAN_TYPE_LABELS } from "@/types";
 import { LOAN_TYPE_LABELS as LABELS } from "@/types";
 
 import { PayoffMilestonesWidget } from "@/components/analytics/PayoffMilestonesWidget";
+import { AIDebtAdvisorWidget } from "@/components/dashboard/AIDebtAdvisorWidget";
+import { CreditUtilizationMeter } from "@/components/credit-cards/CreditUtilizationMeter";
 
 function formatDebtFreeDate(dateStr: string | null) {
   if (!dateStr) return "No active debts!";
@@ -216,6 +218,16 @@ export function DashboardClient() {
         <h2 id="milestones-heading" className="sr-only">Payoff Milestones</h2>
         <PayoffMilestonesWidget data={data} />
       </section>
+
+      {/* AI Debt Advisor & Credit Utilization Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <AIDebtAdvisorWidget data={data} />
+        </div>
+        <div>
+          <CreditUtilizationMeter />
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <section aria-labelledby="quick-actions-heading">
