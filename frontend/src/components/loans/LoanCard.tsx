@@ -9,6 +9,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LoanStatusBadge } from "./LoanStatusBadge";
 import { P2PContractModal } from "./P2PContractModal";
 import { AmortizationScheduleModal } from "./AmortizationScheduleModal";
+import { FinancialFreedomCertificateModal } from "./FinancialFreedomCertificateModal";
 
 interface LoanCardProps {
   loan: Loan;
@@ -30,6 +31,7 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
   const progress = loan.repayment_progress_percent;
   const [showContractModal, setShowContractModal] = useState(false);
   const [showAmortizationModal, setShowAmortizationModal] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
 
   return (
     <>
@@ -131,6 +133,15 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
                 📜 Note
               </button>
             )}
+            {loan.status === "closed" && (
+              <button
+                onClick={() => setShowCertificateModal(true)}
+                className="btn btn-ghost btn-sm py-1 px-2 text-xs font-bold text-amber-500 hover:bg-amber-50/10"
+                title="View Financial Freedom Certificate"
+              >
+                🏆 Certificate
+              </button>
+            )}
             <button
               onClick={() => setShowAmortizationModal(true)}
               className="btn btn-ghost btn-sm py-1 px-2 text-xs font-semibold text-[var(--color-primary-light)] hover:bg-[var(--color-surface-secondary)]"
@@ -166,6 +177,9 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
       )}
       {showAmortizationModal && (
         <AmortizationScheduleModal loan={loan} onClose={() => setShowAmortizationModal(false)} />
+      )}
+      {showCertificateModal && (
+        <FinancialFreedomCertificateModal loan={loan} onClose={() => setShowCertificateModal(false)} />
       )}
     </>
   );
