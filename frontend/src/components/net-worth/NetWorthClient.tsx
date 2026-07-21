@@ -9,9 +9,8 @@ import type { Asset, Liability, NetWorthSummary, AssetType, LiabilityType } from
 import {
   ASSET_TYPE_LABELS,
   LIABILITY_TYPE_LABELS,
-  LIABILITY_CLASS_LABELS,
-  ASSET_CLASS_LABELS,
 } from "@/types";
+import { MoneyGivenModal } from "./MoneyGivenModal";
 
 // ── Icon helpers ──────────────────────────────────────────────────────────────
 function AssetIcon({ type }: { type: string }) {
@@ -21,7 +20,12 @@ function AssetIcon({ type }: { type: string }) {
     fd: <span>📋</span>,
     rd: <span>🔄</span>,
     investment: <span>📈</span>,
+    stocks: <span>📊</span>,
+    crypto: <span>🪙</span>,
     receivable: <span>📨</span>,
+    loan_given_short: <span>🤝</span>,
+    loan_given_long: <span>🏛️</span>,
+    p2p_given: <span>🌐</span>,
     real_estate: <span>🏠</span>,
     gold: <span>🥇</span>,
     business: <span>🏢</span>,
@@ -238,6 +242,7 @@ export function NetWorthClient() {
   // Modal states
   const [modalMode, setModalMode] = useState<"asset" | "liability">("asset");
   const [modalOpen, setModalOpen] = useState(false);
+  const [moneyGivenOpen, setMoneyGivenOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Asset | Liability | null>(null);
 
   const fetchData = async () => {
@@ -283,6 +288,17 @@ export function NetWorthClient() {
     }
   };
 
+  const handleMoneyGivenSubmit = async (data: { name: string; asset_type: string; value: string }) => {
+    try {
+      await assetsService.createAsset(data);
+      setMoneyGivenOpen(false);
+      setLoading(true);
+      await fetchData();
+    } catch {
+      /* ignore */
+    }
+  };
+
   const handleDelete = async (mode: "asset" | "liability", id: string) => {
     if (!confirm(`Delete this ${mode}?`)) return;
     setLoading(true);
@@ -319,6 +335,27 @@ export function NetWorthClient() {
 
   return (
     <div className="space-y-6">
+
+      {/* ── Quick Action Banner for Money Given ────────────────── */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[var(--color-surface-secondary)] p-4 rounded-2xl border border-[var(--color-border-light)] gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl shrink-0 border border-emerald-500/20">
+            🤝
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Lent Money to Someone?</h2>
+            <p className="text-xs text-[var(--color-text-tertiary)]">Record loans given or receivables to count them as Assets towards your Net Worth.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setMoneyGivenOpen(true)}
+            className="btn btn-primary btn-sm px-4 font-bold text-xs flex items-center gap-1.5 shadow-md"
+          >
+            <span>🤝</span> Record Money Lent
+          </button>
+        </div>
+      </div>
 
       {/* ── Summary Row ────────────────────────────────── */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -511,11 +548,18 @@ export function NetWorthClient() {
 
       {/* ── Form Modal ────────────────────────────────── */}
       <FormModal
-        mode={modalMode}
         isOpen={modalOpen}
+        mode={modalMode}
         editing={editingItem}
         onClose={() => setModalOpen(false)}
         onSubmit={handleFormSubmit}
+      />
+
+      {/* Modal for recording money given / loan lent */}
+      <MoneyGivenModal
+        isOpen={moneyGivenOpen}
+        onClose={() => setMoneyGivenOpen(false)}
+        onSubmit={handleMoneyGivenSubmit}
       />
     </div>
   );

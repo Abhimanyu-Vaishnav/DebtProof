@@ -298,7 +298,12 @@ export type AssetType =
   | "fd"
   | "rd"
   | "investment"
+  | "stocks"
+  | "crypto"
   | "receivable"
+  | "loan_given_short"
+  | "loan_given_long"
+  | "p2p_given"
   | "real_estate"
   | "gold"
   | "business"
@@ -361,17 +366,22 @@ export interface NetWorthSummary {
 }
 
 export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
-  cash: "Cash",
+  cash: "Cash In Hand",
   bank: "Bank Account",
   fd: "Fixed Deposit (FD)",
   rd: "Recurring Deposit (RD)",
-  investment: "Investment",
-  receivable: "Receivable / Money Due",
-  real_estate: "Real Estate",
-  gold: "Gold",
+  investment: "Investment (General)",
+  stocks: "Stocks / Mutual Funds",
+  crypto: "Crypto Assets",
+  receivable: "Money Lent / Receivable",
+  loan_given_short: "Short-Term Loan Given (<1 Year)",
+  loan_given_long: "Long-Term Loan Given (>1 Year)",
+  p2p_given: "P2P Money Funded",
+  real_estate: "Real Estate Property",
+  gold: "Gold & Precious Metals",
   business: "Business Equity",
-  vehicle: "Vehicle",
-  other: "Other",
+  vehicle: "Vehicle / Asset",
+  other: "Other Asset",
 };
 
 export const ASSET_CLASS_LABELS: Record<AssetClass, string> = {
