@@ -99,6 +99,21 @@ export default function NotificationsPage() {
     }
   };
 
+  const [evaluating, setEvaluating] = useState(false);
+
+  const handleEvaluateReminders = async () => {
+    setEvaluating(true);
+    try {
+      await notificationsService.evaluateEMIReminders();
+      await loadNotifications();
+      window.dispatchEvent(new CustomEvent("notifications:refresh"));
+    } catch {
+      // silent
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
   const handleClearAll = async () => {
     setNotifications([]);
     try {
@@ -123,10 +138,7 @@ export default function NotificationsPage() {
 
     // Horizontal swipe threshold
     if (Math.abs(diffX) > Math.abs(diffY)) {
-      // Prevent screen scrolling when swiping item
       if (e.cancelable) e.preventDefault();
-      
-      // Limit swipe range to [-120, 120] px
       const offset = Math.min(120, Math.max(-120, diffX));
       setSwipeOffset(prev => ({ ...prev, [id]: offset }));
       setSwipingDir(prev => ({ ...prev, [id]: offset > 0 ? "right" : "left" }));
@@ -137,23 +149,36 @@ export default function NotificationsPage() {
     if (!touchStart.current || touchStart.current.id !== id) return;
     const offset = swipeOffset[id] || 0;
     
-    // Swipe thresholds (80px)
     if (offset < -80) {
-      // Swiped left -> DELETE
       handleDelete(id);
     } else if (offset > 80 && !isAlreadyRead) {
-      // Swiped right -> MARK READ
       handleMarkRead(id);
     }
 
-    // Reset layout animation offsets
     setSwipeOffset(prev => ({ ...prev, [id]: 0 }));
     setSwipingDir(prev => ({ ...prev, [id]: null }));
     touchStart.current = null;
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 pb-24">
+    <div className="max-w-xl mx-auto space-y-5 pb-24">
+      {/* Active Channels Banner */}
+      <div className="p-3.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--color-text-secondary)]">
+          <span>Active Channels:</span>
+          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[10px]">In-App 🔔</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px]">Email 📧</span>
+          <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 text-[10px]">WhatsApp 💬</span>
+        </div>
+        <button
+          onClick={handleEvaluateReminders}
+          disabled={evaluating}
+          className="btn btn-primary btn-xs px-3 py-1 font-bold text-[11px] flex items-center gap-1"
+        >
+          {evaluating ? "Evaluating..." : "⚡ Run EMI Auto-Check"}
+        </button>
+      </div>
+
       {/* Header bar with controls */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-2">
         <div>

@@ -53,4 +53,12 @@ export const notificationsService = {
   clearAll: async (): Promise<void> => {
     await apiClient.post("/notifications/clear-all/");
   },
+
+  /**
+   * Trigger automatic evaluation of active EMI due dates and generate upcoming/overdue alerts.
+   */
+  evaluateEMIReminders: async (): Promise<{ success: boolean; unread_count: number }> => {
+    const { data } = await apiClient.post<{ success: boolean; unread_count: number }>("/notifications/evaluate/");
+    return data;
+  },
 };

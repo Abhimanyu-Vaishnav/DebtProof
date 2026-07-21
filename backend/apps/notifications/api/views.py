@@ -102,5 +102,27 @@ class NotificationClearAllView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
-        deleted, _ = Notification.objects.filter(user=request.user).delete()
-        return Response({"success": True, "deleted": deleted})
+        deleted_count, _ = Notification.objects.filter(user=request.user).delete()
+        return Response({"success": True, "deleted": deleted_count})
+
+
+class NotificationEvaluateEMIRemindersView(APIView):
+    """
+    POST /api/v1/notifications/evaluate/
+    Evaluates active loans and generates upcoming/overdue EMI notifications.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        from django.core.management import call_command
+        try:
+            call_command("generate_emi_notifications")
+            unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+            return Response({
+                "success": True,
+                "message": "EMI evaluation completed successfully.",
+                "unread_count": unread_count
+            })
+        except Exception as e:
+            logger.error("Failed to evaluate EMI notifications: %s", str(e))
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
