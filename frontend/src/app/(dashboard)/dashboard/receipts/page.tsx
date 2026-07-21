@@ -11,17 +11,18 @@ import { paymentsService } from "@/services/payments.service";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { ReceiptProofModal } from "@/components/receipts/ReceiptProofModal";
 import type { Payment } from "@/types";
 
 export default function ReceiptsPage() {
   const [receiptPayments, setReceiptPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedProofPayment, setSelectedProofPayment] = useState<Payment | null>(null);
 
   useEffect(() => {
     const fetchReceipts = async () => {
       try {
         const res = await paymentsService.getAllPayments({ page_size: 100 });
-        // Filter payments that have receipts uploaded
         const withReceipts = (res.results ?? []).filter(p => p.has_receipt && p.receipt);
         setReceiptPayments(withReceipts);
       } catch (err) {
@@ -128,10 +129,16 @@ export default function ReceiptsPage() {
                     )}
                   </div>
                   
-                  <div className="flex justify-end pt-1">
+                  <div className="flex items-center justify-between pt-1 gap-2">
+                    <button
+                      onClick={() => setSelectedProofPayment(p)}
+                      className="btn btn-secondary btn-xs text-xs font-bold flex items-center gap-1"
+                    >
+                      <span>⛓️</span> Inspect Monad Proof
+                    </button>
                     <Link 
                       href={`/dashboard/loans/${p.loan}`}
-                      className="btn btn-secondary btn-xs text-xs"
+                      className="btn btn-ghost btn-xs text-xs"
                     >
                       View Loan Details
                     </Link>
@@ -142,6 +149,13 @@ export default function ReceiptsPage() {
           </div>
         )}
       </main>
+
+      {selectedProofPayment && (
+        <ReceiptProofModal
+          payment={selectedProofPayment}
+          onClose={() => setSelectedProofPayment(null)}
+        />
+      )}
     </>
   );
 }
