@@ -15,6 +15,8 @@ import { WalletCard } from "@/components/dashboard/WalletCard";
 import type { DashboardData, LOAN_TYPE_LABELS } from "@/types";
 import { LOAN_TYPE_LABELS as LABELS } from "@/types";
 
+import { PayoffMilestonesWidget } from "@/components/analytics/PayoffMilestonesWidget";
+
 function formatDebtFreeDate(dateStr: string | null) {
   if (!dateStr) return "No active debts!";
   const [year, month] = dateStr.split("-");
@@ -208,6 +210,12 @@ export function DashboardClient() {
           </div>
         </div>
       )}
+
+      {/* Debt Reduction Velocity & Milestones Widget */}
+      <section aria-labelledby="milestones-heading">
+        <h2 id="milestones-heading" className="sr-only">Payoff Milestones</h2>
+        <PayoffMilestonesWidget data={data} />
+      </section>
 
       {/* Quick Actions */}
       <section aria-labelledby="quick-actions-heading">
