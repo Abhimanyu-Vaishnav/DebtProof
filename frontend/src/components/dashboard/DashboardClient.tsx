@@ -19,6 +19,7 @@ import { PayoffMilestonesWidget } from "@/components/analytics/PayoffMilestonesW
 import { AIDebtAdvisorWidget } from "@/components/dashboard/AIDebtAdvisorWidget";
 import { CreditUtilizationMeter } from "@/components/credit-cards/CreditUtilizationMeter";
 import { EmergencyBufferWidget } from "@/components/dashboard/EmergencyBufferWidget";
+import { EMIBounceProtectionWidget } from "@/components/dashboard/EMIBounceProtectionWidget";
 
 function formatDebtFreeDate(dateStr: string | null) {
   if (!dateStr) return "No active debts!";
@@ -232,6 +233,9 @@ export function DashboardClient() {
 
       {/* Emergency EMI Reserve Buffer Tracker */}
       <EmergencyBufferWidget data={data} />
+
+      {/* EMI Auto-Debits Bank Account Health Checker */}
+      <EMIBounceProtectionWidget data={data} />
 
       {/* Quick Actions */}
       <section aria-labelledby="quick-actions-heading">
