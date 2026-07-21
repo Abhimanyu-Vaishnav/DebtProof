@@ -8,6 +8,7 @@ import { formatCurrency, formatDate, highlightMatch } from "@/utils/formatters";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LoanStatusBadge } from "./LoanStatusBadge";
 import { P2PContractModal } from "./P2PContractModal";
+import { AmortizationScheduleModal } from "./AmortizationScheduleModal";
 
 interface LoanCardProps {
   loan: Loan;
@@ -27,7 +28,8 @@ const LOAN_TYPE_ICONS: Record<string, string> = {
 
 export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
   const progress = loan.repayment_progress_percent;
-  const [showContractModal, setShowContractModal] = React.useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [showAmortizationModal, setShowAmortizationModal] = useState(false);
 
   return (
     <>
@@ -129,6 +131,12 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
                 📜 Note
               </button>
             )}
+            <button
+              onClick={() => setShowAmortizationModal(true)}
+              className="btn btn-ghost btn-sm py-1 px-2 text-xs font-semibold text-[var(--color-primary-light)] hover:bg-[var(--color-surface-secondary)]"
+            >
+              📊 Schedule
+            </button>
             <Link
               href={`/dashboard/loans/${loan.id}`}
               className="btn btn-ghost btn-sm py-1 px-2 text-xs font-semibold"
@@ -155,6 +163,9 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
 
       {showContractModal && (
         <P2PContractModal loan={loan} onClose={() => setShowContractModal(false)} />
+      )}
+      {showAmortizationModal && (
+        <AmortizationScheduleModal loan={loan} onClose={() => setShowAmortizationModal(false)} />
       )}
     </>
   );
