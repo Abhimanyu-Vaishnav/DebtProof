@@ -135,7 +135,28 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Theme Preset Switcher */}
+        <div className="relative hidden sm:block">
+          <select
+            onChange={(e) => {
+              const theme = e.target.value;
+              if (theme === "emerald") {
+                document.documentElement.style.setProperty("--color-accent", "#059669");
+              } else if (theme === "blue") {
+                document.documentElement.style.setProperty("--color-accent", "#2563eb");
+              } else {
+                document.documentElement.style.removeProperty("--color-accent");
+              }
+            }}
+            className="input text-[11px] h-8 px-2 py-0 bg-[var(--color-surface-secondary)] border-[var(--color-border-light)] rounded-xl font-bold text-[var(--color-text-secondary)] cursor-pointer"
+          >
+            <option value="default">🎨 Theme: Titanium</option>
+            <option value="emerald">🌿 Theme: Emerald</option>
+            <option value="blue">🔷 Theme: Midnight</option>
+          </select>
+        </div>
+
         {/* Notification Bell (Hidden on Mobile) */}
         <div className="relative hidden lg:block" ref={notificationsRef}>
           <button
