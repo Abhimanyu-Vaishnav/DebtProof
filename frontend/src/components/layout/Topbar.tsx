@@ -48,6 +48,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       root.style.setProperty("--color-surface-tertiary", "#065f46");
       root.style.setProperty("--color-primary", "#10b981");
       root.style.setProperty("--color-primary-light", "#34d399");
+      root.style.setProperty("--color-primary-dark", "#6ee7b7");
       root.style.setProperty("--color-accent", "#34d399");
       root.style.setProperty("--color-text-primary", "#ecfdf5");
       root.style.setProperty("--color-text-secondary", "#a7f3d0");
@@ -58,6 +59,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       root.style.setProperty("--color-surface-tertiary", "#312e81");
       root.style.setProperty("--color-primary", "#6366f1");
       root.style.setProperty("--color-primary-light", "#818cf8");
+      root.style.setProperty("--color-primary-dark", "#a5b4fc");
       root.style.setProperty("--color-accent", "#818cf8");
       root.style.setProperty("--color-text-primary", "#e0e7ff");
       root.style.setProperty("--color-text-secondary", "#c7d2fe");
@@ -68,6 +70,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       root.style.setProperty("--color-surface-tertiary", "#f1f5f9");
       root.style.setProperty("--color-primary", "#1a3a5c");
       root.style.setProperty("--color-primary-light", "#2563a8");
+      root.style.setProperty("--color-primary-dark", "#0f2340");
       root.style.setProperty("--color-accent", "#10b981");
       root.style.setProperty("--color-text-primary", "#0f172a");
       root.style.setProperty("--color-text-secondary", "#475569");
@@ -79,6 +82,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       root.style.setProperty("--color-surface-tertiary", "#1e293b");
       root.style.setProperty("--color-primary", "#38bdf8");
       root.style.setProperty("--color-primary-light", "#0ea5e9");
+      root.style.setProperty("--color-primary-dark", "#7dd3fc");
       root.style.setProperty("--color-accent", "#10b981");
       root.style.setProperty("--color-text-primary", "#f8fafc");
       root.style.setProperty("--color-text-secondary", "#94a3b8");
