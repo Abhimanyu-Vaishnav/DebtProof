@@ -110,6 +110,12 @@ export interface Loan {
   borrower_wallet: string;
   lender_wallet: string;
   escrow_contract_address: string;
+  is_p2p_agreement?: boolean;
+  counterparty_name?: string;
+  counterparty_email?: string;
+  counterparty_phone?: string;
+  contract_status?: "draft" | "pending_signature" | "active" | "settled";
+  agreement_signed_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -131,6 +137,11 @@ export interface LoanFormData {
   borrower_wallet?: string;
   lender_wallet?: string;
   escrow_contract_address?: string;
+  is_p2p_agreement?: boolean;
+  counterparty_name?: string;
+  counterparty_email?: string;
+  counterparty_phone?: string;
+  contract_status?: string;
 }
 
 // ── Payment Types ────────────────────────────────────────────

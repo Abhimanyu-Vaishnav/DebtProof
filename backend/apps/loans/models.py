@@ -113,6 +113,26 @@ class Loan(BaseModel):
     lender_wallet = models.CharField(max_length=42, blank=True)
     escrow_contract_address = models.CharField(max_length=42, blank=True)
 
+    # ── P2P Promissory Agreement ──────────────────────────────
+    is_p2p_agreement = models.BooleanField(
+        default=False,
+        help_text="If true, this is a peer-to-peer debt agreement with a formal digital promissory note"
+    )
+    counterparty_name = models.CharField(max_length=200, blank=True, help_text="Name of friend/family/business partner")
+    counterparty_email = models.EmailField(blank=True)
+    counterparty_phone = models.CharField(max_length=20, blank=True)
+    contract_status = models.CharField(
+        max_length=30,
+        default="active",
+        choices=[
+            ("draft", "Draft"),
+            ("pending_signature", "Pending Counterparty Signature"),
+            ("active", "Active / Binding"),
+            ("settled", "Settled / Complete"),
+        ]
+    )
+    agreement_signed_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         db_table = "loans"
         verbose_name = "Loan"
