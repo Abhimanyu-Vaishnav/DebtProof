@@ -195,17 +195,19 @@ class LoanDashboardView(APIView):
         )
         total_principal_all = float(all_agg["total_principal_all"] or 0)
 
-        # Upcoming EMI
-        upcoming_loan = (
-            loans.filter(
-                status=LoanStatus.ACTIVE,
-                next_emi_date__gte=date.today(),
-            )
+        # Upcoming EMI (Total sum across all active loans)
+        active_loans_qs = loans.filter(status=LoanStatus.ACTIVE)
+        total_monthly_emi_sum = active_loans_qs.aggregate(total=Sum("monthly_emi"))["total"] or 0
+        upcoming_emi_amount = float(total_monthly_emi_sum)
+
+        earliest_upcoming_loan = (
+            active_loans_qs.filter(next_emi_date__gte=date.today())
             .order_by("next_emi_date")
             .first()
         )
-        upcoming_emi_amount = float(upcoming_loan.monthly_emi) if upcoming_loan else 0
-        upcoming_emi_date = str(upcoming_loan.next_emi_date) if upcoming_loan else None
+        upcoming_emi_date = str(earliest_upcoming_loan.next_emi_date) if earliest_upcoming_loan else (
+            str(date.today().replace(day=1))
+        )
 
         # Overdue loans
         overdue_count = loans.filter(

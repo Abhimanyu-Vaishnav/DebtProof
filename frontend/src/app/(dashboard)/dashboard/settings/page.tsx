@@ -26,9 +26,10 @@ const DATE_FORMATS = [
 ] as const;
 
 const THEMES = [
-  { id: "titanium", label: "Titanium Dark", desc: "Default sleek dark theme", color: "#2563a8", accent: "#10b981" },
-  { id: "emerald",  label: "Deep Emerald",  desc: "Lush green accent",        color: "#059669", accent: "#34d399" },
-  { id: "midnight", label: "Midnight Blue", desc: "Indigo violet palette",    color: "#4f46e5", accent: "#818cf8" },
+  { id: "dark",     label: "Dark Titanium", desc: "Default sleek dark theme", color: "#0f172a", accent: "#38bdf8" },
+  { id: "light",    label: "Clean Light",   desc: "Clean light contrast theme", color: "#ffffff", accent: "#10b981" },
+  { id: "emerald",  label: "Deep Emerald",  desc: "Lush green accent",        color: "#022c22", accent: "#34d399" },
+  { id: "midnight", label: "Midnight Blue", desc: "Indigo violet palette",    color: "#0f172a", accent: "#818cf8" },
 ] as const;
 
 function ToggleSwitch({ checked, onChange, id }: { checked: boolean; onChange: (v: boolean) => void; id: string }) {
@@ -270,24 +271,74 @@ export default function SettingsPage() {
             {/* ── Appearance ─────────────────────────────────────────────── */}
             {activeTab === "appearance" && (
               <>
-                <SectionCard title="Theme" icon="🎨">
-                  <div className="py-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <SectionCard title="Theme Preset" icon="🎨">
+                  <div className="py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     {THEMES.map((t) => (
                       <button
                         key={t.id}
-                        onClick={() => updateSettings({ theme: t.id })}
-                        className={`relative rounded-xl border-2 p-4 text-left transition-all ${
+                        onClick={() => {
+                          updateSettings({ theme: t.id });
+                          localStorage.setItem("debtproof_theme", t.id);
+                          const root = document.documentElement;
+                          if (t.id === "emerald") {
+                            root.style.setProperty("--color-surface", "#064e3b");
+                            root.style.setProperty("--color-surface-secondary", "#022c22");
+                            root.style.setProperty("--color-surface-tertiary", "#065f46");
+                            root.style.setProperty("--color-primary", "#10b981");
+                            root.style.setProperty("--color-primary-light", "#34d399");
+                            root.style.setProperty("--color-primary-dark", "#6ee7b7");
+                            root.style.setProperty("--color-accent", "#34d399");
+                            root.style.setProperty("--color-text-primary", "#ecfdf5");
+                            root.style.setProperty("--color-text-secondary", "#a7f3d0");
+                            root.style.setProperty("--color-border-light", "rgba(52, 211, 153, 0.2)");
+                          } else if (t.id === "midnight") {
+                            root.style.setProperty("--color-surface", "#1e1b4b");
+                            root.style.setProperty("--color-surface-secondary", "#0f172a");
+                            root.style.setProperty("--color-surface-tertiary", "#312e81");
+                            root.style.setProperty("--color-primary", "#6366f1");
+                            root.style.setProperty("--color-primary-light", "#818cf8");
+                            root.style.setProperty("--color-primary-dark", "#a5b4fc");
+                            root.style.setProperty("--color-accent", "#818cf8");
+                            root.style.setProperty("--color-text-primary", "#e0e7ff");
+                            root.style.setProperty("--color-text-secondary", "#c7d2fe");
+                            root.style.setProperty("--color-border-light", "rgba(129, 140, 248, 0.2)");
+                          } else if (t.id === "light") {
+                            root.style.setProperty("--color-surface", "#ffffff");
+                            root.style.setProperty("--color-surface-secondary", "#f8fafc");
+                            root.style.setProperty("--color-surface-tertiary", "#f1f5f9");
+                            root.style.setProperty("--color-primary", "#1a3a5c");
+                            root.style.setProperty("--color-primary-light", "#2563a8");
+                            root.style.setProperty("--color-primary-dark", "#0f2340");
+                            root.style.setProperty("--color-accent", "#10b981");
+                            root.style.setProperty("--color-text-primary", "#0f172a");
+                            root.style.setProperty("--color-text-secondary", "#475569");
+                            root.style.setProperty("--color-border-light", "#f1f5f9");
+                          } else {
+                            root.style.setProperty("--color-surface", "#0f172a");
+                            root.style.setProperty("--color-surface-secondary", "#020617");
+                            root.style.setProperty("--color-surface-tertiary", "#1e293b");
+                            root.style.setProperty("--color-primary", "#38bdf8");
+                            root.style.setProperty("--color-primary-light", "#0ea5e9");
+                            root.style.setProperty("--color-primary-dark", "#7dd3fc");
+                            root.style.setProperty("--color-accent", "#10b981");
+                            root.style.setProperty("--color-text-primary", "#f8fafc");
+                            root.style.setProperty("--color-text-secondary", "#94a3b8");
+                            root.style.setProperty("--color-border-light", "rgba(255, 255, 255, 0.1)");
+                          }
+                          showToast(`Theme changed to ${t.label}`, "info");
+                        }}
+                        className={`relative rounded-xl border-2 p-4 text-left transition-all cursor-pointer ${
                           settings.theme === t.id
                             ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 ring-2 ring-[var(--color-primary)]/30"
-                            : "border-[var(--color-border-light)] hover:border-[var(--color-primary)]/30"
+                            : "border-[var(--color-border-light)] hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-surface-secondary)]"
                         }`}
                       >
                         {settings.theme === t.id && (
                           <span className="absolute top-2.5 right-2.5 text-[var(--color-primary)] font-black text-sm">✓</span>
                         )}
                         <div className="flex gap-1.5 mb-3">
-                          <div className="w-5 h-5 rounded-full" style={{ background: t.color }} />
-                          <div className="w-5 h-5 rounded-full" style={{ background: t.accent }} />
+                          <div className="w-5 h-5 rounded-full border border-black/10" style={{ background: t.color }} />
+                          <div className="w-5 h-5 rounded-full border border-black/10" style={{ background: t.accent }} />
                         </div>
                         <p className="text-xs font-bold text-[var(--color-text-primary)]">{t.label}</p>
                         <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">{t.desc}</p>

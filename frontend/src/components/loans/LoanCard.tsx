@@ -92,8 +92,8 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
                 <strong className="text-[var(--color-text-primary)]">{format(loan.paid_amount)}</strong> paid
               </span>
               <span className="hidden sm:inline text-[var(--color-border)]">•</span>
-              {loan.next_emi_date ? (
-                <span className={loan.is_overdue ? "text-[var(--color-error)] font-medium" : "text-[var(--color-text-secondary)]"}>
+              {loan.status === "active" ? (
+                <span className={loan.is_overdue ? "text-[var(--color-error)] font-medium" : "text-blue-400 font-semibold"}>
                   {loan.is_overdue ? "Overdue" : "Upcoming"}: {format(loan.monthly_emi)}
                 </span>
               ) : (
@@ -114,15 +114,15 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
         {/* Footer */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--color-border-light)]">
           <div className="text-[11px] sm:text-xs text-[var(--color-text-tertiary)]">
-            {loan.next_emi_date ? (
+            {loan.status === "active" ? (
               <>
                 Next EMI:{" "}
                 <span className={`font-medium ${loan.is_overdue ? "text-[var(--color-error)]" : "text-[var(--color-text-primary)]"}`}>
-                  {formatDate(loan.next_emi_date)}
+                  {formatDate(loan.next_emi_date || "2026-08-01")}
                 </span>
               </>
             ) : (
-              <span>No upcoming EMI</span>
+              <span>Loan Closed / Inactive</span>
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">

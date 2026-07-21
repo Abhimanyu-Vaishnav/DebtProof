@@ -172,7 +172,7 @@ interface AppSettings {
   currencyCode: string;
   compactNumbers: boolean;
   dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
-  theme: "titanium" | "emerald" | "midnight";
+  theme: "dark" | "light" | "emerald" | "midnight" | "titanium";
   emiReminderDays: number;
   overdueAlerts: boolean;
   paymentConfirmation: boolean;

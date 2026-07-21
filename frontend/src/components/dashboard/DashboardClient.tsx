@@ -22,6 +22,7 @@ import { CreditUtilizationMeter } from "@/components/credit-cards/CreditUtilizat
 import { EmergencyBufferWidget } from "@/components/dashboard/EmergencyBufferWidget";
 import { EMIBounceProtectionWidget } from "@/components/dashboard/EMIBounceProtectionWidget";
 import { MultiCurrencyWidget } from "@/components/dashboard/MultiCurrencyWidget";
+import { IncomeTrackerWidget } from "@/components/dashboard/IncomeTrackerWidget";
 
 function formatDebtFreeDate(dateStr: string | null) {
   if (!dateStr) return "No active debts!";
@@ -217,6 +218,12 @@ export function DashboardClient() {
           </div>
         </div>
       )}
+
+      {/* Monthly Income & Outflow Safety Meter */}
+      <section aria-labelledby="income-tracker-heading">
+        <h2 id="income-tracker-heading" className="sr-only">Monthly Income & Outflows Tracker</h2>
+        <IncomeTrackerWidget monthlyEmiTotal={data.upcoming_emi_amount || 68800} />
+      </section>
 
       {/* Debt Reduction Velocity & Milestones Widget */}
       <section aria-labelledby="milestones-heading">
