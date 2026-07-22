@@ -141,3 +141,6 @@ export function BottomTabBar() {
     </nav>
   );
 }
+
+export default BottomTabBar;
+
