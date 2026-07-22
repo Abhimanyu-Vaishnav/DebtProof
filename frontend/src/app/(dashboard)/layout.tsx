@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { EMIReminderPopup } from "@/components/ui/EMIReminderPopup";
 import { InstallPWABanner } from "@/components/ui/InstallPWABanner";
+import { AIDebtPayoffAssistant } from "@/components/dashboard/AIDebtPayoffAssistant";
 
 export const metadata: Metadata = {
   title: {
@@ -25,6 +26,7 @@ export default function DashboardLayout({
       {/* Global floating UI */}
       <EMIReminderPopup />
       <InstallPWABanner />
+      <AIDebtPayoffAssistant />
     </div>
   );
 }
