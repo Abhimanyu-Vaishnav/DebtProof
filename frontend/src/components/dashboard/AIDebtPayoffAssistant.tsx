@@ -142,6 +142,46 @@ export function AIDebtPayoffAssistant() {
       };
     }
 
+    // App Install / Download Trigger
+    if (q.includes("install") || q.includes("download") || q.includes("app") || q.includes("mobile")) {
+      try {
+        localStorage.removeItem("debtproof-pwa-dismiss");
+        window.dispatchEvent(new Event("debtproof_pwa_show"));
+      } catch {}
+
+      return {
+        responseText: `📲 **App Install Prompt Activated!**\n\nI have triggered the PWA App Install Banner at the bottom-left of your screen. Click **"Install App"** to add DebtProof directly to your phone or desktop home screen for offline access and faster performance.`,
+      };
+    }
+
+    // Reports / Statement Navigation
+    if (q.includes("report") || q.includes("statement") || q.includes("download pdf") || q.includes("pdf")) {
+      return {
+        responseText: `📊 **Reports & PDF Export Hub**:\n\nYou can generate and download Loan Portfolio Statements, Payment Logs, and Net Worth Audits from the [Reports Page](/dashboard/reports).\n\nWould you like me to open the Reports module for you?`,
+      };
+    }
+
+    // Budget Planner Navigation
+    if (q.includes("budget") || q.includes("income") || q.includes("expense") || q.includes("planner")) {
+      return {
+        responseText: `🏦 **Smart Budget Planner**:\n\nYou can manage live income streams, set monthly budgets, and check your Financial Health Score at [Budget Planner](/dashboard/budget).\n\nChanges here sync live with your main Dashboard!`,
+      };
+    }
+
+    // Profile & Settings Navigation
+    if (q.includes("profile") || q.includes("account") || q.includes("setting") || q.includes("password")) {
+      return {
+        responseText: `⚙️ **Profile & Settings Navigation**:\n\n• Access your full profile at [My Profile](/profile)\n• Change theme, currency, or clear cache at [Settings](/dashboard/settings)\n• You can also install the App anytime from the My Account dropdown menu at the top-right!`,
+      };
+    }
+
+    // Help & Guide Navigation
+    if (q.includes("help") || q.includes("guide") || q.includes("faq") || q.includes("feature")) {
+      return {
+        responseText: `📖 **DebtProof Feature Guide**:\n\nCheck out step-by-step role explanations and how-to guides for every feature at [Help Center](/dashboard/help).`,
+      };
+    }
+
     // 4. Credit Score / DTI
     if (q.includes("credit") || q.includes("dti") || q.includes("score")) {
       return {
@@ -151,7 +191,7 @@ export function AIDebtPayoffAssistant() {
 
     // General fallback response
     return {
-      responseText: `Based on your live portfolio (${activeCount} active loans, total balance ${format(totalDebt)}):\n\nI recommend prioritizing any high-interest loans (>12% p.a.). Would you like me to simulate an extra EMI prepayment calculation or compare Snowball vs Avalanche for your specific loans?`,
+      responseText: `Based on your live portfolio (${activeCount} active loans, total balance ${format(totalDebt)}):\n\nI can help you navigate any module in DebtProof! Try asking:\n• "Install app on device"\n• "Open Budget Planner"\n• "Generate PDF Reports"\n• "View My Profile"\n• "Snowball vs Avalanche advice"`,
     };
   };
 

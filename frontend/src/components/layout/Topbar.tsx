@@ -352,7 +352,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                 <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">Free Plan</p>
               </div>
               <Link
-                href="/dashboard/profile"
+                href="/profile"
                 onClick={() => setDropdownOpen(false)}
                 className="flex items-center gap-2 px-4 py-2 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
               >
@@ -361,6 +361,18 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                 </svg>
                 View Profile
               </Link>
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  const dismissKey = "debtproof-pwa-dismiss";
+                  localStorage.removeItem(dismissKey);
+                  window.dispatchEvent(new Event("debtproof_pwa_show"));
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-xs text-[var(--color-primary-light)] font-bold hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer text-left"
+              >
+                <span>📲</span>
+                Install Mobile App
+              </button>
               <Link
                 href="/dashboard/settings"
                 onClick={() => setDropdownOpen(false)}
