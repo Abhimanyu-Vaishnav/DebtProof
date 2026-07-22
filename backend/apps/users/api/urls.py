@@ -3,8 +3,9 @@ DebtProof — User Auth URL Routes
 All routes live under /api/v1/auth/
 """
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from .views import UserRegistrationView, UserProfileView, LogoutView
+from .jwt_views import CustomTokenObtainPairView
 
 app_name = "users"
 
@@ -13,7 +14,7 @@ urlpatterns = [
     path("register/", UserRegistrationView.as_view(), name="register"),
 
     # JWT Login (returns access + refresh)
-    path("login/", TokenObtainPairView.as_view(), name="login"),
+    path("login/", CustomTokenObtainPairView.as_view(), name="login"),
 
     # Token management
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
