@@ -1,12 +1,11 @@
 /**
  * DebtProof — Full Interactive AI Debt Payoff Assistant & Strategy Coach
- * Floating bot + dedicated interactive chat drawer with live financial calculations.
+ * Light/Dark Mode Accessible High-Contrast Styling with Markdown Rendering.
  */
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { loansService } from "@/services/loans.service";
-import { assetsService } from "@/services/assets.service";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import type { Loan, DashboardData } from "@/types";
 
@@ -24,6 +23,21 @@ interface ChatMessage {
   };
 }
 
+// ── Markdown-like Formatter for **bold** text ─────────────────────
+function renderFormattedText(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-black text-[var(--color-primary-light)]">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
 export function AIDebtPayoffAssistant() {
   const { format } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +46,6 @@ export function AIDebtPayoffAssistant() {
   const [isThinking, setIsThinking] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [dashData, setDashData] = useState<DashboardData | null>(null);
-  const [extraPaymentSim, setExtraPaymentSim] = useState<number>(5000);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Load real financial context
@@ -172,7 +185,7 @@ export function AIDebtPayoffAssistant() {
       {/* ── FLOATING BOT TRIGGER BUTTON ──────────────────────── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black text-xs shadow-2xl hover:scale-105 transition-all cursor-pointer border border-white/20 active:scale-95"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-[var(--color-primary)] text-white font-black text-xs shadow-2xl hover:scale-105 transition-all cursor-pointer border border-white/20 active:scale-95"
         aria-label="Open AI Financial Payoff Assistant"
       >
         <span className="text-xl animate-pulse">🤖</span>
@@ -184,44 +197,44 @@ export function AIDebtPayoffAssistant() {
 
       {/* ── CHAT DRAWER / DIALOG ─────────────────────────────── */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-full max-w-md bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[520px] max-h-[80vh] animate-fade-in-up">
+        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-full max-w-md bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[540px] max-h-[82vh] animate-fade-in-up">
           
           {/* Header */}
-          <div className="p-4 bg-gradient-to-r from-indigo-900/90 to-purple-900/90 text-white flex items-center justify-between border-b border-white/10">
+          <div className="p-4 bg-[var(--color-primary)] text-white flex items-center justify-between border-b border-white/10 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-xl shadow-inner">
+              <div className="w-9 h-9 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-xl shadow-inner">
                 🤖
               </div>
               <div>
-                <h3 className="text-sm font-black tracking-tight leading-none">DebtProof AI Coach</h3>
-                <p className="text-[10px] text-indigo-200 mt-1 font-medium flex items-center gap-1">
+                <h3 className="text-sm font-black tracking-tight leading-none text-white">DebtProof AI Coach</h3>
+                <p className="text-[10px] text-blue-100 mt-1 font-bold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> Active Portfolio Intelligence
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-full hover:bg-white/10 text-white/80 transition cursor-pointer"
+              className="p-1.5 rounded-full hover:bg-white/20 text-white font-bold transition cursor-pointer"
             >
               ✕
             </button>
           </div>
 
           {/* Messages Scroll Area */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-[var(--color-surface-secondary)]/50 text-xs">
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-[var(--color-surface-secondary)] text-xs">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`p-3.5 rounded-2xl max-w-[85%] leading-relaxed space-y-2 whitespace-pre-wrap ${
+                  className={`p-3.5 rounded-2xl max-w-[88%] leading-relaxed space-y-2 whitespace-pre-wrap ${
                     msg.sender === "user"
-                      ? "bg-[var(--color-primary)] text-white font-medium rounded-br-none shadow-sm"
-                      : "bg-[var(--color-surface)] text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-bl-none shadow-xs"
+                      ? "bg-[var(--color-primary)] text-white font-bold rounded-br-none shadow-md"
+                      : "bg-[var(--color-surface)] text-[var(--color-text-primary)] border border-[var(--color-border)] font-medium rounded-bl-none shadow-sm"
                   }`}
                 >
-                  <p>{msg.text}</p>
+                  <p className="text-[13px]">{renderFormattedText(msg.text)}</p>
 
                   {/* Impact Calculation Card Attachment */}
                   {msg.impactCard && (
@@ -244,18 +257,18 @@ export function AIDebtPayoffAssistant() {
                   )}
                 </div>
 
-                <span className="text-[9px] text-[var(--color-text-tertiary)] font-bold mt-1 px-1">
+                <span className="text-[9px] text-[var(--color-text-secondary)] font-bold mt-1 px-1">
                   {msg.timestamp}
                 </span>
 
                 {/* Preset Prompt Options (if present) */}
                 {msg.options && (
-                  <div className="flex flex-wrap gap-1.5 mt-2 max-w-[90%]">
+                  <div className="flex flex-wrap gap-1.5 mt-2.5 max-w-[92%]">
                     {msg.options.map((opt, i) => (
                       <button
                         key={i}
                         onClick={() => handleSendMessage(opt.actionPrompt)}
-                        className="text-[10px] font-bold px-3 py-1.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary-light)] text-[var(--color-text-primary)] transition-all text-left shadow-xs cursor-pointer"
+                        className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary-light)] text-[var(--color-text-primary)] transition-all text-left shadow-xs cursor-pointer"
                       >
                         {opt.label}
                       </button>
@@ -266,8 +279,8 @@ export function AIDebtPayoffAssistant() {
             ))}
 
             {isThinking && (
-              <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-secondary)] font-medium p-2">
-                <span className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-primary)] font-bold p-2">
+                <span className="w-3.5 h-3.5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
                 <span>AI Coach is analyzing your debt metrics...</span>
               </div>
             )}
@@ -282,12 +295,12 @@ export function AIDebtPayoffAssistant() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-              className="flex-1 px-3.5 py-2.5 rounded-2xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]"
+              className="flex-1 px-3.5 py-2.5 rounded-2xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-primary)]"
             />
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputValue.trim()}
-              className="p-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white disabled:opacity-40 hover:opacity-90 transition cursor-pointer shrink-0 font-bold"
+              className="p-2.5 rounded-2xl bg-[var(--color-primary)] text-white disabled:opacity-40 hover:opacity-90 transition cursor-pointer shrink-0 font-bold"
             >
               🚀
             </button>
