@@ -1,5 +1,5 @@
 /**
- * DebtProof — Notifications Page (Responsive Swipe Gestures)
+ * DebtProof — Notifications Page (Responsive Swipe Gestures + Filter Tabs + Push)
  */
 "use client";
 
@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { notificationsService } from "@/services/notifications.service";
 import type { Notification } from "@/types";
 import { cn } from "@/utils/cn";
+
+type FilterTab = "all" | "unread" | "emi" | "payments";
 
 function notifIcon(type: string) {
   if (type === "emi_overdue") return { bg: "bg-red-50 text-red-500 border-red-100", emoji: "⚠️", label: "Overdue" };
@@ -25,24 +27,62 @@ function timeAgo(isoString: string): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-// Redirect mapping based on notification parameters
 function getRedirectPath(n: Notification): string {
   const type = n.notif_type;
-  if (type === "emi_overdue" || type === "emi_upcoming") {
-    return "/dashboard/loans";
-  }
-  if (type === "payment_received") {
-    return "/dashboard/payments";
-  }
-  if (n.title.toLowerCase().includes("credit") || n.body.toLowerCase().includes("credit")) {
-    return "/dashboard/credit-cards";
-  }
+  if (type === "emi_overdue" || type === "emi_upcoming") return "/dashboard/loans";
+  if (type === "payment_received") return "/dashboard/payments";
+  if (n.title.toLowerCase().includes("credit") || n.body.toLowerCase().includes("credit")) return "/dashboard/credit-cards";
   return "/dashboard";
 }
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
+  const [pushStatus, setPushStatus] = useState<"unknown" | "granted" | "denied" | "unsupported">("unknown");
+  const [pushLoading, setPushLoading] = useState(false);
+
+  // Check push notification status
+  useEffect(() => {
+    if (!('Notification' in window)) { setPushStatus("unsupported"); return; }
+    if (Notification.permission === "granted") setPushStatus("granted");
+    else if (Notification.permission === "denied") setPushStatus("denied");
+    else setPushStatus("unknown");
+  }, []);
+
+  const requestPushPermission = async () => {
+    if (!('Notification' in window)) return;
+    setPushLoading(true);
+    try {
+      const result = await Notification.requestPermission();
+      setPushStatus(result === "granted" ? "granted" : "denied");
+      if (result === "granted") {
+        // Show a test notification
+        setTimeout(() => {
+          new Notification("🔔 DebtProof Notifications Enabled!", {
+            body: "You'll now receive alerts for upcoming EMIs and payment reminders.",
+            icon: "/icons/icon-192.png",
+          });
+        }, 500);
+      }
+    } finally { setPushLoading(false); }
+  };
+
+  // Filter logic
+  const filteredNotifications = notifications.filter(n => {
+    if (activeFilter === "unread") return !n.is_read;
+    if (activeFilter === "emi") return n.notif_type === "emi_upcoming" || n.notif_type === "emi_overdue";
+    if (activeFilter === "payments") return n.notif_type === "payment_received" || n.notif_type === "loan_closed";
+    return true;
+  });
+
+  const FILTER_TABS: { id: FilterTab; label: string; icon: string }[] = [
+    { id: "all", label: "All", icon: "🔔" },
+    { id: "unread", label: "Unread", icon: "🔵" },
+    { id: "emi", label: "EMI Alerts", icon: "📅" },
+    { id: "payments", label: "Payments", icon: "✅" },
+  ];
+
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
   const router = useRouter();
 
@@ -162,21 +202,74 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-xl mx-auto space-y-5 pb-24">
+
+      {/* Browser Push Notification Card */}
+      <div className={`p-4 rounded-xl border flex items-start justify-between gap-3 ${
+        pushStatus === "granted" ? "bg-emerald-500/10 border-emerald-500/30" :
+        pushStatus === "denied" ? "bg-rose-500/10 border-rose-500/30" :
+        "bg-[var(--color-surface-secondary)] border-[var(--color-border)]"
+      }`}>
+        <div className="flex items-start gap-2.5">
+          <span className="text-xl mt-0.5">
+            {pushStatus === "granted" ? "🔔" : pushStatus === "denied" ? "🔕" : "📲"}
+          </span>
+          <div>
+            <p className="text-xs font-black text-[var(--color-text-primary)]">
+              {pushStatus === "granted" ? "Browser Push: Enabled ✅" :
+               pushStatus === "denied" ? "Browser Push: Blocked ❌" :
+               pushStatus === "unsupported" ? "Push Not Supported" :
+               "Enable Browser Push Notifications"}
+            </p>
+            <p className="text-[10px] font-medium text-[var(--color-text-secondary)] mt-0.5">
+              {pushStatus === "granted" ? "You'll receive EMI reminders directly in your browser." :
+               pushStatus === "denied" ? "Unblock in browser settings → Site Permissions → Notifications." :
+               pushStatus === "unsupported" ? "Your browser doesn't support push notifications." :
+               "Get real-time EMI alerts, payment reminders, and overdue warnings."}
+            </p>
+          </div>
+        </div>
+        {(pushStatus === "unknown") && (
+          <button onClick={requestPushPermission} disabled={pushLoading}
+            className="shrink-0 px-3 py-1.5 rounded-lg bg-[var(--color-primary)] text-white text-[11px] font-bold hover:opacity-90 disabled:opacity-60 transition cursor-pointer">
+            {pushLoading ? "..." : "Enable"}
+          </button>
+        )}
+      </div>
+
       {/* Active Channels Banner */}
       <div className="p-3.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--color-text-secondary)]">
           <span>Active Channels:</span>
           <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[10px]">In-App 🔔</span>
+          {pushStatus === "granted" && <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px]">Browser Push ✅</span>}
           <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px]">Email 📧</span>
-          <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 text-[10px]">WhatsApp 💬</span>
         </div>
         <button
           onClick={handleEvaluateReminders}
           disabled={evaluating}
-          className="btn btn-primary btn-xs px-3 py-1 font-bold text-[11px] flex items-center gap-1"
+          className="btn btn-primary btn-xs px-3 py-1 font-bold text-[11px] flex items-center gap-1 cursor-pointer"
         >
           {evaluating ? "Evaluating..." : "⚡ Run EMI Auto-Check"}
         </button>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {FILTER_TABS.map(tab => {
+          const count = tab.id === "unread" ? notifications.filter(n => !n.is_read).length :
+                        tab.id === "emi" ? notifications.filter(n => n.notif_type === "emi_upcoming" || n.notif_type === "emi_overdue").length :
+                        tab.id === "payments" ? notifications.filter(n => n.notif_type === "payment_received" || n.notif_type === "loan_closed").length :
+                        notifications.length;
+          return (
+            <button key={tab.id} onClick={() => setActiveFilter(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
+                activeFilter === tab.id ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border)]"
+              }`}>
+              <span>{tab.icon}</span><span>{tab.label}</span>
+              {count > 0 && <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${activeFilter === tab.id ? "bg-white/20" : "bg-[var(--color-surface-tertiary)]"}`}>{count}</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* Header bar with controls */}
@@ -213,14 +306,14 @@ export default function NotificationsPage() {
               <div key={n} className="h-24 w-full skeleton rounded-xl" />
             ))}
           </div>
-        ) : notifications.length === 0 ? (
+        ) : filteredNotifications.length === 0 ? (
           <div className="card p-10 text-center flex flex-col items-center justify-center border border-[var(--color-border-light)]">
             <span className="text-5xl mb-4 animate-bounce">🔔</span>
             <h3 className="text-sm font-bold text-[var(--color-text-primary)]">All Clear!</h3>
             <p className="text-xs text-[var(--color-text-tertiary)] mt-1">No notifications pending at this moment.</p>
           </div>
         ) : (
-          notifications.map((n) => {
+          filteredNotifications.map((n) => {
             const icon = notifIcon(n.notif_type);
             const offset = swipeOffset[n.id] || 0;
             const dir = swipingDir[n.id];

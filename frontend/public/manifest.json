@@ -1,0 +1,50 @@
+{
+  "name": "DebtProof",
+  "short_name": "DebtProof",
+  "description": "Blockchain-powered debt management — track loans, investments, payments and generate immutable repayment proof.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#38bdf8",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity"],
+  "lang": "en",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Loans",
+      "short_name": "Loans",
+      "url": "/dashboard/loans",
+      "description": "View all your active loans",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Record Payment",
+      "short_name": "Pay",
+      "url": "/dashboard/payments",
+      "description": "Record a new EMI payment",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "url": "/dashboard/analytics",
+      "description": "View financial analytics",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
