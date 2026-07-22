@@ -160,8 +160,20 @@ function RepaymentScheduleTable({ loan, payments }: { loan: Loan; payments: Paym
   const [viewingReceipt, setViewingReceipt] = useState<Payment | null>(null);
 
   const emiAmount = parseFloat(loan.monthly_emi) || 1000;
+  const principalAmount = parseFloat(loan.principal_amount) || 0;
   const startDate = new Date(loan.start_date);
-  const totalMonths = Math.max(6, loan.total_payments || 12);
+  const endDate = new Date(loan.end_date);
+
+  let calculatedTenureMonths = 0;
+  if (loan.start_date && loan.end_date && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+    calculatedTenureMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1;
+  }
+  if (!calculatedTenureMonths || calculatedTenureMonths <= 0) {
+    calculatedTenureMonths = principalAmount > 0 && emiAmount > 0 ? Math.ceil(principalAmount / emiAmount) : 12;
+  }
+
+  // Generate full loan tenure schedule (min 12, max 360 months)
+  const totalMonths = Math.min(360, Math.max(12, calculatedTenureMonths));
 
   // Sort payments chronologically
   const sortedPayments = [...payments].sort((a, b) => 
@@ -233,12 +245,12 @@ function RepaymentScheduleTable({ loan, payments }: { loan: Loan; payments: Paym
           </p>
         </div>
         <span className="self-start sm:self-auto text-[11px] font-bold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/30">
-          {scheduleRows.filter(r => r.status === "full").length} Full / {scheduleRows.filter(r => r.status === "partial").length} Part Paid
+          {scheduleRows.filter(r => r.status === "full").length} Full / {scheduleRows.filter(r => r.status === "partial").length} Part / {scheduleRows.filter(r => r.status === "pending").length} Pending ({scheduleRows.length} Total EMIs)
         </span>
       </div>
 
       {/* Fixed Height Scrollable Table Container */}
-      <div className="overflow-x-auto overflow-y-auto max-h-[420px] rounded-xl border border-[var(--color-border)] shadow-inner custom-scrollbar">
+      <div className="overflow-x-auto overflow-y-auto max-h-[500px] rounded-xl border border-[var(--color-border)] shadow-inner custom-scrollbar">
         <table className="w-full text-left border-collapse text-xs min-w-[640px]">
           <thead className="sticky top-0 z-10 bg-[var(--color-surface-secondary)] shadow-xs">
             <tr className="border-b border-[var(--color-border)] text-[10px] sm:text-[11px] font-black uppercase text-[var(--color-text-secondary)]">
