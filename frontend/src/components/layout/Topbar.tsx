@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { notificationsService } from "@/services/notifications.service";
 import type { Notification } from "@/types";
 
+import { THEME_PRESETS, applyGlobalTheme } from "@/utils/theme";
+
 interface TopbarProps {
   title?: string;
   subtitle?: string;
@@ -37,62 +39,25 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [theme, setTheme] = useState("dark");
 
-  const applyTheme = (themeName: string) => {
+  const handleApplyTheme = (themeName: string) => {
     setTheme(themeName);
-    localStorage.setItem("debtproof_theme", themeName);
-
-    const root = document.documentElement;
-    if (themeName === "emerald") {
-      root.style.setProperty("--color-surface", "#064e3b");
-      root.style.setProperty("--color-surface-secondary", "#022c22");
-      root.style.setProperty("--color-surface-tertiary", "#065f46");
-      root.style.setProperty("--color-primary", "#10b981");
-      root.style.setProperty("--color-primary-light", "#34d399");
-      root.style.setProperty("--color-primary-dark", "#6ee7b7");
-      root.style.setProperty("--color-accent", "#34d399");
-      root.style.setProperty("--color-text-primary", "#ecfdf5");
-      root.style.setProperty("--color-text-secondary", "#a7f3d0");
-      root.style.setProperty("--color-border-light", "rgba(52, 211, 153, 0.2)");
-    } else if (themeName === "midnight") {
-      root.style.setProperty("--color-surface", "#1e1b4b");
-      root.style.setProperty("--color-surface-secondary", "#0f172a");
-      root.style.setProperty("--color-surface-tertiary", "#312e81");
-      root.style.setProperty("--color-primary", "#6366f1");
-      root.style.setProperty("--color-primary-light", "#818cf8");
-      root.style.setProperty("--color-primary-dark", "#a5b4fc");
-      root.style.setProperty("--color-accent", "#818cf8");
-      root.style.setProperty("--color-text-primary", "#e0e7ff");
-      root.style.setProperty("--color-text-secondary", "#c7d2fe");
-      root.style.setProperty("--color-border-light", "rgba(129, 140, 248, 0.2)");
-    } else if (themeName === "light") {
-      root.style.setProperty("--color-surface", "#ffffff");
-      root.style.setProperty("--color-surface-secondary", "#f8fafc");
-      root.style.setProperty("--color-surface-tertiary", "#f1f5f9");
-      root.style.setProperty("--color-primary", "#1a3a5c");
-      root.style.setProperty("--color-primary-light", "#2563a8");
-      root.style.setProperty("--color-primary-dark", "#0f2340");
-      root.style.setProperty("--color-accent", "#10b981");
-      root.style.setProperty("--color-text-primary", "#0f172a");
-      root.style.setProperty("--color-text-secondary", "#475569");
-      root.style.setProperty("--color-border-light", "#f1f5f9");
-    } else {
-      // Dark Titanium Default
-      root.style.setProperty("--color-surface", "#0f172a");
-      root.style.setProperty("--color-surface-secondary", "#020617");
-      root.style.setProperty("--color-surface-tertiary", "#1e293b");
-      root.style.setProperty("--color-primary", "#38bdf8");
-      root.style.setProperty("--color-primary-light", "#0ea5e9");
-      root.style.setProperty("--color-primary-dark", "#7dd3fc");
-      root.style.setProperty("--color-accent", "#10b981");
-      root.style.setProperty("--color-text-primary", "#f8fafc");
-      root.style.setProperty("--color-text-secondary", "#94a3b8");
-      root.style.setProperty("--color-border-light", "rgba(255, 255, 255, 0.1)");
-    }
+    applyGlobalTheme(themeName);
   };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("debtproof_theme") || "dark";
-    applyTheme(savedTheme);
+    setTheme(savedTheme);
+    applyGlobalTheme(savedTheme);
+
+    const onThemeChanged = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setTheme(customEvent.detail);
+      }
+    };
+
+    window.addEventListener("debtproof_theme_changed", onThemeChanged);
+    return () => window.removeEventListener("debtproof_theme_changed", onThemeChanged);
   }, []);
 
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -199,13 +164,13 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
         <div className="relative hidden sm:block">
           <select
             value={theme}
-            onChange={(e) => applyTheme(e.target.value)}
+            onChange={(e) => handleApplyTheme(e.target.value)}
             className="input text-[11px] h-8 px-2 py-0 bg-[var(--color-surface-secondary)] border-[var(--color-border-light)] rounded-xl font-bold text-[var(--color-text-secondary)] cursor-pointer"
           >
             <option value="dark">🌙 Dark Titanium</option>
-            <option value="emerald">🌿 Deep Emerald</option>
             <option value="midnight">🔷 Midnight Blue</option>
-            <option value="light">☀️ Clean Light</option>
+            <option value="emerald">🌿 Deep Emerald</option>
+            <option value="cyberpunk">⚡ Cyber Neon</option>
           </select>
         </div>
 
@@ -346,7 +311,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
           {/* Dropdown Menu */}
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-lg py-1.5 z-50 animate-fade-in-up">
+            <div className="absolute right-0 mt-2 w-48 bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-[var(--radius-md)] shadow-2xl py-1.5 z-50 animate-fade-in-up">
               <div className="px-4 py-2 border-b border-[var(--color-border-light)] sm:hidden">
                 <p className="text-[13px] font-medium text-[var(--color-text-primary)]">My Account</p>
                 <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">Free Plan</p>
