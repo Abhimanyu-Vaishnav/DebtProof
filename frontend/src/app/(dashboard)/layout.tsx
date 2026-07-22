@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
-import { EMIReminderPopup } from "@/components/ui/EMIReminderPopup";
-import { InstallPWABanner } from "@/components/ui/InstallPWABanner";
-import { AIDebtPayoffAssistant } from "@/components/dashboard/AIDebtPayoffAssistant";
+import { GlobalFloatingUI } from "@/components/ui/GlobalFloatingUI";
 
 export const metadata: Metadata = {
   title: {
@@ -23,10 +21,8 @@ export default function DashboardLayout({
       <Sidebar />
       <div className="main-content">{children}</div>
       <BottomTabBar />
-      {/* Global floating UI */}
-      <EMIReminderPopup />
-      <InstallPWABanner />
-      <AIDebtPayoffAssistant />
+      {/* Client-hydrated Global floating UI */}
+      <GlobalFloatingUI />
     </div>
   );
 }
