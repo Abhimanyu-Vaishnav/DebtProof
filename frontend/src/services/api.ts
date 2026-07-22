@@ -87,11 +87,17 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retried) {
       originalRequest._retried = true;
+      
+      // Do not redirect to /login if the request itself was an auth request
+      if (originalRequest.url?.includes("/auth/")) {
+        return Promise.reject(error);
+      }
+
       const refreshToken = tokenStorage.getRefresh();
 
       if (!refreshToken) {
         tokenStorage.clear();
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
           window.location.href = "/login";
         }
         return Promise.reject(error);
