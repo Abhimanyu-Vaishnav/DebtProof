@@ -436,7 +436,7 @@ export function ProfileClient() {
           </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2 border-b border-[var(--color-border)]">
           <div>
             <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Blockchain Anchoring (Monad ZK-Proof)</h3>
             <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
@@ -446,6 +446,26 @@ export function ProfileClient() {
           <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
             Active on Testnet
           </span>
+        </div>
+
+        {/* PWA Install Trigger in Profile */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2">
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">📱 Install Mobile / Desktop App (PWA)</h3>
+            <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+              Add DebtProof to your Home Screen for faster loads, offline access, and native app experience.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              const dismissKey = "debtproof-pwa-dismiss";
+              localStorage.removeItem(dismissKey);
+              window.location.reload();
+            }}
+            className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-white font-bold text-xs hover:opacity-90 transition-all shrink-0 cursor-pointer shadow-sm"
+          >
+            📲 Reset & Install App
+          </button>
         </div>
       </div>
 

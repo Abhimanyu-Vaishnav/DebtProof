@@ -76,7 +76,7 @@ export function InstallPWABanner() {
   if (!showBanner || installed) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:w-80 animate-fade-in-up">
+    <div className="fixed bottom-4 left-4 right-4 z-40 sm:left-4 sm:right-auto sm:w-80 animate-fade-in-up">
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="px-4 py-3 bg-gradient-to-r from-[var(--color-primary)]/20 to-[var(--color-primary)]/5 flex items-center justify-between border-b border-[var(--color-border)]">
