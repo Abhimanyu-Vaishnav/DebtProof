@@ -4,7 +4,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
@@ -32,16 +32,19 @@ type FormErrors = Partial<Record<keyof PaymentFormData | "submit", string>>;
 
 export function PaymentForm({ loan }: PaymentFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
+  const initialAmount = searchParams?.get("amount") || "";
+  const initialDate = searchParams?.get("date") || today;
 
   const [form, setForm] = useState<PaymentFormData>({
-    amount: "",
-    payment_date: today,
+    amount: initialAmount,
+    payment_date: initialDate,
     payment_method: "bank_transfer",
     reference_number: "",
     status: "confirmed",
@@ -117,14 +120,38 @@ export function PaymentForm({ loan }: PaymentFormProps) {
         </div>
       )}
 
-      {/* Loan Context Banner */}
-      <div className="mb-5 px-4 py-3 rounded-[var(--radius-md)] bg-[var(--color-surface-tertiary)] border border-[var(--color-border)]">
-        <p className="text-xs text-[var(--color-text-tertiary)] mb-0.5">Recording payment for</p>
-        <p className="text-sm font-semibold text-[var(--color-text-primary)]">{loan.name}</p>
-        <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-          Outstanding: <span className="font-semibold text-[var(--color-error)]">₹{outstanding.toLocaleString("en-IN")}</span>
-          {" "}· EMI: <span className="font-semibold">₹{parseFloat(loan.monthly_emi).toLocaleString("en-IN")}</span>
-        </p>
+      {/* Detailed Loan & Pending Amount Context Banner */}
+      <div className="mb-5 p-4 rounded-2xl bg-gradient-to-br from-[var(--color-primary)]/10 via-[var(--color-surface-secondary)] to-[var(--color-surface-secondary)] border border-[var(--color-primary)]/20 shadow-xs space-y-3">
+        <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)]">Recording Payment For</p>
+            <h3 className="text-sm font-black text-[var(--color-text-primary)]">{loan.name}</h3>
+          </div>
+          <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-[var(--color-surface-tertiary)] border border-[var(--color-border-light)] text-[var(--color-text-secondary)]">
+            {loan.lender_name}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+          <div className="p-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+            <span className="text-[9px] font-bold text-[var(--color-text-secondary)] block">Total Outstanding Due</span>
+            <span className="font-black text-rose-500 text-sm">₹{outstanding.toLocaleString("en-IN")}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+            <span className="text-[9px] font-bold text-[var(--color-text-secondary)] block">Scheduled Monthly EMI</span>
+            <span className="font-black text-[var(--color-primary)] text-sm">₹{parseFloat(loan.monthly_emi).toLocaleString("en-IN")}</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] col-span-2 sm:col-span-1">
+            <span className="text-[9px] font-bold text-[var(--color-text-secondary)] block">Interest Rate</span>
+            <span className="font-black text-[var(--color-text-primary)] text-sm">{loan.interest_rate}% p.a.</span>
+          </div>
+        </div>
+
+        {/* Dynamic Pending Helper */}
+        <div className="text-[11px] font-bold text-[var(--color-text-secondary)] flex items-center justify-between pt-1">
+          <span>💡 Next EMI Due Date: <span className="text-[var(--color-text-primary)]">{loan.next_emi_date || "Monthly"}</span></span>
+          <span className="text-emerald-600 dark:text-emerald-400">Total Payments: {loan.total_payments || 0}</span>
+        </div>
       </div>
 
       <div className="space-y-4">

@@ -80,7 +80,7 @@ export function EMIReminderPopup() {
 
   return (
     <div
-      className={`fixed bottom-6 right-4 z-50 w-80 shadow-2xl rounded-2xl border overflow-hidden transition-all duration-400 ${
+      className={`fixed bottom-24 right-3 sm:bottom-6 sm:right-4 z-30 w-[calc(100vw-1.5rem)] sm:w-80 shadow-2xl rounded-2xl border overflow-hidden transition-all duration-400 ${
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       } ${hasOverdue
         ? "bg-rose-950/95 border-rose-500/40 backdrop-blur-md"

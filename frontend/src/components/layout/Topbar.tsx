@@ -167,10 +167,11 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
             onChange={(e) => handleApplyTheme(e.target.value)}
             className="input text-[11px] h-8 px-2 py-0 bg-[var(--color-surface-secondary)] border-[var(--color-border-light)] rounded-xl font-bold text-[var(--color-text-secondary)] cursor-pointer"
           >
-            <option value="dark">🌙 Dark Titanium</option>
-            <option value="midnight">🔷 Midnight Blue</option>
-            <option value="emerald">🌿 Deep Emerald</option>
-            <option value="cyberpunk">⚡ Cyber Neon</option>
+            {THEME_PRESETS.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.icon} {t.label}
+              </option>
+            ))}
           </select>
         </div>
 

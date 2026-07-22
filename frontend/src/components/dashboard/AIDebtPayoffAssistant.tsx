@@ -50,6 +50,17 @@ export function AIDebtPayoffAssistant() {
   const [isThinking, setIsThinking] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [dashData, setDashData] = useState<DashboardData | null>(null);
+  
+  // Dragging state for desktop & mobile
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number }>({
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0,
+  });
+  const windowRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Load real financial context
@@ -95,6 +106,49 @@ export function AIDebtPayoffAssistant() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking]);
+
+  // Handle Dragging
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return; // Don't drag when clicking close button
+    setIsDragging(true);
+    const rect = windowRef.current?.getBoundingClientRect();
+    const currentX = position ? position.x : (rect ? rect.left : window.innerWidth - 420);
+    const currentY = position ? position.y : (rect ? rect.top : window.innerHeight - 580);
+    
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: currentX,
+      initialY: currentY,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const deltaX = e.clientX - dragRef.current.startX;
+    const deltaY = e.clientY - dragRef.current.startY;
+    
+    let newX = dragRef.current.initialX + deltaX;
+    let newY = dragRef.current.initialY + deltaY;
+
+    // Bounds checking
+    const maxX = window.innerWidth - 300;
+    const maxY = window.innerHeight - 200;
+    newX = Math.max(10, Math.min(newX, maxX));
+    newY = Math.max(10, Math.min(newY, maxY));
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isDragging) {
+      setIsDragging(false);
+      try {
+        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
 
   // Dynamic AI Logic based on live user data
   const generateAIResponse = (userQuery: string): { responseText: string; impactCard?: ChatMessage["impactCard"] } => {
@@ -226,53 +280,70 @@ export function AIDebtPayoffAssistant() {
 
   return (
     <>
-      {/* ── FLOATING BOT TRIGGER BUTTON ──────────────────────── */}
+      {/* ── FLOATING BOT TRIGGER BUTTON (Elevated & Responsive) ── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-[var(--color-primary)] text-white font-black text-xs shadow-2xl hover:scale-105 transition-all cursor-pointer border border-white/20 active:scale-95"
+        className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2.5 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full bg-[var(--color-primary)] text-white font-black text-xs shadow-2xl hover:scale-105 transition-all cursor-pointer border border-white/20 active:scale-95"
         aria-label="Open AI Financial Payoff Assistant"
       >
         <span className="text-xl animate-pulse">🤖</span>
-        <span className="hidden sm:inline">AI Debt Coach</span>
+        <span className="inline font-bold">AI Coach</span>
         {messages.length > 1 && (
           <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
         )}
       </button>
 
-      {/* ── CHAT DRAWER / DIALOG ─────────────────────────────── */}
+      {/* ── DRAGGABLE CHAT DRAWER / DIALOG ─────────────────────────────── */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-full max-w-md bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[540px] max-h-[82vh] animate-fade-in-up">
-          
-          {/* Header */}
-          <div className="p-4 bg-[var(--color-primary)] text-white flex items-center justify-between border-b border-white/10 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-xl shadow-inner">
+        <div
+          ref={windowRef}
+          style={
+            position
+              ? { position: "fixed", left: `${position.x}px`, top: `${position.y}px`, bottom: "auto", right: "auto" }
+              : undefined
+          }
+          className={`fixed z-50 w-[calc(100vw-2rem)] max-w-md bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[520px] max-h-[80vh] animate-fade-in-up ${
+            !position ? "bottom-24 right-4 sm:bottom-20 sm:right-6" : ""
+          }`}
+        >
+          {/* Header - DRAGGABLE HANDLE */}
+          <div
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            className="p-3.5 bg-[var(--color-primary)] text-white flex items-center justify-between border-b border-white/10 shadow-sm cursor-grab active:cursor-grabbing select-none"
+          >
+            <div className="flex items-center gap-3 pointer-events-none">
+              <div className="w-8 h-8 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-lg shadow-inner">
                 🤖
               </div>
               <div>
-                <h3 className="text-sm font-black tracking-tight leading-none text-white">DebtProof AI Coach</h3>
-                <p className="text-[10px] text-blue-100 mt-1 font-bold flex items-center gap-1">
+                <h3 className="text-xs font-black tracking-tight leading-none text-white flex items-center gap-1.5">
+                  DebtProof AI Coach
+                  <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-medium">🖐️ Drag me</span>
+                </h3>
+                <p className="text-[10px] text-blue-100 mt-0.5 font-bold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> Active Portfolio Intelligence
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-full hover:bg-white/20 text-white font-bold transition cursor-pointer"
+              className="p-1.5 rounded-full hover:bg-white/20 text-white font-bold transition cursor-pointer text-xs"
             >
               ✕
             </button>
           </div>
 
           {/* Messages Scroll Area */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-[var(--color-surface-secondary)] text-xs">
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-[var(--color-surface-secondary)] text-xs">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`p-3.5 rounded-2xl max-w-[88%] leading-relaxed space-y-2 whitespace-pre-wrap shadow-sm ${
+                  className={`p-3 rounded-2xl max-w-[90%] leading-relaxed space-y-2 whitespace-pre-wrap shadow-sm ${
                     msg.sender === "user"
                       ? "rounded-br-none"
                       : "rounded-bl-none border border-[var(--color-border)]"
@@ -282,18 +353,18 @@ export function AIDebtPayoffAssistant() {
                     color: msg.sender === "user" ? "#ffffff" : "var(--color-text-primary)",
                   }}
                 >
-                  <p className="text-[13px] font-medium" style={{ color: msg.sender === "user" ? "#ffffff" : "var(--color-text-primary)" }}>
+                  <p className="text-[12px] font-medium leading-normal" style={{ color: msg.sender === "user" ? "#ffffff" : "var(--color-text-primary)" }}>
                     {renderFormattedText(msg.text, msg.sender === "user")}
                   </p>
 
                   {/* Impact Calculation Card Attachment */}
                   {msg.impactCard && (
-                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[var(--color-text-primary)] space-y-1.5 mt-2">
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[var(--color-text-primary)] space-y-1 mt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400">⚡ Prepayment Impact</span>
-                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">+{msg.impactCard.monthsSaved} Months Saved</span>
+                        <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400">⚡ Prepayment Impact</span>
+                        <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">+{msg.impactCard.monthsSaved} Months Saved</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                      <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
                         <div>
                           <span className="text-[9px] font-bold text-[var(--color-text-secondary)] block">Interest Saved</span>
                           <span className="font-black text-emerald-600 dark:text-emerald-400">{format(msg.impactCard.interestSaved)}</span>
@@ -307,18 +378,18 @@ export function AIDebtPayoffAssistant() {
                   )}
                 </div>
 
-                <span className="text-[9px] text-[var(--color-text-secondary)] font-bold mt-1 px-1">
+                <span className="text-[9px] text-[var(--color-text-secondary)] font-bold mt-0.5 px-1">
                   {msg.timestamp}
                 </span>
 
                 {/* Preset Prompt Options (if present) */}
                 {msg.options && (
-                  <div className="flex flex-wrap gap-1.5 mt-2.5 max-w-[92%]">
+                  <div className="flex flex-wrap gap-1.5 mt-2 max-w-[95%]">
                     {msg.options.map((opt, i) => (
                       <button
                         key={i}
                         onClick={() => handleSendMessage(opt.actionPrompt)}
-                        className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary-light)] text-[var(--color-text-primary)] transition-all text-left shadow-xs cursor-pointer"
+                        className="text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-primary-light)] text-[var(--color-text-primary)] transition-all text-left shadow-xs cursor-pointer"
                       >
                         {opt.label}
                       </button>
@@ -338,19 +409,19 @@ export function AIDebtPayoffAssistant() {
           </div>
 
           {/* Chat Input Bar */}
-          <div className="p-3 bg-[var(--color-surface)] border-t border-[var(--color-border)] flex items-center gap-2">
+          <div className="p-2.5 bg-[var(--color-surface)] border-t border-[var(--color-border)] flex items-center gap-2">
             <input
               type="text"
-              placeholder="Ask anything (e.g. How to save interest?)"
+              placeholder="Ask anything..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-              className="flex-1 px-3.5 py-2.5 rounded-2xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-primary)]"
+              className="flex-1 px-3 py-2 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-primary)]"
             />
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputValue.trim()}
-              className="p-2.5 rounded-2xl bg-[var(--color-primary)] text-white disabled:opacity-40 hover:opacity-90 transition cursor-pointer shrink-0 font-bold"
+              className="p-2 rounded-xl bg-[var(--color-primary)] text-white disabled:opacity-40 hover:opacity-90 transition cursor-pointer shrink-0 font-bold text-xs"
             >
               🚀
             </button>

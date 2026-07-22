@@ -84,34 +84,34 @@ export function InstallPWABanner() {
   if (!showBanner || installed) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-40 sm:left-4 sm:right-auto sm:w-80 animate-fade-in-up">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed bottom-20 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-auto sm:w-80 z-30 animate-fade-in-up">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md">
         {/* Header */}
-        <div className="px-4 py-3 bg-gradient-to-r from-[var(--color-primary)]/20 to-[var(--color-primary)]/5 flex items-center justify-between border-b border-[var(--color-border)]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-white font-black text-sm shadow-md">
+        <div className="px-3.5 py-2.5 bg-gradient-to-r from-[var(--color-primary)]/20 to-[var(--color-primary)]/5 flex items-center justify-between border-b border-[var(--color-border)]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[var(--color-primary)] flex items-center justify-center text-white font-black text-xs shadow-sm">
               💳
             </div>
             <div>
               <p className="text-xs font-black text-[var(--color-text-primary)]">Install DebtProof</p>
-              <p className="text-[10px] font-medium text-[var(--color-text-secondary)]">Add to home screen</p>
+              <p className="text-[9px] font-bold text-[var(--color-text-secondary)]">Add to home screen</p>
             </div>
           </div>
-          <button onClick={handleDismiss} className="p-1.5 rounded-full hover:bg-[var(--color-surface-tertiary)] transition cursor-pointer text-[var(--color-text-secondary)]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <button onClick={handleDismiss} className="p-1 rounded-full hover:bg-[var(--color-surface-tertiary)] transition cursor-pointer text-[var(--color-text-secondary)]">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-4 py-3">
-          <p className="text-xs font-medium text-[var(--color-text-secondary)] leading-relaxed">
-            Install DebtProof on your device for faster access, offline support, and a native app experience.
+        <div className="px-3.5 py-2">
+          <p className="text-[11px] font-medium text-[var(--color-text-secondary)] leading-tight">
+            Install DebtProof for fast offline access and app performance.
           </p>
-          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-            {["⚡ Faster loads", "📴 Works offline", "🔔 Notifications"].map(f => (
-              <span key={f} className="text-[10px] font-bold text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] border border-[var(--color-border)] px-2 py-0.5 rounded-full">
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            {["⚡ Fast", "📴 Offline", "🔔 Alerts"].map(f => (
+              <span key={f} className="text-[9px] font-bold text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] border border-[var(--color-border)] px-1.5 py-0.5 rounded-md">
                 {f}
               </span>
             ))}
@@ -119,13 +119,13 @@ export function InstallPWABanner() {
         </div>
 
         {/* Actions */}
-        <div className="px-4 pb-4 flex gap-2">
+        <div className="px-3.5 pb-3 flex gap-2 pt-1">
           <button onClick={handleInstall} disabled={installing}
-            className="flex-1 py-2.5 rounded-xl bg-[var(--color-primary)] text-white text-sm font-black hover:opacity-90 disabled:opacity-60 transition cursor-pointer">
+            className="flex-1 py-1.5 rounded-lg bg-[var(--color-primary)] text-white text-xs font-bold hover:opacity-90 disabled:opacity-60 transition cursor-pointer">
             {installing ? "Installing..." : "📱 Install App"}
           </button>
           <button onClick={handleDismiss}
-            className="px-4 py-2.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-sm font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition cursor-pointer">
+            className="px-3 py-1.5 rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition cursor-pointer">
             Later
           </button>
         </div>

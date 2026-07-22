@@ -19,95 +19,122 @@ export interface LoanQueryParams {
   loan_type?: string;
   ordering?: string;
   overdue?: "true" | "false";
-}
-
-const MOCK_LOANS: Loan[] = [
+}const MOCK_LOANS: Loan[] = [
   {
-    id: "loan-1",
-    user: "usr-1",
-    name: "HDFC Home Loan",
-    loan_type: "home",
+    id: "6a40d2f7565148f69b69efb35066473c",
+    user: "b4058f3167684616aa34c6517fe9580b",
+    name: "HDFC Personal Loan",
+    loan_type: "personal",
     lender_name: "HDFC Bank",
-    account_number: "HL-987456321",
-    principal_amount: "4500000.00",
-    outstanding_amount: "3850000.00",
-    interest_rate: "8.50",
-    monthly_emi: "42500.00",
-    start_date: "2022-04-10",
-    end_date: "2042-04-10",
+    account_number: "PL-987456321",
+    principal_amount: "150000.00",
+    outstanding_amount: "115000.00",
+    interest_rate: "11.50",
+    monthly_emi: "4800.00",
+    start_date: "2024-01-10",
+    end_date: "2027-01-10",
     next_emi_date: "2026-08-10",
     status: "active",
-    notes: "20 year home loan for 3BHK Apartment.",
-    paid_amount: "650000.00",
-    interest_paid: "320000.00",
-    repayment_progress_percent: 14.4,
+    notes: "Personal loan for home expenses.",
+    paid_amount: "35000.00",
+    interest_paid: "12000.00",
+    repayment_progress_percent: 23.3,
     is_active: true,
     is_overdue: false,
-    total_payments: 48,
+    total_payments: 18,
     is_escrow: false,
     borrower_wallet: "",
     lender_wallet: "",
     escrow_contract_address: "",
-    created_at: "2022-04-10T10:00:00Z",
+    created_at: "2024-01-10T10:00:00Z",
     updated_at: "2026-07-10T10:00:00Z",
   },
   {
-    id: "loan-2",
-    name: "ICICI Car Loan",
-    user: "usr-1",
-    loan_type: "vehicle",
-    lender_name: "ICICI Bank",
-    account_number: "VL-548796123",
-    principal_amount: "800000.00",
-    outstanding_amount: "320000.00",
-    interest_rate: "9.25",
-    monthly_emi: "16800.00",
-    start_date: "2024-01-15",
-    end_date: "2029-01-15",
+    id: "febd3d607b9443fabe358d698dd85aae",
+    name: "Personal Loan By Poonawala",
+    user: "b4058f3167684616aa34c6517fe9580b",
+    loan_type: "personal",
+    lender_name: "Poonawalla Fincorp",
+    account_number: "PL-548796123",
+    principal_amount: "300000.00",
+    outstanding_amount: "210000.00",
+    interest_rate: "12.50",
+    monthly_emi: "8900.00",
+    start_date: "2024-03-15",
+    end_date: "2028-03-15",
     next_emi_date: "2026-08-15",
     status: "active",
-    notes: "5 year auto loan for SUV.",
-    paid_amount: "480000.00",
-    interest_paid: "95000.00",
-    repayment_progress_percent: 60.0,
+    notes: "Medical emergency line.",
+    paid_amount: "90000.00",
+    interest_paid: "28000.00",
+    repayment_progress_percent: 30.0,
     is_active: true,
     is_overdue: false,
-    total_payments: 30,
+    total_payments: 16,
     is_escrow: false,
     borrower_wallet: "",
     lender_wallet: "",
     escrow_contract_address: "",
-    created_at: "2024-01-15T10:00:00Z",
+    created_at: "2024-03-15T10:00:00Z",
     updated_at: "2026-07-15T10:00:00Z",
   },
   {
-    id: "loan-3",
-    name: "Personal Emergency Debt",
-    user: "usr-1",
+    id: "5090673232bd48bba3845a155a420f3b",
+    name: "Axis Bank Personal Loan",
+    user: "b4058f3167684616aa34c6517fe9580b",
     loan_type: "personal",
     lender_name: "Axis Bank",
     account_number: "PL-112233445",
-    principal_amount: "200000.00",
-    outstanding_amount: "75000.00",
-    interest_rate: "12.00",
-    monthly_emi: "9500.00",
-    start_date: "2025-02-01",
-    end_date: "2027-02-01",
+    principal_amount: "120000.00",
+    outstanding_amount: "65000.00",
+    interest_rate: "10.75",
+    monthly_emi: "3600.00",
+    start_date: "2024-05-01",
+    end_date: "2027-05-01",
     next_emi_date: "2026-08-01",
     status: "active",
-    notes: "Personal loan for home renovation.",
-    paid_amount: "125000.00",
-    interest_paid: "22000.00",
-    repayment_progress_percent: 62.5,
+    notes: "Debt consolidation loan.",
+    paid_amount: "55000.00",
+    interest_paid: "9500.00",
+    repayment_progress_percent: 45.8,
     is_active: true,
     is_overdue: false,
-    total_payments: 17,
+    total_payments: 14,
     is_escrow: false,
     borrower_wallet: "",
     lender_wallet: "",
     escrow_contract_address: "",
-    created_at: "2025-02-01T10:00:00Z",
+    created_at: "2024-05-01T10:00:00Z",
     updated_at: "2026-07-01T10:00:00Z",
+  },
+  {
+    id: "820e3179d50a47ef8b97475ff1009ff4",
+    name: "Personal Loan From Anmol",
+    user: "b4058f3167684616aa34c6517fe9580b",
+    loan_type: "personal",
+    lender_name: "Anmol (P2P Lender)",
+    account_number: "P2P-88776655",
+    principal_amount: "832000.00",
+    outstanding_amount: "640000.00",
+    interest_rate: "9.00",
+    monthly_emi: "19200.00",
+    start_date: "2023-11-20",
+    end_date: "2028-11-20",
+    next_emi_date: "2026-08-20",
+    status: "active",
+    notes: "P2P peer loan contract.",
+    paid_amount: "192000.00",
+    interest_paid: "45000.00",
+    repayment_progress_percent: 23.0,
+    is_active: true,
+    is_overdue: false,
+    total_payments: 22,
+    is_escrow: false,
+    borrower_wallet: "",
+    lender_wallet: "",
+    escrow_contract_address: "",
+    created_at: "2023-11-20T10:00:00Z",
+    updated_at: "2026-07-20T10:00:00Z",
   }
 ];
 
@@ -194,6 +221,61 @@ const MOCK_DASHBOARD: DashboardData = {
   },
 };
 
+const LOANS_STORAGE_KEY = "debtproof_local_loans";
+
+function getStoredLoans(): Loan[] {
+  if (typeof window === "undefined") return MOCK_LOANS;
+  try {
+    const raw = localStorage.getItem(LOANS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return MOCK_LOANS;
+}
+
+function setStoredLoans(loans: Loan[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(LOANS_STORAGE_KEY, JSON.stringify(loans));
+  } catch {}
+}
+
+// Helper to dynamically calculate loan numbers from actual payment records
+function syncLoanWithPayments(loan: Loan): Loan {
+  const PAYMENTS_KEY = "debtproof_local_payments";
+  let allPayments: any[] = [];
+  try {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(PAYMENTS_KEY) : null;
+    if (raw) allPayments = JSON.parse(raw);
+  } catch {}
+
+  const loanPayments = allPayments.filter((p: any) => p.loan === loan.id || p.loan_id === loan.id);
+  const principal = parseFloat(loan.principal_amount) || 1;
+
+  if (loanPayments.length > 0) {
+    const totalPaid = loanPayments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
+    const outstanding = Math.max(0, principal - totalPaid);
+    const progress = Math.min(100, (totalPaid / principal) * 100);
+
+    return {
+      ...loan,
+      paid_amount: totalPaid.toFixed(2),
+      outstanding_amount: outstanding.toFixed(2),
+      total_payments: loanPayments.length,
+      repayment_progress_percent: parseFloat(progress.toFixed(1)),
+    };
+  } else {
+    // Zero payments recorded - reset values to exact 0
+    return {
+      ...loan,
+      paid_amount: "0.00",
+      interest_paid: "0.00",
+      outstanding_amount: loan.principal_amount,
+      total_payments: 0,
+      repayment_progress_percent: 0,
+    };
+  }
+}
+
 export const loansService = {
   /**
    * Get all loans for the authenticated user.
@@ -201,21 +283,36 @@ export const loansService = {
   getLoans: async (params?: LoanQueryParams): Promise<PaginatedResponse<Loan>> => {
     try {
       const { data } = await apiClient.get<PaginatedResponse<Loan>>("/loans/", { params });
-      if (data && data.results && data.results.length > 0) {
-        return data;
+      if (data && data.results) {
+        return {
+          ...data,
+          results: data.results.map(syncLoanWithPayments)
+        };
       }
-      return data;
-    } catch {
+      const localLoans = getStoredLoans().map(syncLoanWithPayments);
       return {
         success: true,
         pagination: {
-          count: MOCK_LOANS.length,
+          count: localLoans.length,
           total_pages: 1,
           current_page: 1,
           next: null,
           previous: null,
         },
-        results: MOCK_LOANS,
+        results: localLoans,
+      };
+    } catch {
+      const localLoans = getStoredLoans().map(syncLoanWithPayments);
+      return {
+        success: true,
+        pagination: {
+          count: localLoans.length,
+          total_pages: 1,
+          current_page: 1,
+          next: null,
+          previous: null,
+        },
+        results: localLoans,
       };
     }
   },
@@ -226,10 +323,11 @@ export const loansService = {
   getLoan: async (id: string): Promise<Loan> => {
     try {
       const { data } = await apiClient.get<{ success: boolean; loan: Loan }>(`/loans/${id}/`);
-      return data.loan;
+      return syncLoanWithPayments(data.loan);
     } catch {
-      const found = MOCK_LOANS.find(l => l.id === id) || MOCK_LOANS[0];
-      return found;
+      const localLoans = getStoredLoans();
+      const found = localLoans.find((l) => l.id === id) ?? localLoans[0];
+      return syncLoanWithPayments(found);
     }
   },
 
@@ -239,6 +337,14 @@ export const loansService = {
   createLoan: async (loanData: LoanFormData): Promise<Loan> => {
     try {
       const { data } = await apiClient.post<{ success: boolean; loan: Loan }>("/loans/", loanData);
+      // Sync to local cache as well
+      if (data.loan) {
+        const current = getStoredLoans();
+        const existingIdx = current.findIndex(l => l.id === data.loan.id);
+        if (existingIdx !== -1) current[existingIdx] = data.loan;
+        else current.unshift(data.loan);
+        setStoredLoans(current);
+      }
       return data.loan;
     } catch {
       const newLoan: Loan = {
@@ -270,7 +376,9 @@ export const loansService = {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      MOCK_LOANS.unshift(newLoan);
+      const current = getStoredLoans();
+      current.unshift(newLoan);
+      setStoredLoans(current);
       return newLoan;
     }
   },
@@ -283,8 +391,10 @@ export const loansService = {
       const { data } = await apiClient.post<{ success: boolean; loan: Loan }>(`/loans/${id}/`, loanData);
       return data.loan;
     } catch {
-      const found = MOCK_LOANS.find(l => l.id === id) || MOCK_LOANS[0];
+      const current = getStoredLoans();
+      const found = current.find(l => l.id === id) || current[0];
       Object.assign(found, loanData);
+      setStoredLoans(current);
       return found;
     }
   },
@@ -296,8 +406,12 @@ export const loansService = {
     try {
       await apiClient.delete(`/loans/${id}/`);
     } catch {
-      const idx = MOCK_LOANS.findIndex(l => l.id === id);
-      if (idx !== -1) MOCK_LOANS.splice(idx, 1);
+      const current = getStoredLoans();
+      const idx = current.findIndex(l => l.id === id);
+      if (idx !== -1) {
+        current.splice(idx, 1);
+        setStoredLoans(current);
+      }
     }
   },
 
@@ -310,10 +424,50 @@ export const loansService = {
         success: boolean;
         dashboard: DashboardData;
       }>("/loans/dashboard/");
-      return data.dashboard;
-    } catch {
-      return MOCK_DASHBOARD;
-    }
+      if (data && data.dashboard) {
+        return data.dashboard;
+      }
+    } catch {}
+
+    const rawLoans = getStoredLoans();
+    const loans = rawLoans.map(syncLoanWithPayments);
+    const activeLoans = loans.filter(l => l.status === "active" || l.is_active);
+    const totalOutstanding = activeLoans.reduce((sum, l) => sum + parseFloat(l.outstanding_amount || "0"), 0);
+    const totalPrincipal = activeLoans.reduce((sum, l) => sum + parseFloat(l.principal_amount || "0"), 0);
+    const totalPaid = activeLoans.reduce((sum, l) => sum + parseFloat(l.paid_amount || "0"), 0);
+    const totalEmi = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_emi || "0"), 0);
+
+    return {
+      total_loans: loans.length,
+      active_loans: activeLoans.length,
+      closed_loans: loans.filter(l => l.status === "closed").length,
+      defaulted_loans: loans.filter(l => l.status === "defaulted").length,
+      total_outstanding: totalOutstanding,
+      total_principal_active: totalPrincipal,
+      total_paid_active: totalPaid,
+      total_interest_paid: activeLoans.reduce((sum, l) => sum + parseFloat(l.interest_paid || "0"), 0),
+      total_principal_all: totalPrincipal,
+      upcoming_emi_amount: totalEmi,
+      upcoming_emi_date: activeLoans[0]?.next_emi_date || new Date().toISOString().split("T")[0],
+      overdue_count: loans.filter(l => l.is_overdue).length,
+      type_distribution: [
+        { loan_type: "home", count: loans.filter(l => l.loan_type === "home").length },
+        { loan_type: "vehicle", count: loans.filter(l => l.loan_type === "vehicle").length },
+        { loan_type: "personal", count: loans.filter(l => l.loan_type === "personal").length },
+      ],
+      monthly_trend: [
+        { month: "2026-02", total: totalEmi, count: activeLoans.length },
+        { month: "2026-03", total: totalEmi, count: activeLoans.length },
+        { month: "2026-04", total: totalEmi, count: activeLoans.length },
+        { month: "2026-05", total: totalEmi, count: activeLoans.length },
+        { month: "2026-06", total: totalEmi, count: activeLoans.length },
+        { month: "2026-07", total: totalEmi, count: activeLoans.length },
+      ],
+      recent_payments: [],
+      projected_debt_free_date: "2030-12",
+      monthly_interest_burn: Math.round(totalOutstanding * 0.10 / 12),
+      simulations: MOCK_DASHBOARD.simulations,
+    };
   },
 
   /**

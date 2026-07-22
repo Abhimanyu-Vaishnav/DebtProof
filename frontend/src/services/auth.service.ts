@@ -144,8 +144,8 @@ export const authService = {
       if (local) return local;
 
       const defaultUser: User = {
-        id: "usr-1",
-        email: "abhimanyu@debtproof.io",
+        id: `usr-${Date.now()}`,
+        email: "abhi@gmail.com",
         first_name: "Abhimanyu",
         last_name: "Vaishnav",
         full_name: "Abhimanyu Vaishnav",

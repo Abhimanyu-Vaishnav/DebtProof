@@ -26,7 +26,11 @@ const DATE_FORMATS = [
   { value: "YYYY-MM-DD", label: "YYYY-MM-DD (2025-12-31)", example: "2025-12-31" },
 ] as const;
 
-import { THEME_PRESETS, applyGlobalTheme } from "@/utils/theme";
+import { THEME_PRESETS, FONT_OPTIONS, applyGlobalTheme, applyCustomColors, applyFontFamily, type CustomColors } from "@/utils/theme";
+
+// Inside SettingsPage component state:
+// We will add custom color controls and font family controls inside the appearance tab render section
+
 
 function ToggleSwitch({ checked, onChange, id }: { checked: boolean; onChange: (v: boolean) => void; id: string }) {
   return (
@@ -267,7 +271,8 @@ export default function SettingsPage() {
             {/* ── Appearance ─────────────────────────────────────────────── */}
             {activeTab === "appearance" && (
               <>
-                <SectionCard title="Theme Preset" icon="🎨">
+                {/* Preset Themes */}
+                <SectionCard title="Theme Presets" icon="🎨">
                   <div className="py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {THEME_PRESETS.map((t) => (
                       <button
@@ -300,6 +305,139 @@ export default function SettingsPage() {
                   </div>
                 </SectionCard>
 
+                {/* Live Custom Color Palette Picker */}
+                <SectionCard title="Full Custom Color Customizer" icon="🌈">
+                  <div className="py-4 space-y-4">
+                    <p className="text-xs text-[var(--color-text-tertiary)] font-medium">
+                      Tailor any light/dark theme by customizing primary brand accent, text, surface, and background colors individually.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Primary Brand Color */}
+                      <div className="p-3.5 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-[var(--color-text-primary)]">Primary / Button Color</p>
+                          <p className="text-[10px] text-[var(--color-text-tertiary)]">Icons, Buttons & Highlights</p>
+                        </div>
+                        <input
+                          type="color"
+                          defaultValue="#38bdf8"
+                          onChange={(e) => {
+                            applyCustomColors({ primary: e.target.value });
+                            updateSettings({ theme: "custom" as any });
+                          }}
+                          className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                        />
+                      </div>
+
+                      {/* Text Color */}
+                      <div className="p-3.5 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-[var(--color-text-primary)]">Primary Text Color</p>
+                          <p className="text-[10px] text-[var(--color-text-tertiary)]">Headings & Body Copy</p>
+                        </div>
+                        <input
+                          type="color"
+                          defaultValue="#f8fafc"
+                          onChange={(e) => {
+                            applyCustomColors({ textPrimary: e.target.value });
+                            updateSettings({ theme: "custom" as any });
+                          }}
+                          className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                        />
+                      </div>
+
+                      {/* Secondary Text Color */}
+                      <div className="p-3.5 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-[var(--color-text-primary)]">Muted Text Color</p>
+                          <p className="text-[10px] text-[var(--color-text-tertiary)]">Subtitles & Labels</p>
+                        </div>
+                        <input
+                          type="color"
+                          defaultValue="#94a3b8"
+                          onChange={(e) => {
+                            applyCustomColors({ textSecondary: e.target.value });
+                            updateSettings({ theme: "custom" as any });
+                          }}
+                          className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                        />
+                      </div>
+
+                      {/* Background Color */}
+                      <div className="p-3.5 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-[var(--color-text-primary)]">Page Background</p>
+                          <p className="text-[10px] text-[var(--color-text-tertiary)]">Main Dashboard Canvas</p>
+                        </div>
+                        <input
+                          type="color"
+                          defaultValue="#020617"
+                          onChange={(e) => {
+                            applyCustomColors({ background: e.target.value });
+                            updateSettings({ theme: "custom" as any });
+                          }}
+                          className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                        />
+                      </div>
+
+                      {/* Card Surface Color */}
+                      <div className="p-3.5 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-[var(--color-text-primary)]">Card Surface Color</p>
+                          <p className="text-[10px] text-[var(--color-text-tertiary)]">Widget & Card Container</p>
+                        </div>
+                        <input
+                          type="color"
+                          defaultValue="#0f172a"
+                          onChange={(e) => {
+                            applyCustomColors({ surface: e.target.value });
+                            updateSettings({ theme: "custom" as any });
+                          }}
+                          className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                        />
+                      </div>
+
+                      {/* Accent Color */}
+                      <div className="p-3.5 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-[var(--color-text-primary)]">Accent Badge Color</p>
+                          <p className="text-[10px] text-[var(--color-text-tertiary)]">Success & Metric Badges</p>
+                        </div>
+                        <input
+                          type="color"
+                          defaultValue="#10b981"
+                          onChange={(e) => {
+                            applyCustomColors({ accent: e.target.value });
+                            updateSettings({ theme: "custom" as any });
+                          }}
+                          className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </SectionCard>
+
+                {/* Typography & Font Customizer */}
+                <SectionCard title="Typography & Font Customization" icon="🔤">
+                  <SettingRow
+                    label="App Font Family"
+                    desc="Choose typography style for text across all modules"
+                  >
+                    <select
+                      onChange={(e) => {
+                        applyFontFamily(e.target.value);
+                        showToast("Font updated live!", "info");
+                      }}
+                      className="form-input text-xs py-2 px-3 rounded-xl border-[var(--color-border-light)] bg-[var(--color-surface-secondary)] font-bold text-[var(--color-text-primary)]"
+                    >
+                      {FONT_OPTIONS.map((f) => (
+                        <option key={f.id} value={f.family}>{f.label}</option>
+                      ))}
+                    </select>
+                  </SettingRow>
+                </SectionCard>
+
+                {/* Display Options */}
                 <SectionCard title="Display Options" icon="🖥️">
                   <SettingRow
                     label="Date Format"

@@ -1,7 +1,14 @@
-/**
- * DebtProof — Central Theme Manager Utility
- * Supports 7 curated modern themes with complete CSS variable mapping.
- */
+export interface CustomColors {
+  mode: "dark" | "light";
+  primary: string;
+  background: string;
+  surface: string;
+  textPrimary: string;
+  textSecondary: string;
+  accent: string;
+  border: string;
+  fontFamily: string;
+}
 
 export interface ThemeConfig {
   id: string;
@@ -21,8 +28,17 @@ export interface ThemeConfig {
     "--color-text-primary": string;
     "--color-text-secondary": string;
     "--color-border-light": string;
+    "--font-family"?: string;
   };
 }
+
+export const FONT_OPTIONS = [
+  { id: "inter", label: "Inter (Modern Tech)", family: "var(--font-inter), system-ui, sans-serif" },
+  { id: "roboto", label: "Roboto (Clean & Crisp)", family: "'Roboto', sans-serif" },
+  { id: "outfit", label: "Outfit (Trendy Geometric)", family: "'Outfit', sans-serif" },
+  { id: "serif", label: "Playfair (Classic Luxury)", family: "'Playfair Display', serif" },
+  { id: "mono", label: "Fira Code (Developer Mono)", family: "'Fira Code', monospace" },
+];
 
 export const THEME_PRESETS: ThemeConfig[] = [
   {
@@ -167,15 +183,75 @@ export const THEME_PRESETS: ThemeConfig[] = [
   },
 ];
 
+export function applyCustomColors(colors: Partial<CustomColors>): void {
+  if (typeof window === "undefined") return;
+  const root = document.documentElement;
+
+  if (colors.primary) {
+    root.style.setProperty("--color-primary", colors.primary);
+    root.style.setProperty("--color-primary-light", colors.primary);
+  }
+  if (colors.background) {
+    root.style.setProperty("--color-surface-secondary", colors.background);
+  }
+  if (colors.surface) {
+    root.style.setProperty("--color-surface", colors.surface);
+    root.style.setProperty("--color-surface-tertiary", colors.surface);
+  }
+  if (colors.textPrimary) {
+    root.style.setProperty("--color-text-primary", colors.textPrimary);
+  }
+  if (colors.textSecondary) {
+    root.style.setProperty("--color-text-secondary", colors.textSecondary);
+  }
+  if (colors.accent) {
+    root.style.setProperty("--color-accent", colors.accent);
+  }
+  if (colors.border) {
+    root.style.setProperty("--color-border-light", colors.border);
+  }
+  if (colors.fontFamily) {
+    root.style.fontFamily = colors.fontFamily;
+  }
+
+  localStorage.setItem("debtproof_custom_colors", JSON.stringify(colors));
+  localStorage.setItem("debtproof_theme", "custom");
+  window.dispatchEvent(new CustomEvent("debtproof_theme_changed", { detail: "custom" }));
+}
+
 export function applyGlobalTheme(themeId: string): void {
   if (typeof window === "undefined") return;
-  const config = THEME_PRESETS.find((t) => t.id === themeId) || THEME_PRESETS[0];
   const root = document.documentElement;
+
+  if (themeId === "custom") {
+    try {
+      const raw = localStorage.getItem("debtproof_custom_colors");
+      if (raw) {
+        applyCustomColors(JSON.parse(raw));
+        return;
+      }
+    } catch {}
+  }
+
+  const config = THEME_PRESETS.find((t) => t.id === themeId) || THEME_PRESETS[0];
 
   Object.entries(config.vars).forEach(([key, val]) => {
     root.style.setProperty(key, val);
   });
 
+  // Re-apply saved custom font if selected
+  const savedFont = localStorage.getItem("debtproof_font_family");
+  if (savedFont) {
+    root.style.fontFamily = savedFont;
+  }
+
   localStorage.setItem("debtproof_theme", themeId);
   window.dispatchEvent(new CustomEvent("debtproof_theme_changed", { detail: themeId }));
 }
+
+export function applyFontFamily(fontFamily: string): void {
+  if (typeof window === "undefined") return;
+  document.documentElement.style.fontFamily = fontFamily;
+  localStorage.setItem("debtproof_font_family", fontFamily);
+}
+

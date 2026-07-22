@@ -17,53 +17,87 @@ export interface PaymentQueryParams {
 const MOCK_PAYMENTS: Payment[] = [
   {
     id: "pay-1",
-    loan: "loan-1",
-    loan_name: "HDFC Home Loan",
-    amount: "42500.00",
-    payment_date: "2026-07-10",
+    loan: "6a40d2f7565148f69b69efb35066473c",
+    loan_name: "HDFC Personal Loan",
+    amount: "35000.00",
+    payment_date: "2024-02-10",
     payment_method: "auto_debit",
     reference_number: "TXN98451236",
     status: "confirmed",
-    principal_component: "30000.00",
-    interest_component: "12500.00",
-    notes: "Auto-debited EMI payment.",
+    principal_component: "35000.00",
+    interest_component: "12000.00",
+    notes: "Monthly EMI Repayment.",
     has_receipt: true,
-    created_at: "2026-07-10T08:30:00Z",
-    updated_at: "2026-07-10T08:30:00Z",
+    created_at: "2024-02-10T08:30:00Z",
+    updated_at: "2024-02-10T08:30:00Z",
   },
   {
     id: "pay-2",
-    loan: "loan-2",
-    loan_name: "ICICI Car Loan",
-    amount: "16800.00",
-    payment_date: "2026-07-15",
+    loan: "febd3d607b9443fabe358d698dd85aae",
+    loan_name: "Personal Loan By Poonawala",
+    amount: "90000.00",
+    payment_date: "2024-04-15",
     payment_method: "upi",
     reference_number: "UPI77441122",
     status: "confirmed",
-    principal_component: "13500.00",
-    interest_component: "3300.00",
-    notes: "UPI payment via GPay.",
-    has_receipt: false,
-    created_at: "2026-07-15T10:15:00Z",
-    updated_at: "2026-07-15T10:15:00Z",
+    principal_component: "90000.00",
+    interest_component: "28000.00",
+    notes: "UPI payment.",
+    has_receipt: true,
+    created_at: "2024-04-15T10:15:00Z",
+    updated_at: "2024-04-15T10:15:00Z",
   },
   {
     id: "pay-3",
-    loan: "loan-3",
-    loan_name: "Personal Emergency Debt",
-    amount: "9500.00",
-    payment_date: "2026-07-01",
+    loan: "5090673232bd48bba3845a155a420f3b",
+    loan_name: "Axis Bank Personal Loan",
+    amount: "55000.00",
+    payment_date: "2024-06-01",
     payment_method: "bank_transfer",
     reference_number: "NEFT88554411",
     status: "confirmed",
-    principal_component: "8000.00",
-    interest_component: "1500.00",
-    notes: "Monthly installment transfer.",
+    principal_component: "55000.00",
+    interest_component: "9500.00",
+    notes: "Installment transfer.",
     has_receipt: true,
-    created_at: "2026-07-01T11:00:00Z",
-    updated_at: "2026-07-01T11:00:00Z",
+    created_at: "2024-06-01T11:00:00Z",
+    updated_at: "2024-06-01T11:00:00Z",
+  },
+  {
+    id: "pay-4",
+    loan: "820e3179d50a47ef8b97475ff1009ff4",
+    loan_name: "Personal Loan From Anmol",
+    amount: "192000.00",
+    payment_date: "2023-12-20",
+    payment_method: "auto_debit",
+    reference_number: "P2P991122",
+    status: "confirmed",
+    principal_component: "192000.00",
+    interest_component: "45000.00",
+    notes: "P2P installment.",
+    has_receipt: true,
+    created_at: "2023-12-20T10:00:00Z",
+    updated_at: "2023-12-20T10:00:00Z",
   }
 ];
+
+const PAYMENTS_STORAGE_KEY = "debtproof_local_payments";
+
+function getStoredPayments(): Payment[] {
+  if (typeof window === "undefined") return MOCK_PAYMENTS;
+  try {
+    const raw = localStorage.getItem(PAYMENTS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return MOCK_PAYMENTS;
+}
+
+function setStoredPayments(payments: Payment[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(payments));
+  } catch {}
+}
 
 export const paymentsService = {
   getLoanPayments: async (
@@ -72,13 +106,23 @@ export const paymentsService = {
   ): Promise<PaginatedResponse<Payment>> => {
     try {
       const { data } = await apiClient.get<PaginatedResponse<Payment>>(`/loans/${loanId}/payments/`, { params });
-      return data;
-    } catch {
-      const filtered = MOCK_PAYMENTS.filter(p => p.loan === loanId);
+      if (data && data.results && data.results.length > 0) {
+        return data;
+      }
+      const current = getStoredPayments();
+      const filtered = current.filter(p => p.loan === loanId);
       return {
         success: true,
         pagination: { count: filtered.length, total_pages: 1, current_page: 1, next: null, previous: null },
-        results: filtered.length > 0 ? filtered : MOCK_PAYMENTS,
+        results: filtered,
+      };
+    } catch {
+      const current = getStoredPayments();
+      const filtered = current.filter(p => p.loan === loanId);
+      return {
+        success: true,
+        pagination: { count: filtered.length, total_pages: 1, current_page: 1, next: null, previous: null },
+        results: filtered,
       };
     }
   },
@@ -90,11 +134,40 @@ export const paymentsService = {
       const { data } = await apiClient.get<PaginatedResponse<Payment>>("/payments/", { params });
       return data;
     } catch {
+      const current = getStoredPayments();
       return {
         success: true,
-        pagination: { count: MOCK_PAYMENTS.length, total_pages: 1, current_page: 1, next: null, previous: null },
-        results: MOCK_PAYMENTS,
+        pagination: { count: current.length, total_pages: 1, current_page: 1, next: null, previous: null },
+        results: current,
       };
+    }
+  },
+
+  createPayment: async (payload: PaymentFormData): Promise<Payment> => {
+    try {
+      const { data } = await apiClient.post<{ success: boolean; payment: Payment }>("/payments/", payload);
+      return data.payment;
+    } catch {
+      const newPayment: Payment = {
+        id: `pay-${Date.now()}`,
+        loan: payload.loan,
+        loan_name: "Loan Payment",
+        amount: payload.amount,
+        payment_date: payload.payment_date,
+        payment_method: payload.payment_method || "auto_debit",
+        reference_number: payload.reference_number || `TXN${Date.now().toString().slice(-8)}`,
+        status: "confirmed",
+        principal_component: payload.principal_component || payload.amount,
+        interest_component: payload.interest_component || "0.00",
+        notes: payload.notes || "Manual payment logged",
+        has_receipt: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const current = getStoredPayments();
+      current.unshift(newPayment);
+      setStoredPayments(current);
+      return newPayment;
     }
   },
 
@@ -113,16 +186,21 @@ export const paymentsService = {
   ): Promise<Payment> => {
     try {
       const { data } = await apiClient.post<{ success: boolean; payment: Payment }>(`/loans/${loanId}/payments/`, paymentData);
+      if (data && data.payment) {
+        const current = getStoredPayments();
+        current.unshift(data.payment);
+        setStoredPayments(current);
+      }
       return data.payment;
     } catch {
       const newPay: Payment = {
         id: `pay-${Date.now()}`,
         loan: loanId,
-        loan_name: "Loan Payment",
+        loan_name: "Repayment",
         amount: paymentData.amount,
         payment_date: paymentData.payment_date,
-        payment_method: paymentData.payment_method,
-        reference_number: paymentData.reference_number || "REF-001",
+        payment_method: paymentData.payment_method || "bank_transfer",
+        reference_number: paymentData.reference_number || `TXN${Date.now().toString().slice(-6)}`,
         status: paymentData.status || "confirmed",
         principal_component: paymentData.principal_component || paymentData.amount,
         interest_component: paymentData.interest_component || "0.00",
@@ -131,7 +209,9 @@ export const paymentsService = {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      MOCK_PAYMENTS.unshift(newPay);
+      const current = getStoredPayments();
+      current.unshift(newPay);
+      setStoredPayments(current);
       return newPay;
     }
   },
@@ -153,8 +233,11 @@ export const paymentsService = {
     try {
       await apiClient.delete(`/payments/${id}/`);
     } catch {
-      const idx = MOCK_PAYMENTS.findIndex(p => p.id === id);
-      if (idx !== -1) MOCK_PAYMENTS.splice(idx, 1);
+      /* ignore API error and clean local storage */
+    } finally {
+      const current = getStoredPayments();
+      const filtered = current.filter(p => p.id !== id);
+      setStoredPayments(filtered);
     }
   },
 
