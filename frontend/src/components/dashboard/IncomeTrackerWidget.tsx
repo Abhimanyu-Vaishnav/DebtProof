@@ -36,7 +36,7 @@ export function IncomeTrackerWidget({ monthlyEmiTotal = 68800, monthlySipTotal =
     monthlyAmount: "",
   });
 
-  useEffect(() => {
+  const loadIncomes = () => {
     const saved = localStorage.getItem("debtproof_income_streams");
     if (saved) {
       try {
@@ -47,11 +47,25 @@ export function IncomeTrackerWidget({ monthlyEmiTotal = 68800, monthlySipTotal =
       }
     }
     setIncomes(DEFAULT_INCOMES);
+  };
+
+  useEffect(() => {
+    loadIncomes();
+
+    const handleUpdate = () => loadIncomes();
+    window.addEventListener("debtproof_income_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    return () => {
+      window.removeEventListener("debtproof_income_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, []);
 
   const saveIncomes = (items: IncomeStream[]) => {
     setIncomes(items);
     localStorage.setItem("debtproof_income_streams", JSON.stringify(items));
+    window.dispatchEvent(new Event("debtproof_income_updated"));
   };
 
   const openAddModal = () => {
