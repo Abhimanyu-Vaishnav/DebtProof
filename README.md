@@ -1,204 +1,151 @@
-# 📑 DebtProof — Secure, Track & Verify Loan Repayments on Monad Blockchain 🚀
+# 📑 DebtProof — Modern Decentralized Financial & Debt Management Platform 🚀
 
-> **Never lose proof of your loan repayments again.** Safeguard your financial transactions with cryptographic trust.
+> **Never lose proof of your loan repayments again.** Manage traditional bank debts, track investments, optimize monthly budgets, participate in P2P Web3 lending, and generate immutable cryptographic proof of every transaction on the **Monad Blockchain**.
 
-[![Organization](https://img.shields.io/badge/Organization-Sanatan%20Labs-1a3a5c?style=flat-square)](https://github.com/sanatan-labs)
-[![Status](https://img.shields.io/badge/Status-Day%205%20Production%20Ready-10b981?style=flat-square)](#)
-[![Blockchain](https://img.shields.io/badge/Blockchain-Monad%20Testnet-7c3aed?style=flat-square)](https://monad.xyz)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+🌐 **Live Application URL**: [https://debt-proof-front-tau.vercel.app/](https://debt-proof-front-tau.vercel.app/)
 
----
-
-## 🌟 Project Overview
-
-**DebtProof** is a modern, blockchain-powered debt management platform that allows borrowers to track their loans and create **permanent, tamper-proof proof of every repayment**. 
-
-By anchoring cryptographic hashes of payment receipts onto the high-performance **Monad Blockchain**, DebtProof guarantees receipt authenticity without storing personal financial information on a public ledger.
+[![Live App](https://img.shields.io/badge/Live%20App-Vercel%20Deployed-10b981?style=for-the-badge&logo=vercel)](https://debt-proof-front-tau.vercel.app/)
+[![Organization](https://img.shields.io/badge/Organization-Sanatan%20Labs-1a3a5c?style=for-the-badge)](https://github.com/sanatan-labs)
+[![Blockchain](https://img.shields.io/badge/Blockchain-Monad%20Testnet-7c3aed?style=for-the-badge)](https://monad.xyz)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 ---
 
-## ⚠️ The Problem We Solve
+## 🌟 What is DebtProof?
 
-Lenders and borrowers frequently clash over payments due to:
-- **Lost Receipts 📄**: Digital receipts get deleted; physical papers get lost.
-- **Tampered Records ✏️**: Backdated or photoshopped PDFs and screenshots can easily be forged.
-- **No Shared Trust 🤝**: There is no permanent, neutral third-party log that both borrowers and lenders can reference years later.
+**DebtProof** is an end-to-end, human-first personal financial management ecosystem. Whether you are managing multiple bank loans (Home, Vehicle, Personal, Credit Cards), tracking your investment SIPs, planning monthly household budgets, or participating in peer-to-peer (P2P) lending — DebtProof brings clarity, automation, and cryptographic trust to your financial life.
 
-### 💡 The Solution
-DebtProof creates a **trustless verification system** using:
-1. **Management Layer**: A beautiful React/Next.js and Flutter client dashboard to manage all liabilities.
-2. **Cryptographic Proofs**: Generate SHA-256 hashes of all receipt documents locally.
-3. **Immutable Anchors**: Write receipt hashes directly to the Monad Testnet blockchain.
+Every payment receipt uploaded is hashed using **SHA-256** and anchored onto the **Monad Blockchain**, guaranteeing that your repayment records can **never be deleted, backdated, or disputed by lenders**.
 
 ---
 
-## ⛓️ Monad Integration & Privacy Model
+## 🚀 Key Features & Detailed Module Guide
 
-We prioritize **absolute user privacy**. No personal names, loan amounts, or payment methods are ever published on the blockchain.
+Here is a comprehensive breakdown of everything built into DebtProof, how each module works, and why it matters:
 
-### 🛡️ On-chain vs Off-chain boundary:
-- **On-chain (Public)**: Unique `proof_id` (UUID), cryptographic `receiptHash` (SHA-256), anchoring wallet address, and block timestamp.
-- **Off-chain (Private)**: Personal accounts, payment methods, bank reference details, and actual uploaded receipt documents.
+### 1. 📊 Interactive Dashboard & Financial Command Center
+- **What it does**: Provides a bird's-eye view of your entire financial standing — total borrowed principal, total repaid principal, active outstanding debt, and monthly interest burn.
+- **Key Capabilities**:
+  - **Individual Loan Progress Cards**: Visual status bars with % repaid, color-coded overdue warnings, and click-to-navigate access.
+  - **Monthly Payment History Chart**: Interactive bar/line chart showing monthly payment trends.
+  - **Live Income Tracker**: Synchronized multi-source income tracker (Salary, Rental, Freelance, Business) that alerts you if your monthly EMI exceeds safe limits (DTI > 35%).
+  - **Dashboard Customization**: Hide or show widgets based on personal preference via Settings.
 
-### ⚙️ Monad Network Config:
-- **Network Name:** Monad Testnet
-- **Chain ID:** `10143` (Hex: `0x279f`)
-- **RPC URL:** `https://testnet-rpc.monad.xyz/`
-- **Block Explorer:** `https://testnet.monadscan.com/`
-- **Smart Contract Address:** `0x316dF00a399d655734CeaeFfEE0A7DD432e1DB5f`
+### 2. 🏦 My Loans & Repayment Management
+- **What it does**: Track home loans, car loans, education loans, personal loans, and business liabilities in one place.
+- **Key Capabilities**:
+  - **Loan Detail Page**: Displays a 140px radial repayment progress ring, key numbers (Principal Paid, Outstanding Balance, Interest Cost), and monthly payment history bars.
+  - **⚡ Foreclosure & Part-Pay Calculator**: Calculate exact interest saved and tenure reduced by making lump-sum prepayments.
+  - **Payment Logger**: Record monthly EMIs with principal vs interest split, payment method (UPI, Auto-debit, NEFT), and transaction reference numbers.
+
+### 3. 💵 Intelligent Budget Planner (`/dashboard/budget`)
+- **What it does**: A unified cash flow engine that balances monthly income streams, living expenses, EMI commitments, and savings targets.
+- **Key Capabilities**:
+  - **🔄 2-Way Real-time Income Sync**: Changes made in the Budget Planner immediately reflect on the main Dashboard and vice versa.
+  - **Budget Health Score (0–100)**: Animated health gauge rating your cash flow (Excellent, Good, Fair, Tight, Critical).
+  - **Visual Cash Flow Allocation Bar**: Color-coded breakdown showing exact percentages for EMIs, Living Expenses, Savings Target, and Free Surplus.
+  - **Custom Expenses Tracking**: Track 8 living categories (Rent, Food, Utilities, Transport, Health, Entertainment, Education, Misc).
+  - **Smart Tips**: Automated warnings when your DTI ratio exceeds 40% or savings rate falls below 20%.
+
+### 4. 📈 Investments & Wealth Tracker (`/dashboard/investments`)
+- **What it does**: Track wealth-building assets including Mutual Fund SIPs, Stocks, Fixed Deposits, Real Estate, Gold, and Crypto.
+- **Key Capabilities**:
+  - **Investment Detail Growth Chart**: Interactive SVG curve displaying **Invested Capital vs Current Valuation** over time.
+  - **🚀 Future Compound Wealth Predictor**: Calculates projected future wealth over 1, 3, 5, and 10 years at your expected CAGR %.
+  - **Portfolio Mix Donut**: Visual percentage breakdown of asset categories.
+
+### 5. 🤖 AI Debt Payoff Assistant & Strategy Coach
+- **What it does**: An interactive AI chat coach floating globally on your screen that analyzes your active portfolio to provide personalized advice.
+- **Key Capabilities**:
+  - **Live Portfolio Context**: Auto-reads your active loans, total debt, and interest burn to give tailor-made recommendations.
+  - **⚡ Extra Prepayment Impact Simulator**: Displays an interactive summary card showing exact months saved, interest saved, and new debt-free date when adding extra EMI.
+  - **Strategy Coach**: Compares **Debt Avalanche** (paying highest interest first for max savings) vs **Debt Snowball** (paying smallest balance first for motivation).
+  - **High-Contrast Design**: Optimized for 100% legibility in both Dark and Light themes.
+
+### 6. 📄 Official Reports & PDF Export Engine (`/dashboard/reports`)
+- **What it does**: Generate bank-grade PDF statements and CSV/JSON data dumps.
+- **Key Capabilities**:
+  - **📄 One-Click PDF Print**: Generates clean, formatted PDF statements (Loan Portfolio Statement, Payment History Log, Net Worth Audit) ready for printing or saving as PDF.
+  - **Live Interactive Data Preview**: Filter by specific loan account, start date, or end date, and preview matching payment logs live on screen before exporting.
+  - **CSV & JSON Exports**: Download raw structured data for accounting software.
+
+### 7. 🤝 P2P Web3 Marketplace & Monad Escrow (`/dashboard/p2p-market`)
+- **What it does**: Trustless peer-to-peer borrowing and lending powered by Monad Blockchain smart contracts.
+- **Key Capabilities**:
+  - **Zero-Middleman Escrow**: Borrowers post loan requests; lenders fund directly using **MON tokens** via MetaMask.
+  - **On-chain Repayments**: Smart contracts verify and record every installment transparently without central bank intervention.
+
+### 8. 🛡️ Cryptographic Receipt Verification (`/verify-proof`)
+- **What it does**: Verify payment receipt authenticity using SHA-256 cryptographic hashes.
+- **Key Capabilities**:
+  - **Tamper-Proof Verification**: Upload any receipt file to compute its hash and query the Monad Testnet blockchain.
+  - **Public Admissibility**: Share your hash or transaction link with banks, courts, or auditors for independent verification.
+
+### 9. 🔔 Smart Notifications & Browser Push (`/dashboard/notifications`)
+- **What it does**: Keeps you ahead of due dates with multi-channel alerts.
+- **Key Capabilities**:
+  - **📲 Browser Push Notifications**: Real-time push alerts on your desktop or mobile browser.
+  - **Floating 3-Day EMI Reminder Popup**: Auto-appears when an EMI is due within 3 days.
+  - **Swipe Gestures**: Mobile-friendly swipe right to mark read, swipe left to delete.
+
+### 10. 📱 Progressive Web App (PWA)
+- **What it does**: Install DebtProof directly onto your mobile or desktop home screen.
+- **Key Capabilities**:
+  - **Install Banner**: Mobile prompt to add to Home Screen.
+  - **Service Worker (`sw.js`)**: Network-first strategy for navigation, offline fallback, and fast asset caching.
 
 ---
 
-## 🗺️ Visual Architecture Flow
+## 🛠️ Tech Stack
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Borrower
-    participant FE as Next.js/Flutter App
-    participant BE as Django API
-    participant DB as Database
-    participant BC as Monad Smart Contract
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS (Vanilla CSS variables system), Recharts, Ethers.js v6.
+- **Backend**: Django 5.0, Django REST Framework, SQLite / PostgreSQL.
+- **Blockchain**: Monad Testnet (Chain ID: `10143`), Solidity Smart Contracts (EVM), SHA-256 Hashing.
+- **Hosting**: Deployed on Vercel ([Live Link](https://debt-proof-front-tau.vercel.app/)).
 
-    User->>FE: Log Payment & Upload Receipt File
-    FE->>BE: POST /api/v1/payments/ (with receipt file)
-    BE->>BE: Compute SHA-256 Hash of Receipt File
-    BE->>DB: Save Payment & Receipt Hash
-    BE-->>FE: Return Payment Details & Hash
-    User->>FE: Click "Anchor Proof on Monad"
-    FE->>BC: call storeProof(proofId, receiptHash) via Web3 Wallet
-    BC-->>FE: Confirm Transaction (Block #, Tx Hash)
-    FE->>BE: POST /api/v1/payments/{id}/proof/store/ (Tx Hash details)
-    BE->>DB: Mark Receipt as Verified Onchain
-    BE-->>FE: Return Status Confirmed
-    FE-->>User: Display Green "ON-CHAIN VERIFIED" badge
+---
+
+## 🛡️ Monad Network Configuration
+
+- **Network Name**: Monad Testnet
+- **Chain ID**: `10143` (`0x279f`)
+- **RPC URL**: `https://testnet-rpc.monad.xyz/`
+- **Block Explorer**: `https://testnet.monadscan.com/`
+- **Smart Contract Address**: `0x316dF00a399d655734CeaeFfEE0A7DD432e1DB5f`
+
+---
+
+## ⚙️ How to Run Locally
+
+### 1. Backend Setup (Django)
+```bash
+cd backend
+python -m venv .venv
+# On Windows:
+.venv\Scripts\activate
+# On Mac/Linux:
+# source .venv/bin/activate
+
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver 8000
 ```
 
----
+### 2. Frontend Setup (Next.js)
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## 🚀 Step-by-Step Environment Setup & Installation
-
-If you are cloning this repository from GitHub, follow this complete configuration manual.
-
-### 📋 Prerequisites
-- **Python** (version 3.10+)
-- **Node.js** (version 18+)
-- **Git**
-- **MetaMask** wallet extension in your web browser (configured for Monad Testnet)
+Open `http://localhost:3000` in your browser.
 
 ---
 
-### 🐍 1. Django Backend Setup
+## 🌐 Live Web Application
 
-1. **Clone and navigate to backend**:
-   ```bash
-   git clone https://github.com/sanatan-labs/DebtProof.git
-   cd DebtProof/backend
-   ```
-
-2. **Initialize virtual environment**:
-   - **Windows**:
-     ```bash
-     python -m venv .venv
-     .venv\Scripts\activate
-     ```
-   - **macOS/Linux**:
-     ```bash
-     python -m venv .venv
-     source .venv/bin/activate
-     ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Setup environment variables**:
-   Create a `.env` file in the `backend/` folder:
-   ```properties
-   SECRET_KEY=dev-secret-key-debtproof-app-1234567890
-   DEBUG=True
-   ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.223,*
-   CORS_ALLOWED_ORIGINS=http://localhost:3000,http://192.168.1.223:3000
-   ```
-
-5. **Run migrations and start backend server**:
-   ```bash
-   python manage.py migrate
-   python manage.py runserver 0.0.0.0:8000
-   ```
-
----
-
-### ⚛️ 2. React/Next.js Web Setup
-
-1. **Navigate to the frontend**:
-   ```bash
-   cd ../frontend
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Setup environment variables**:
-   Create a `.env.local` file in the `frontend/` folder:
-   ```properties
-   NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-   NEXT_PUBLIC_APP_NAME=DebtProof
-   NEXT_PUBLIC_APP_VERSION=1.0.0
-   ```
-
-4. **Launch Web application**:
-   ```bash
-   npm run dev -- --hostname 0.0.0.0
-   ```
-
----
-
-### 📱 3. Flutter Mobile Setup
-
-1. **Navigate to the Flutter directory**:
-   ```bash
-   cd "../DebtProof Android/DebtProof"
-   ```
-
-2. **Install packages**:
-   ```bash
-   flutter pub get
-   ```
-
-3. **Configure environment variables**:
-   Modify `.env` file in the Flutter root directory:
-   ```properties
-   API_BASE_URL_DEV=http://192.168.1.223:8000
-   MONAD_RPC_URL=https://testnet-rpc.monad.xyz/
-   MONAD_CHAIN_ID=10143
-   REGISTRY_CONTRACT_ADDRESS=0x316dF00a399d655734CeaeFfEE0A7DD432e1DB5f
-   APP_ENV=development
-   ```
-
-4. **Run mobile app**:
-   ```bash
-   flutter run
-   ```
-
----
-
-## 📈 Future Vision: Building the Complete Financial Cycle
-
-We plan to expand DebtProof from a simple tracking system into a fully autonomous, circular **Financial cycle platform**:
-
-1. **Decentralized Escrow Clearing (P2P Lending) 🛡️**:
-   - Integrate automated smart contracts that act as trustees. 
-   - Borrowers and lenders deposit and receive repayments directly through on-chain escrow accounts, clearing the outstanding balance automatically without manual bank slip uploads.
-
-2. **Zero-Knowledge Proofs (ZKP) for Credit Scoring 🕵️**:
-   - Implement zero-knowledge proofs (such as zk-SNARKs) allowing borrowers to prove to third-party lenders that they have paid 100% of their EMIs on time *without* revealing their monthly incomes, loan types, or lender identities.
-
-3. **DeFi Collateralized Refinancing 🔄**:
-   - Allow users to tokenize their repayment histories as reputation NFTs. These reputation scores can serve as collateral multiplier metrics for securing cheaper, interest-adjusted loans across decentralised credit protocols on Monad.
+Experience DebtProof live in production:
+👉 **[https://debt-proof-front-tau.vercel.app/](https://debt-proof-front-tau.vercel.app/)**
 
 ---
 
