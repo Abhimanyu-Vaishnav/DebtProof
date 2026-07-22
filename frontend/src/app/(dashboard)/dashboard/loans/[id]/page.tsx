@@ -192,13 +192,19 @@ function RepaymentScheduleTable({ loan, payments }: { loan: Loan; payments: Paym
     let paidForThisInst = 0;
     let matchedPayments: Payment[] = [];
 
-    // Method 1: Check exact month payments
-    const monthMatches = sortedPayments.filter(p => p.payment_date && p.payment_date.slice(0, 7) === monthKey);
-    if (monthMatches.length > 0) {
-      paidForThisInst = monthMatches.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-      matchedPayments = monthMatches;
-    } else {
-      // Method 2: Sequential pool distribution
+    // 1. First check if any payment explicitly matches this monthKey and has remaining balance in pool
+    for (const poolItem of paymentPool) {
+      if (poolItem.remainingAmount > 0 && poolItem.payment_date && poolItem.payment_date.slice(0, 7) === monthKey) {
+        const needed = emiAmount - paidForThisInst;
+        const take = Math.min(needed, poolItem.remainingAmount);
+        paidForThisInst += take;
+        poolItem.remainingAmount -= take;
+        matchedPayments.push(poolItem);
+      }
+    }
+
+    // 2. If installment is still not full, fill sequentially from remaining payment pool
+    if (paidForThisInst < emiAmount) {
       for (const poolItem of paymentPool) {
         if (poolItem.remainingAmount > 0 && paidForThisInst < emiAmount) {
           const needed = emiAmount - paidForThisInst;

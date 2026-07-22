@@ -166,6 +166,28 @@ export const paymentsService = {
       }
       return data.payment;
     } catch {
+      let iComp = paymentData.interest_component;
+      let pComp = paymentData.principal_component;
+
+      if (!iComp || parseFloat(iComp) === 0) {
+        const PAYMENTS_KEY = "debtproof_local_loans";
+        let localLoans: any[] = [];
+        try {
+          const raw = typeof window !== "undefined" ? localStorage.getItem(PAYMENTS_KEY) : null;
+          if (raw) localLoans = JSON.parse(raw);
+        } catch {}
+        const foundLoan = localLoans.find(l => l.id === loanId);
+        const rate = foundLoan ? (parseFloat(foundLoan.interest_rate) || 12) / 1200 : 0.01;
+        const currentBal = foundLoan ? (parseFloat(foundLoan.outstanding_amount) || parseFloat(foundLoan.principal_amount) || 0) : 100000;
+        const amt = parseFloat(paymentData.amount) || 0;
+
+        const estInterest = Math.min(amt, Math.round(currentBal * rate * 100) / 100);
+        const estPrincipal = Math.max(0, amt - estInterest);
+
+        iComp = estInterest.toFixed(2);
+        pComp = estPrincipal.toFixed(2);
+      }
+
       const newPay: Payment = {
         id: `pay-${Date.now()}`,
         loan: loanId,
@@ -175,8 +197,8 @@ export const paymentsService = {
         payment_method: paymentData.payment_method || "bank_transfer",
         reference_number: paymentData.reference_number || `TXN${Date.now().toString().slice(-6)}`,
         status: paymentData.status || "confirmed",
-        principal_component: paymentData.principal_component || paymentData.amount,
-        interest_component: paymentData.interest_component || "0.00",
+        principal_component: pComp || paymentData.amount,
+        interest_component: iComp || "0.00",
         notes: paymentData.notes || "",
         has_receipt: false,
         created_at: new Date().toISOString(),

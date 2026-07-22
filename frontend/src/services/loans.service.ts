@@ -249,16 +249,44 @@ function syncLoanWithPayments(loan: Loan): Loan {
   } catch {}
 
   const loanPayments = allPayments.filter((p: any) => p.loan === loan.id || p.loan_id === loan.id);
-  const principal = parseFloat(loan.principal_amount) || 1;
+  const principal = parseFloat(loan.principal_amount) || 0;
+  const rate = (parseFloat(loan.interest_rate) || 12) / 1200;
 
   if (loanPayments.length > 0) {
-    const totalPaid = loanPayments.reduce((sum: number, p: any) => sum + (parseFloat(p.amount) || 0), 0);
-    const outstanding = Math.max(0, principal - totalPaid);
-    const progress = Math.min(100, (totalPaid / principal) * 100);
+    let totalPaid = 0;
+    let totalPrincipalPaid = 0;
+    let totalInterestPaid = 0;
+    let currentBalance = principal;
+
+    // Sort payments chronologically for accurate interest calculation
+    const sortedLoanPayments = [...loanPayments].sort((a, b) => 
+      new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime()
+    );
+
+    sortedLoanPayments.forEach((p: any) => {
+      const amt = parseFloat(p.amount) || 0;
+      let pComp = parseFloat(p.principal_component);
+      let iComp = parseFloat(p.interest_component);
+
+      // If interest component was not specified or defaulted to 0, calculate EMI interest portion
+      if (isNaN(iComp) || iComp === 0 || pComp === amt) {
+        iComp = Math.min(amt, Math.round(currentBalance * rate * 100) / 100);
+        pComp = Math.max(0, amt - iComp);
+      }
+
+      totalPaid += amt;
+      totalInterestPaid += iComp;
+      totalPrincipalPaid += pComp;
+      currentBalance = Math.max(0, currentBalance - pComp);
+    });
+
+    const outstanding = Math.max(0, principal - totalPrincipalPaid);
+    const progress = Math.min(100, (totalPrincipalPaid / principal) * 100);
 
     return {
       ...loan,
       paid_amount: totalPaid.toFixed(2),
+      interest_paid: totalInterestPaid.toFixed(2),
       outstanding_amount: outstanding.toFixed(2),
       total_payments: loanPayments.length,
       repayment_progress_percent: parseFloat(progress.toFixed(1)),
