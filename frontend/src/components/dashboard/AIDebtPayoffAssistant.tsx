@@ -24,12 +24,16 @@ interface ChatMessage {
 }
 
 // ── Markdown-like Formatter for **bold** text ─────────────────────
-function renderFormattedText(text: string) {
+function renderFormattedText(text: string, isUser: boolean) {
   const parts = text.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} className="font-black text-[var(--color-primary-light)]">
+        <strong
+          key={i}
+          className="font-black"
+          style={{ color: isUser ? "#ffffff" : "#2563eb" }}
+        >
           {part.slice(2, -2)}
         </strong>
       );
@@ -228,13 +232,19 @@ export function AIDebtPayoffAssistant() {
                 className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`p-3.5 rounded-2xl max-w-[88%] leading-relaxed space-y-2 whitespace-pre-wrap ${
+                  className={`p-3.5 rounded-2xl max-w-[88%] leading-relaxed space-y-2 whitespace-pre-wrap shadow-sm ${
                     msg.sender === "user"
-                      ? "bg-[var(--color-primary)] text-white font-bold rounded-br-none shadow-md"
-                      : "bg-[var(--color-surface)] text-[var(--color-text-primary)] border border-[var(--color-border)] font-medium rounded-bl-none shadow-sm"
+                      ? "rounded-br-none"
+                      : "rounded-bl-none border border-[var(--color-border)]"
                   }`}
+                  style={{
+                    backgroundColor: msg.sender === "user" ? "#1e40af" : "var(--color-surface)",
+                    color: msg.sender === "user" ? "#ffffff" : "var(--color-text-primary)",
+                  }}
                 >
-                  <p className="text-[13px]">{renderFormattedText(msg.text)}</p>
+                  <p className="text-[13px] font-medium" style={{ color: msg.sender === "user" ? "#ffffff" : "var(--color-text-primary)" }}>
+                    {renderFormattedText(msg.text, msg.sender === "user")}
+                  </p>
 
                   {/* Impact Calculation Card Attachment */}
                   {msg.impactCard && (
