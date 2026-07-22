@@ -125,3 +125,5 @@ export function InstallPWABanner() {
     </div>
   );
 }
+
+export default InstallPWABanner;

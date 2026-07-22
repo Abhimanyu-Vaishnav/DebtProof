@@ -104,3 +104,5 @@ export function AIDebtAdvisorWidget({ data }: AIDebtAdvisorWidgetProps) {
     </div>
   );
 }
+
+export default AIDebtAdvisorWidget;

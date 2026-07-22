@@ -151,3 +151,5 @@ export function EMIReminderPopup() {
     </div>
   );
 }
+
+export default EMIReminderPopup;
