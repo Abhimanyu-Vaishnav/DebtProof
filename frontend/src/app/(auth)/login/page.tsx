@@ -36,7 +36,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(formData);
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "response" in err

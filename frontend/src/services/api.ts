@@ -97,9 +97,6 @@ apiClient.interceptors.response.use(
 
       if (!refreshToken) {
         tokenStorage.clear();
-        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-          window.location.href = "/login";
-        }
         return Promise.reject(error);
       }
 
@@ -130,9 +127,6 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         tokenStorage.clear();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
