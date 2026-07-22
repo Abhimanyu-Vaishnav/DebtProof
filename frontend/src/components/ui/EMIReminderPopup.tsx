@@ -80,74 +80,77 @@ export function EMIReminderPopup() {
 
   return (
     <div
-      className={`fixed bottom-24 right-3 sm:bottom-6 sm:right-4 z-30 w-[calc(100vw-1.5rem)] sm:w-80 shadow-2xl rounded-2xl border overflow-hidden transition-all duration-400 ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100vw-2rem)] max-w-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-2xl border backdrop-blur-xl transition-all duration-500 transform ${
+        visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-10 scale-95 pointer-events-none"
       } ${hasOverdue
-        ? "bg-rose-950/95 border-rose-500/40 backdrop-blur-md"
-        : "bg-[var(--color-surface)] border-amber-500/40 backdrop-blur-md"
+        ? "bg-rose-950/95 border-rose-500/50 text-white"
+        : "bg-[var(--color-surface)]/95 border-amber-500/40 text-[var(--color-text-primary)]"
       }`}
     >
-      {/* Header */}
-      <div className={`px-4 py-3 flex items-center justify-between ${hasOverdue ? "bg-rose-900/60" : "bg-amber-500/10"}`}>
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{hasOverdue ? "⚠️" : "🔔"}</span>
-          <p className={`text-xs font-black uppercase tracking-wider ${hasOverdue ? "text-rose-300" : "text-amber-600 dark:text-amber-400"}`}>
-            {hasOverdue ? "Overdue EMI Alert" : `EMI Due ${topItem.daysLeft === 0 ? "Today" : `in ${topItem.daysLeft} Day${topItem.daysLeft > 1 ? "s" : ""}`}`}
-          </p>
+      <div className="p-3 sm:px-4 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        {/* Left Info Section */}
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className={`w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center text-lg shadow-inner ${
+            hasOverdue ? "bg-rose-500/20 text-rose-300 border border-rose-500/40" : "bg-amber-500/20 text-amber-500 border border-amber-500/40"
+          }`}>
+            {hasOverdue ? "⚠️" : "🔔"}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full animate-ping ${hasOverdue ? "bg-rose-400" : "bg-amber-400"}`} />
+              <p className={`text-[10px] font-black uppercase tracking-wider ${hasOverdue ? "text-rose-300" : "text-amber-600 dark:text-amber-400"}`}>
+                {hasOverdue ? "Overdue EMI Alert" : `EMI Due ${topItem.daysLeft === 0 ? "Today" : `in ${topItem.daysLeft} Day${topItem.daysLeft > 1 ? "s" : ""}`}`}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-xs sm:text-sm font-black truncate max-w-[180px] sm:max-w-[220px]">
+                {topItem.loanName}
+              </p>
+              <span className="text-xs font-black text-amber-500 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                {format(topItem.amount)}
+              </span>
+            </div>
+          </div>
         </div>
-        <button onClick={dismiss} className="p-1 rounded-full hover:bg-white/10 transition cursor-pointer text-[var(--color-text-secondary)]">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
 
-      {/* Body */}
-      <div className="px-4 py-3 space-y-2.5">
-        {dueItems.slice(0, 3).map(item => (
-          <Link key={item.loanId} href={`/dashboard/loans/${item.loanId}`}
+        {/* Right Actions Section */}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 border-[var(--color-border)]/50 pt-2 sm:pt-0">
+          <Link
+            href={`/dashboard/loans/${topItem.loanId}/payments/new?amount=${topItem.amount}`}
             onClick={dismiss}
-            className="flex items-center justify-between group rounded-xl p-2.5 hover:bg-white/5 transition cursor-pointer">
-            <div>
-              <p className="text-sm font-black text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors">
-                {item.loanName}
-              </p>
-              <p className="text-[10px] font-medium text-[var(--color-text-secondary)] mt-0.5">
-                {item.isOverdue
-                  ? `Overdue by ${Math.abs(item.daysLeft)} day${Math.abs(item.daysLeft) !== 1 ? "s" : ""}`
-                  : item.daysLeft === 0 ? "Due today!" : `Due on ${new Date(item.dueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}`
-                }
-              </p>
-            </div>
-            <div className="text-right">
-              <p className={`text-sm font-black ${item.isOverdue ? "text-rose-400" : "text-amber-500"}`}>
-                {format(item.amount)}
-              </p>
-              <svg className="w-3 h-3 text-[var(--color-text-secondary)] ml-auto mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
+            className="flex-1 sm:flex-initial px-4 py-1.5 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-white text-xs font-bold text-center transition-all shadow-md cursor-pointer flex items-center justify-center gap-1"
+          >
+            <span>Pay EMI</span>
+            <span className="text-[10px]">→</span>
           </Link>
-        ))}
 
-        {dueItems.length > 3 && (
-          <p className="text-[10px] text-center text-[var(--color-text-secondary)] font-medium">
-            +{dueItems.length - 3} more upcoming EMIs
-          </p>
-        )}
+          <Link
+            href="/dashboard/loans"
+            onClick={dismiss}
+            className="px-3 py-1.5 rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] text-[11px] font-bold text-[var(--color-text-secondary)] transition cursor-pointer"
+          >
+            View All
+          </Link>
+
+          <button
+            onClick={dismiss}
+            className="p-1.5 rounded-xl hover:bg-white/10 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition cursor-pointer"
+            aria-label="Dismiss Notification"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Actions */}
-      <div className="px-4 pb-4 flex gap-2">
-        <Link href="/dashboard/loans" onClick={dismiss}
-          className="flex-1 py-2 rounded-xl bg-[var(--color-primary)] text-white text-xs font-bold text-center hover:opacity-90 transition cursor-pointer">
-          View Loans
-        </Link>
-        <button onClick={dismiss}
-          className="px-4 py-2 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition cursor-pointer">
-          Later
-        </button>
-      </div>
+      {dueItems.length > 1 && (
+        <div className="px-4 py-1 bg-black/10 text-[10px] text-center font-bold text-[var(--color-text-secondary)] border-t border-white/5">
+          +{dueItems.length - 1} more EMI{dueItems.length - 1 > 1 ? "s" : ""} pending action
+        </div>
+      )}
     </div>
   );
 }
