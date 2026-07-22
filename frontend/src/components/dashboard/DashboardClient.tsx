@@ -106,20 +106,46 @@ export function DashboardClient() {
   };
 
   useEffect(() => {
-    Promise.all([
-      loansService.getDashboard(),
-      loansService.getLoans({ page_size: 50 }).catch(() => null)
-    ])
-      .then(([dashData, loansRes]) => {
-        setData(dashData);
+    let isSubscribed = true;
+
+    // Safety timeout: ensure loading spinner disappears within 2s even if network stalls
+    const fallbackTimer = setTimeout(() => {
+      if (isSubscribed && loading) {
+        setLoading(false);
+      }
+    }, 2000);
+
+    loansService.getDashboard()
+      .then((dashData) => {
+        if (!isSubscribed) return;
+        if (dashData) {
+          setData(dashData);
+          setError(null);
+        }
+      })
+      .catch(() => {
+        if (!isSubscribed) return;
+        setError("Failed to load dashboard data.");
+      })
+      .finally(() => {
+        if (isSubscribed) setLoading(false);
+      });
+
+    loansService.getLoans({ page_size: 50 })
+      .then((loansRes) => {
+        if (!isSubscribed) return;
         if (loansRes && "results" in loansRes && Array.isArray(loansRes.results)) {
           setLoansList(loansRes.results);
         } else if (Array.isArray(loansRes)) {
           setLoansList(loansRes as unknown as Loan[]);
         }
       })
-      .catch(() => setError("Failed to load dashboard data."))
-      .finally(() => setLoading(false));
+      .catch(() => {});
+
+    return () => {
+      isSubscribed = false;
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   if (loading) {
@@ -154,8 +180,8 @@ export function DashboardClient() {
     {
       id: "total-loans",
       title: "Total Loans",
-      value: data.total_loans.toString(),
-      subtitle: `${data.active_loans} active · ${data.closed_loans} closed`,
+      value: (data.total_loans ?? 0).toString(),
+      subtitle: `${data.active_loans ?? 0} active · ${data.closed_loans ?? 0} closed`,
       bg: "bg-[var(--color-primary)]",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -166,8 +192,8 @@ export function DashboardClient() {
     {
       id: "outstanding",
       title: "Total Outstanding",
-      value: format(data.total_outstanding),
-      subtitle: `${format(data.total_paid_active)} principal · ${format(data.total_interest_paid)} interest`,
+      value: format(data.total_outstanding ?? 0),
+      subtitle: `${format(data.total_paid_active ?? 0)} principal · ${format(data.total_interest_paid ?? 0)} interest`,
       bg: "bg-[var(--color-error)]",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -177,15 +203,15 @@ export function DashboardClient() {
     },
     {
       id: "upcoming-emi",
-      title: data.overdue_count > 0 ? "Overdue EMI" : "Upcoming EMI",
-      value: data.upcoming_emi_amount > 0 ? format(data.upcoming_emi_amount) : "—",
+      title: (data.overdue_count ?? 0) > 0 ? "Overdue EMI" : "Upcoming EMI",
+      value: (data.upcoming_emi_amount ?? 0) > 0 ? format(data.upcoming_emi_amount ?? 0) : "—",
       subtitle: data.upcoming_emi_date 
-        ? `${data.overdue_count > 0 ? "Overdue since" : "Due"} ${formatDate(data.upcoming_emi_date)}` 
+        ? `${(data.overdue_count ?? 0) > 0 ? "Overdue since" : "Due"} ${formatDate(data.upcoming_emi_date)}` 
         : "No upcoming EMI",
-      bg: data.overdue_count > 0 ? "bg-[var(--color-error)]" : "bg-[var(--color-warning)]",
+      bg: (data.overdue_count ?? 0) > 0 ? "bg-[var(--color-error)]" : "bg-[var(--color-warning)]",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          {data.overdue_count > 0 ? (
+          {(data.overdue_count ?? 0) > 0 ? (
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01" />
           ) : (
             <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>
@@ -196,8 +222,8 @@ export function DashboardClient() {
     {
       id: "loans-status",
       title: "Loans Status",
-      value: `${data.active_loans} Active`,
-      subtitle: `${data.closed_loans} closed · ${data.defaulted_loans} defaulted`,
+      value: `${data.active_loans ?? 0} Active`,
+      subtitle: `${data.closed_loans ?? 0} closed · ${data.defaulted_loans ?? 0} defaulted`,
       bg: "bg-[var(--color-accent)]",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

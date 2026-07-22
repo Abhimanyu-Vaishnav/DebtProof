@@ -176,6 +176,7 @@ export interface Payment {
 }
 
 export interface PaymentFormData {
+  loan?: string;
   amount: string;
   payment_date: string;
   payment_method: PaymentMethod;

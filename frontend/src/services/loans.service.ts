@@ -420,12 +420,10 @@ export const loansService = {
    */
   getDashboard: async (): Promise<DashboardData> => {
     try {
-      const { data } = await apiClient.get<{
-        success: boolean;
-        dashboard: DashboardData;
-      }>("/loans/dashboard/");
-      if (data && data.dashboard) {
-        return data.dashboard;
+      const { data } = await apiClient.get<any>("/loans/dashboard/");
+      if (data) {
+        if (data.dashboard) return data.dashboard;
+        if (typeof data.total_loans === "number") return data as DashboardData;
       }
     } catch {}
 

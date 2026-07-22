@@ -143,33 +143,6 @@ export const paymentsService = {
     }
   },
 
-  createPayment: async (payload: PaymentFormData): Promise<Payment> => {
-    try {
-      const { data } = await apiClient.post<{ success: boolean; payment: Payment }>("/payments/", payload);
-      return data.payment;
-    } catch {
-      const newPayment: Payment = {
-        id: `pay-${Date.now()}`,
-        loan: payload.loan,
-        loan_name: "Loan Payment",
-        amount: payload.amount,
-        payment_date: payload.payment_date,
-        payment_method: payload.payment_method || "auto_debit",
-        reference_number: payload.reference_number || `TXN${Date.now().toString().slice(-8)}`,
-        status: "confirmed",
-        principal_component: payload.principal_component || payload.amount,
-        interest_component: payload.interest_component || "0.00",
-        notes: payload.notes || "Manual payment logged",
-        has_receipt: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      const current = getStoredPayments();
-      current.unshift(newPayment);
-      setStoredPayments(current);
-      return newPayment;
-    }
-  },
 
   getPayment: async (id: string): Promise<Payment> => {
     try {
