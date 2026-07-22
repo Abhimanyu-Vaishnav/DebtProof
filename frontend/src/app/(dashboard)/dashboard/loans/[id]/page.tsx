@@ -25,14 +25,36 @@ import { ForeclosureCalculatorModal } from "@/components/loans/ForeclosureCalcul
 // ── EMI Repayment Progress Card & Live Calculations ─────────────────────────────────
 function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[] }) {
   const principal = parseFloat(loan.principal_amount) || 1;
-  
-  // Calculate dynamic totals from recorded payments
-  const totalPaymentsAmount = payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-  const calculatedInterestPaid = payments.reduce((sum, p) => sum + (parseFloat(p.interest_component) || 0), 0);
-  const calculatedPrincipalPaid = payments.reduce((sum, p) => sum + (parseFloat(p.principal_component) || (parseFloat(p.amount) * 0.8)), 0);
+  const annualRate = parseFloat(loan.interest_rate) || 12;
+  const monthlyRate = annualRate / 1200;
 
-  const paid = payments.length > 0 ? calculatedPrincipalPaid : 0;
-  const interestPaid = payments.length > 0 ? calculatedInterestPaid : 0;
+  // Calculate dynamic interest & principal breakdown per payment
+  let calculatedInterestPaid = 0;
+  let calculatedPrincipalPaid = 0;
+  let runningBalance = principal;
+
+  const sortedPayments = [...payments].sort((a, b) => 
+    new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime()
+  );
+
+  sortedPayments.forEach((p) => {
+    const amt = parseFloat(p.amount) || 0;
+    let iComp = parseFloat(p.interest_component);
+    let pComp = parseFloat(p.principal_component);
+
+    // If interest component is 0, missing, or equal to total amount, calculate standard EMI interest portion
+    if (isNaN(iComp) || iComp === 0 || pComp === amt || !p.interest_component) {
+      iComp = Math.min(amt, Math.round(runningBalance * monthlyRate * 100) / 100);
+      pComp = Math.max(0, amt - iComp);
+    }
+
+    calculatedInterestPaid += iComp;
+    calculatedPrincipalPaid += pComp;
+    runningBalance = Math.max(0, runningBalance - pComp);
+  });
+
+  const paid = calculatedPrincipalPaid;
+  const interestPaid = calculatedInterestPaid;
   const outstanding = Math.max(0, principal - paid);
   const progress = Math.min(100, Math.round((paid / principal) * 100));
 
