@@ -25,3 +25,6 @@ export function GlobalFloatingUI() {
     </>
   );
 }
+
+export default GlobalFloatingUI;
+
