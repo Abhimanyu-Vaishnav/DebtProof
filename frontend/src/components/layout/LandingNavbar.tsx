@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/utils/cn";
+import { useAuth } from "@/hooks/useAuth";
 
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
@@ -22,6 +23,8 @@ export function LandingNavbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <nav
@@ -58,22 +61,49 @@ export function LandingNavbar() {
           ))}
         </div>
 
-        {/* Auth Buttons */}
-        <div className="hidden md:flex items-center gap-2">
-          <Link
-            href="/login"
-            className="btn btn-secondary btn-sm"
-            id="nav-login-btn"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/register"
-            className="btn btn-primary btn-sm"
-            id="nav-register-btn"
-          >
-            Get Started
-          </Link>
+        {/* Auth Buttons / Logged In User State */}
+        <div className="hidden md:flex items-center gap-3">
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] hover:border-[var(--color-primary-light)] transition-all"
+              >
+                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">
+                  {user.first_name ? user.first_name[0].toUpperCase() : user.email[0].toUpperCase()}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-black text-[var(--color-text-primary)] leading-none">
+                    {user.first_name ? `${user.first_name} ${user.last_name || ""}` : user.email}
+                  </p>
+                  <p className="text-[9px] font-bold text-emerald-500 mt-0.5">● Dashboard</p>
+                </div>
+              </Link>
+              <button
+                onClick={() => logout()}
+                className="px-3 py-1.5 text-xs font-bold text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="btn btn-secondary btn-sm"
+                id="nav-login-btn"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="btn btn-primary btn-sm"
+                id="nav-register-btn"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -110,8 +140,21 @@ export function LandingNavbar() {
             </a>
           ))}
           <div className="pt-2 flex flex-col gap-2">
-            <Link href="/login" className="btn btn-secondary btn-sm w-full justify-center">Sign In</Link>
-            <Link href="/register" className="btn btn-primary btn-sm w-full justify-center">Get Started</Link>
+            {isAuthenticated && user ? (
+              <div className="space-y-2">
+                <Link href="/dashboard" className="btn btn-primary btn-sm w-full justify-center">
+                  Dashboard ({user.first_name || user.email})
+                </Link>
+                <button onClick={() => logout()} className="btn btn-secondary btn-sm w-full justify-center text-rose-500">
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link href="/login" className="btn btn-secondary btn-sm w-full justify-center">Sign In</Link>
+                <Link href="/register" className="btn btn-primary btn-sm w-full justify-center">Get Started</Link>
+              </>
+            )}
           </div>
         </div>
       )}

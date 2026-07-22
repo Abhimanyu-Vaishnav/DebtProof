@@ -1,150 +1,282 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import { Topbar } from "@/components/layout/Topbar";
 
-export default function HelpAboutPage() {
-  const faqs = [
-    {
-      question: "What is DebtProof?",
-      answer: "DebtProof is a decentralized personal finance and loan management platform. It allows users to track their traditional loans, manage their net worth, monitor credit cards, and participate in peer-to-peer (P2P) lending using blockchain technology (Monad)."
-    },
-    {
-      question: "How does the P2P Marketplace work?",
-      answer: "In the P2P Marketplace, borrowers can list a loan request to be funded by other users via Web3. Once a lender funds the loan using MON tokens on the Monad network, the borrower can withdraw the principal. Repayments are also made on-chain, ensuring a transparent, trustless escrow process without middlemen."
-    },
-    {
-      question: "How is my data secured?",
-      answer: "Traditional loan data is stored securely in our backend database, while any P2P escrow loans and receipt hashes are anchored to the Monad blockchain. This dual approach ensures speed for daily operations while providing immutable proof for critical financial transactions."
-    },
-    {
-      question: "Can I track my net worth?",
-      answer: "Yes! The Net Worth section allows you to log all your assets (cash, bank accounts, real estate, etc.) and liabilities. The dashboard automatically calculates your total net worth and provides visual distributions of your portfolio."
-    },
-    {
-      question: "What happens if I miss an EMI?",
-      answer: "The platform tracks your upcoming EMIs via the Calendar and Dashboard. If you miss a payment, the loan will be marked as overdue and you will receive notifications. In the P2P marketplace, missed payments will be permanently recorded on the blockchain."
-    },
-    {
-      question: "How do I verify a receipt?",
-      answer: "You can go to the 'Verify Proof' page and upload any receipt. The system will calculate its cryptographic hash and check if it has been anchored to the Monad blockchain."
-    },
-    {
-      question: "Can I generate PDF reports?",
-      answer: "Yes, head over to the 'Reports' section. You can generate detailed CSV or PDF reports of all your loans, payments, and overall financial health."
-    }
-  ];
+interface FeatureGuide {
+  id: string;
+  icon: string;
+  name: string;
+  category: "core" | "analytics" | "web3" | "tools";
+  role: string;
+  howToUse: string[];
+  keyBenefits: string[];
+  path: string;
+}
 
-  const features = [
-    {
-      title: "📊 Dashboard & Analytics",
-      desc: "Get a bird's-eye view of your financial health, upcoming payments, and debt payoff projections."
-    },
-    {
-      title: "💰 Net Worth Tracker",
-      desc: "Log your assets and liabilities to calculate and track your true net worth over time."
-    },
-    {
-      title: "🏦 Loan Management",
-      desc: "Track home loans, personal loans, and credit cards. Record EMI payments and keep digital receipts."
-    },
-    {
-      title: "🤝 P2P Web3 Lending",
-      desc: "Borrow and lend directly with other users via the Monad blockchain. No banks, complete transparency."
-    },
-    {
-      title: "🔗 Cryptographic Proof",
-      desc: "Anchor your important payment receipts to the blockchain for tamper-proof verification."
-    },
-    {
-      title: "📅 Payment Calendar",
-      desc: "Never miss a due date with a unified calendar showing all your upcoming EMIs and credit card bills."
-    },
-    {
-      title: "🔔 Smart Notifications",
-      desc: "Receive alerts for upcoming payments, overdue EMIs, and successful receipt verifications."
-    },
-    {
-      title: "📱 Mobile Responsive",
-      desc: "Access your dashboard and manage your loans seamlessly from any device."
-    },
-    {
-      title: "📈 Financial Projections",
-      desc: "Simulate snowball and avalanche strategies to see exactly when you will become completely debt-free."
-    }
-  ];
+const FEATURE_GUIDES: FeatureGuide[] = [
+  {
+    id: "overview",
+    icon: "📊",
+    name: "Dashboard & Overview",
+    category: "core",
+    role: "Central command center for real-time tracking of active loans, monthly interest burn, total outstanding debt, and recent payments.",
+    howToUse: [
+      "Open Dashboard to review top KPI cards (Total Borrowed, Total Repaid, Outstanding, Monthly EMI).",
+      "Monitor individual loan progress bars with color-coded status.",
+      "Check the Monthly Payment History interactive bar/line chart.",
+      "Track your active Income Streams and see if your total EMI stays within safe limits (<35%)."
+    ],
+    keyBenefits: ["Instant financial health overview", "Live EMI alerts", "Safe debt ratio indicator"],
+    path: "/dashboard"
+  },
+  {
+    id: "loans",
+    icon: "🏦",
+    name: "My Loans",
+    category: "core",
+    role: "Manage all traditional bank loans (Home, Vehicle, Personal, Business, Credit Cards).",
+    howToUse: [
+      "Click '+ Add Loan' to record a new loan account with lender name, interest rate, EMI, and start/end dates.",
+      "Click any loan card to open its detailed page featuring radial repayment ring and monthly breakdown.",
+      "Use '⚡ Foreclose / Part-Pay' calculator to see how prepayments reduce total interest.",
+      "Record EMI payments directly to maintain complete payment history."
+    ],
+    keyBenefits: ["Detailed progress visualization", "Foreclosure interest savings calculator", "Payment history logs"],
+    path: "/dashboard/loans"
+  },
+  {
+    id: "budget",
+    icon: "💵",
+    name: "Budget Planner",
+    category: "core",
+    role: "Unified monthly budgeting engine that synchronizes your income streams, living expenses, and EMI commitments.",
+    howToUse: [
+      "Add or edit income sources in the 'Income' tab (synchronizes live with Dashboard).",
+      "Set your category-wise monthly living expenses (Rent, Food, Utilities, Transport, etc.).",
+      "Review the Budget Health Score (0-100) and Cash Flow Allocation breakdown.",
+      "Click '💾 Save Plan' to persist your monthly budget plan."
+    ],
+    keyBenefits: ["Automated DTI calculation", "Live 2-way income sync with Dashboard", "Personalized budget recommendations"],
+    path: "/dashboard/budget"
+  },
+  {
+    id: "investments",
+    icon: "📈",
+    name: "Investments & SIPs",
+    category: "analytics",
+    role: "Track your wealth-building assets (Mutual Funds, Stocks, FDs, Crypto, Real Estate, Gold).",
+    howToUse: [
+      "Add investment items with initial capital, current valuation, and expected return (CAGR %).",
+      "Click any investment item to view its interactive Growth Chart (Invested vs Current Valuation).",
+      "Utilize the Future Compound Wealth Predictor to project returns over 1, 3, 5, and 10 years."
+    ],
+    keyBenefits: ["Growth chart visualization", "Compound interest calculator", "Portfolio allocation mix"],
+    path: "/dashboard/investments"
+  },
+  {
+    id: "analytics",
+    icon: "⚡",
+    name: "Analytics & Chart Studio",
+    category: "analytics",
+    role: "Advanced financial intelligence suite for deep-dive metric overlays and strategy comparison.",
+    howToUse: [
+      "Use 'Interactive Chart Studio' to toggle/overlay Payments, Net Worth, Investments, and Debt curves.",
+      "Analyze Monthly Interest Burn (money lost to interest vs principal).",
+      "Run Debt Battle Simulator to compare Snowball vs Avalanche payoff strategies.",
+      "Use Tax Savings Calculator for home loan deduction optimization."
+    ],
+    keyBenefits: ["Multi-metric chart overlays", "Snowball vs Avalanche strategy simulator", "Interest cost analysis"],
+    path: "/dashboard/analytics"
+  },
+  {
+    id: "reports",
+    icon: "📄",
+    name: "Reports & PDF Export",
+    category: "tools",
+    role: "Generate official PDF statements and CSV/JSON data dumps for bank, tax, or legal use.",
+    howToUse: [
+      "Select desired report type: Loan Portfolio Statement, Payment History, Net Worth, or Credit Cards.",
+      "Apply custom filters (specific loan, start date, end date).",
+      "Click '📄 Export PDF' to trigger a print-ready formatted statement, or '📊 CSV / JSON' for data export."
+    ],
+    keyBenefits: ["One-click PDF print statements", "Filtered CSV export", "Audit-ready financial logs"],
+    path: "/dashboard/reports"
+  },
+  {
+    id: "p2p",
+    icon: "🤝",
+    name: "P2P Web3 Market & Escrow",
+    category: "web3",
+    role: "Decentralized peer-to-peer lending powered by Monad Blockchain smart contracts.",
+    howToUse: [
+      "Borrowers create Web3 loan requests with principal amount, interest rate, and duration.",
+      "Lenders fund loans using MON tokens directly via Web3 wallet (MetaMask).",
+      "Escrow smart contract manages automated disbursement and on-chain repayment verification."
+    ],
+    keyBenefits: ["Zero middleman fees", "Transparent smart contract escrow", "On-chain reputation tracking"],
+    path: "/dashboard/p2p-market"
+  },
+  {
+    id: "verify",
+    icon: "🛡️",
+    name: "Verify Cryptographic Proof",
+    category: "web3",
+    role: "Verify receipt authenticity using SHA-256 cryptographic hashes anchored on Monad Testnet.",
+    howToUse: [
+      "Upload any receipt document file or enter receipt hash.",
+      "System computes the cryptographic hash and queries Monad Blockchain.",
+      "Displays verification badge, transaction hash, block number, and timestamp."
+    ],
+    keyBenefits: ["Tamper-proof repayment evidence", "Bank & legal admissibility", "Public blockchain verification"],
+    path: "/verify-proof"
+  },
+  {
+    id: "notifications",
+    icon: "🔔",
+    name: "Smart Notifications & Push",
+    category: "tools",
+    role: "Real-time alert system for upcoming EMIs, overdue warnings, and browser push alerts.",
+    howToUse: [
+      "Click 'Enable' on Browser Push banner to get alerts directly on your device.",
+      "Filter notifications by All, Unread, EMI Alerts, and Payments.",
+      "Swipe right to mark read, swipe left to delete."
+    ],
+    keyBenefits: ["Browser push notifications", "3-day EMI due floating popup", "Swipe gesture mobile controls"],
+    path: "/dashboard/notifications"
+  }
+];
+
+export default function HelpAboutPage() {
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredGuides = FEATURE_GUIDES.filter(g => {
+    const matchesCategory = selectedCategory === "all" || g.category === selectedCategory;
+    const matchesSearch = g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          g.role.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <>
-      <Topbar title="Help & About" subtitle="Learn more about DebtProof and how to use it" />
-      <main className="page-content space-y-8">
-        
-        {/* About Section */}
-        <section className="card p-6 bg-gradient-to-br from-[var(--color-surface-secondary)] to-[var(--color-surface)]">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shrink-0 shadow-lg">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">About DebtProof</h2>
-              <p className="text-sm text-[var(--color-primary-light)] font-medium">by Sanatan Labs</p>
-            </div>
+      <Topbar title="Help Center & Feature Guide" subtitle="Comprehensive guide on how to use every feature in DebtProof" />
+      <main className="page-content space-y-8 pb-16">
+
+        {/* Hero Welcome Banner */}
+        <div className="card p-6 border-2 border-[var(--color-primary)]/30 bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-surface-secondary)] relative overflow-hidden">
+          <div className="max-w-2xl space-y-2 relative z-10">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary-light)] bg-[var(--color-primary)]/10 px-2.5 py-1 rounded-full">
+              DebtProof User Guide
+            </span>
+            <h1 className="text-2xl font-black text-[var(--color-text-primary)]">
+              Master Every Feature of DebtProof
+            </h1>
+            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+              DebtProof combines traditional financial management with Monad Blockchain security. Use this guide to understand every module, its role, and step-by-step instructions.
+            </p>
           </div>
-          <p className="text-[var(--color-text-secondary)] leading-relaxed max-w-4xl text-sm">
-            DebtProof is designed to bring transparency, efficiency, and decentralization to personal finance. 
-            Whether you're looking to aggressively pay down traditional bank loans using our Snowball/Avalanche calculators, 
-            or you want to step into the future of decentralized finance by borrowing/lending directly on the blockchain, 
-            DebtProof provides the tools you need in one clean, unified interface.
+        </div>
+
+        {/* Filter & Search Bar */}
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="flex gap-2 overflow-x-auto w-full sm:w-auto scrollbar-none pb-1">
+            {[
+              { id: "all", label: "All Features", icon: "🌐" },
+              { id: "core", label: "Core Modules", icon: "🏦" },
+              { id: "analytics", label: "Analytics & Wealth", icon: "📊" },
+              { id: "web3", label: "Web3 & Blockchain", icon: "⛓️" },
+              { id: "tools", label: "Reports & Tools", icon: "🛠️" },
+            ].map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
+                  selectedCategory === cat.id
+                    ? "bg-[var(--color-primary)] text-white shadow-md"
+                    : "bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-secondary)]"
+                }`}
+              >
+                <span>{cat.icon}</span>
+                <span>{cat.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <input
+            type="text"
+            placeholder="Search any feature or guide..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-64 px-3.5 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]"
+          />
+        </div>
+
+        {/* Feature Guides Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {filteredGuides.map(guide => (
+            <div key={guide.id} className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between space-y-4 hover:border-[var(--color-primary-light)] transition-all">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl p-2.5 rounded-xl bg-[var(--color-surface-tertiary)] border border-[var(--color-border)]">
+                      {guide.icon}
+                    </span>
+                    <div>
+                      <h3 className="text-base font-black text-[var(--color-text-primary)]">{guide.name}</h3>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary-light)]">
+                        {guide.category} module
+                      </span>
+                    </div>
+                  </div>
+                  <Link
+                    href={guide.path}
+                    className="btn btn-secondary btn-xs font-bold text-[11px] px-3 py-1 flex items-center gap-1"
+                  >
+                    Open Page →
+                  </Link>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)] mb-1">🎯 Role & Purpose</p>
+                  <p className="text-xs text-[var(--color-text-primary)] font-medium leading-relaxed">{guide.role}</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">📖 How To Use</p>
+                  <ul className="space-y-1 text-xs text-[var(--color-text-secondary)] font-medium">
+                    {guide.howToUse.map((step, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-[var(--color-primary-light)] font-bold shrink-0">{idx + 1}.</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[var(--color-border-light)] flex flex-wrap gap-1.5">
+                {guide.keyBenefits.map(b => (
+                  <span key={b} className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                    ✓ {b}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Future Expansion & Extensibility Note */}
+        <div className="card p-6 border border-blue-500/30 bg-gradient-to-r from-blue-900/20 to-indigo-900/20 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🚀</span>
+            <h3 className="text-sm font-black text-[var(--color-text-primary)]">Future-Proof Architecture & Extensibility</h3>
+          </div>
+          <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+            DebtProof is engineered with a modular service-oriented architecture. When new features or financial tools are added to the application, corresponding downloadable reports, PDF templates, and analytical guides are automatically integrated into the <strong>Reports Client</strong> and <strong>Help Center</strong>.
           </p>
-        </section>
-
-        {/* Features Grid */}
-        <section>
-          <h3 className="text-[14px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-4 px-1">
-            Core Features
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((feature, idx) => (
-              <div key={idx} className="card p-5 hover:border-[var(--color-primary-light)] transition-colors">
-                <h4 className="text-[15px] font-bold text-[var(--color-text-primary)] mb-2">{feature.title}</h4>
-                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                  {feature.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section>
-          <h3 className="text-[14px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-4 px-1">
-            Frequently Asked Questions
-          </h3>
-          <div className="space-y-3">
-            {faqs.map((faq, idx) => (
-              <div key={idx} className="card p-5">
-                <h4 className="text-[15px] font-bold text-[var(--color-text-primary)] mb-2 flex items-start gap-2">
-                  <span className="text-[var(--color-primary-light)]">Q:</span>
-                  {faq.question}
-                </h4>
-                <p className="text-sm text-[var(--color-text-secondary)] pl-6 leading-relaxed">
-                  <span className="font-semibold text-[var(--color-text-tertiary)] mr-2">A:</span>
-                  {faq.answer}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Footer / Support */}
-        <section className="text-center py-8">
-          <p className="text-sm text-[var(--color-text-tertiary)] mb-3">Still have questions or need support?</p>
-          <button className="btn btn-secondary px-6">
-            Contact Support
-          </button>
-        </section>
+        </div>
 
       </main>
     </>

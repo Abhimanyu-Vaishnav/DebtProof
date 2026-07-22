@@ -14,6 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [stayLoggedIn, setStayLoggedIn] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
@@ -130,7 +131,16 @@ export default function LoginPage() {
                 error={errors.password}
                 required
               />
-              <div className="flex justify-end mt-1.5">
+              <div className="flex items-center justify-between mt-3">
+                <label className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-secondary)] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={stayLoggedIn}
+                    onChange={(e) => setStayLoggedIn(e.target.checked)}
+                    className="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] bg-[var(--color-surface-secondary)] cursor-pointer"
+                  />
+                  <span>Stay signed in on this device</span>
+                </label>
                 <Link
                   href="/forgot-password"
                   className="text-xs text-[var(--color-primary-light)] hover:text-[var(--color-primary)] font-medium"
