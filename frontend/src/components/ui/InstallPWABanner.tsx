@@ -42,14 +42,22 @@ export function InstallPWABanner() {
       setTimeout(() => setShowBanner(true), 3000);
     };
 
+    const handleShowTrigger = () => {
+      setShowBanner(true);
+    };
+
     window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("debtproof_pwa_show", handleShowTrigger);
 
     window.addEventListener("appinstalled", () => {
       setInstalled(true);
       setShowBanner(false);
     });
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("debtproof_pwa_show", handleShowTrigger);
+    };
   }, []);
 
   const handleInstall = async () => {

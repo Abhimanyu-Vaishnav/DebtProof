@@ -451,20 +451,22 @@ export function ProfileClient() {
         {/* PWA Install Trigger in Profile */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2">
           <div>
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">📱 Install Mobile / Desktop App (PWA)</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">📱 Install App on Device (PWA)</h3>
             <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
-              Add DebtProof to your Home Screen for faster loads, offline access, and native app experience.
+              If you closed the install popup earlier, click here to add DebtProof to your Home Screen.
             </p>
           </div>
           <button
             onClick={() => {
               const dismissKey = "debtproof-pwa-dismiss";
               localStorage.removeItem(dismissKey);
-              window.location.reload();
+              window.dispatchEvent(new Event("debtproof_pwa_show"));
+              window.location.href = "/dashboard";
             }}
-            className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-white font-bold text-xs hover:opacity-90 transition-all shrink-0 cursor-pointer shadow-sm"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xs hover:opacity-90 transition-all shrink-0 cursor-pointer shadow-md flex items-center gap-2"
           >
-            📲 Reset & Install App
+            <span>📲</span>
+            <span>Install App Now</span>
           </button>
         </div>
       </div>
