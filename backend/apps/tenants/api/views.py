@@ -224,6 +224,198 @@ class InvitationListCreateAPIView(views.APIView):
         return Response({"success": True, "message": f"Invitation sent to {email}.", "invitation": OrganizationInvitationSerializer(invite).data})
 
 
+class ResendCancelInvitationAPIView(views.APIView):
+    """
+    POST /api/v1/tenants/invitations/<id>/resend/ — Resend invitation email token
+    POST /api/v1/tenants/invitations/<id>/cancel/ — Cancel pending invitation
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invite_id, action_type):
+        org = getattr(request, "organization", None)
+        invite = OrganizationInvitation.objects.filter(id=invite_id, organization=org).first()
+        if not invite:
+            return Response({"success": False, "message": "Invitation not found."}, status=404)
+
+        if action_type == "resend":
+            invite.expires_at = timezone.now() + timedelta(days=7)
+            invite.status = InvitationStatus.PENDING
+            invite.token = str(uuid.uuid4())
+            invite.save()
+
+            AuditLogger.log(
+                action="invitation_sent",
+                user=request.user,
+                organization_id=org.id,
+                target_resource=invite.email,
+                request=request,
+                metadata={"action": "resent"},
+            )
+            return Response({"success": True, "message": f"Invitation resent to {invite.email}."})
+
+        elif action_type == "cancel":
+            invite.status = InvitationStatus.CANCELED
+            invite.canceled_at = timezone.now()
+            invite.save()
+
+            AuditLogger.log(
+                action="invitation_sent",
+                user=request.user,
+                organization_id=org.id,
+                target_resource=invite.email,
+                request=request,
+                metadata={"action": "canceled"},
+            )
+            return Response({"success": True, "message": f"Invitation for {invite.email} canceled."})
+
+        return Response({"success": False, "message": "Invalid action."}, status=400)
+
+
+class MemberManagementAPIView(views.APIView):
+    """
+    DELETE /api/v1/tenants/members/<member_id>/ — Remove member
+    PATCH  /api/v1/tenants/members/<member_id>/status/ — Suspend or activate member
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, member_id):
+        org = getattr(request, "organization", None)
+        if not org:
+            return Response({"success": False, "message": "No active organization"}, status=400)
+
+        member = OrganizationMember.objects.filter(id=member_id, organization=org).first()
+        if not member:
+            return Response({"success": False, "message": "Member not found."}, status=404)
+
+        if member.user == org.owner:
+            return Response({"success": False, "message": "Cannot remove the Organization Owner."}, status=400)
+
+        email = member.user.email
+        member.delete()
+
+        AuditLogger.log(
+            action="role_changed",
+            user=request.user,
+            organization_id=org.id,
+            target_resource=email,
+            request=request,
+            metadata={"action": "removed_from_organization"},
+        )
+        return Response({"success": True, "message": f"Member {email} removed from organization."})
+
+    def patch(self, request, member_id):
+        org = getattr(request, "organization", None)
+        if not org:
+            return Response({"success": False, "message": "No active organization"}, status=400)
+
+        member = OrganizationMember.objects.filter(id=member_id, organization=org).first()
+        if not member:
+            return Response({"success": False, "message": "Member not found."}, status=404)
+
+        new_status = request.data.get("status", "active")
+        if new_status not in ["active", "suspended"]:
+            return Response({"success": False, "message": "Invalid status. Use 'active' or 'suspended'."}, status=400)
+
+        member.status = new_status
+        member.save()
+
+        AuditLogger.log(
+            action="role_changed",
+            user=request.user,
+            organization_id=org.id,
+            target_resource=member.user.email,
+            request=request,
+            metadata={"status": new_status},
+        )
+        return Response({"success": True, "message": f"Member status updated to {new_status}."})
+
+
+class TransferOwnershipAPIView(views.APIView):
+    """POST /api/v1/tenants/transfer-ownership/ — Transfer org ownership"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        org = getattr(request, "organization", None)
+        if not org:
+            return Response({"success": False, "message": "No active organization"}, status=400)
+
+        if org.owner != request.user and not request.user.is_superuser:
+            return Response({"success": False, "message": "Only the current Owner can transfer ownership."}, status=403)
+
+        new_owner_email = request.data.get("email", "").strip().lower()
+        new_owner = User.objects.filter(email=new_owner_email).first()
+        if not new_owner:
+            return Response({"success": False, "message": "User with specified email not found."}, status=404)
+
+        target_member = OrganizationMember.objects.filter(organization=org, user=new_owner).first()
+        if not target_member:
+            return Response({"success": False, "message": "New owner must already be a member of this organization."}, status=400)
+
+        org.owner = new_owner
+        org.save()
+
+        target_member.role = TenantRole.OWNER
+        target_member.save()
+
+        my_member = OrganizationMember.objects.filter(organization=org, user=request.user).first()
+        if my_member:
+            my_member.role = TenantRole.ADMIN
+            my_member.save()
+
+        AuditLogger.log(
+            action="role_changed",
+            user=request.user,
+            organization_id=org.id,
+            target_resource=new_owner.email,
+            request=request,
+            metadata={"action": "transferred_ownership", "new_owner": new_owner.email},
+        )
+
+        return Response({"success": True, "message": f"Organization ownership transferred to {new_owner.email}."})
+
+
+class SuperAdminPlanConfigAPIView(views.APIView):
+    """
+    POST  /api/v1/tenants/admin/plans/ — Create Plan
+    PATCH /api/v1/tenants/admin/plans/<id>/ — Edit Plan
+    """
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        code = request.data.get("code")
+        name = request.data.get("name")
+        price_m = Decimal(str(request.data.get("price_monthly", 0)))
+        price_y = Decimal(str(request.data.get("price_yearly", 0)))
+
+        plan = Plan.objects.create(
+            code=code,
+            name=name,
+            price_monthly=price_m,
+            price_yearly=price_y,
+            max_loans=request.data.get("max_loans", 10),
+            max_storage_bytes=request.data.get("max_storage_bytes", 1073741824),
+            max_reports=request.data.get("max_reports", 50),
+            max_ai_requests=request.data.get("max_ai_requests", 100),
+            max_blockchain_proofs=request.data.get("max_blockchain_proofs", 25),
+            max_team_members=request.data.get("max_team_members", 5),
+            is_recommended=request.data.get("is_recommended", False),
+            is_popular=request.data.get("is_popular", False),
+            savings_badge=request.data.get("savings_badge", ""),
+            features_json=request.data.get("features_json", []),
+        )
+        return Response({"success": True, "plan": PlanSerializer(plan).data})
+
+    def patch(self, request, plan_id):
+        plan = Plan.objects.filter(id=plan_id).first()
+        if not plan:
+            return Response({"success": False, "message": "Plan not found."}, status=404)
+
+        serializer = PlanSerializer(plan, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"success": True, "plan": serializer.data})
+
+
 class AcceptRejectInvitationAPIView(views.APIView):
     """POST /api/v1/tenants/invitations/{token}/action/ — Accept or Reject Invitation"""
     permission_classes = [IsAuthenticated]

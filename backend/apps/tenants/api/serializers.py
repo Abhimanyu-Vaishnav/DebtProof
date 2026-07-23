@@ -32,7 +32,7 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrganizationMember
-        fields = ["id", "user", "role", "created_at"]
+        fields = ["id", "user", "role", "status", "last_login_at", "created_at"]
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -71,11 +71,27 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 class OrganizationInvitationSerializer(serializers.ModelSerializer):
     invited_by = UserBasicSerializer(read_only=True)
+    workspace_name = serializers.SerializerMethodField()
 
     class Meta:
         model = OrganizationInvitation
-        fields = ["id", "email", "role", "invited_by", "token", "status", "expires_at", "created_at"]
+        fields = [
+            "id",
+            "email",
+            "role",
+            "workspace",
+            "workspace_name",
+            "invited_by",
+            "token",
+            "status",
+            "expires_at",
+            "canceled_at",
+            "created_at",
+        ]
         read_only_fields = ["id", "token", "status", "expires_at", "created_at"]
+
+    def get_workspace_name(self, obj: OrganizationInvitation) -> str:
+        return obj.workspace.name if obj.workspace else "All Workspaces"
 
 
 class FeatureFlagSerializer(serializers.ModelSerializer):
@@ -105,13 +121,22 @@ class PlanSerializer(serializers.ModelSerializer):
             "name",
             "price_monthly",
             "price_yearly",
+            "is_recommended",
+            "is_popular",
+            "is_active",
+            "is_archived",
+            "savings_badge",
             "max_loans",
             "max_storage_bytes",
             "max_reports",
             "max_ai_requests",
             "max_blockchain_proofs",
             "max_team_members",
+            "workspace_limit",
             "allow_api_access",
+            "has_priority_support",
+            "has_custom_branding",
+            "features_json",
         ]
 
 

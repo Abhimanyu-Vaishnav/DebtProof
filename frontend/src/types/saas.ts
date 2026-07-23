@@ -6,9 +6,9 @@ export type TenantRole = "owner" | "admin" | "manager" | "member" | "viewer";
 
 export type WorkspaceType = "personal" | "family" | "business" | "investment" | "rental" | "startup";
 
-export type InvitationStatus = "pending" | "accepted" | "rejected" | "expired";
+export type InvitationStatus = "pending" | "accepted" | "rejected" | "expired" | "canceled";
 
-export type SubscriptionPlanCode = "free" | "basic" | "premium" | "business" | "enterprise";
+export type SubscriptionPlanCode = "free" | "basic" | "premium" | "business" | "enterprise" | string;
 
 export interface Workspace {
   id: string;
@@ -31,6 +31,8 @@ export interface OrganizationMember {
     avatar?: string;
   };
   role: TenantRole;
+  status: "active" | "suspended";
+  last_login_at?: string;
   created_at: string;
 }
 
@@ -57,6 +59,8 @@ export interface OrganizationInvitation {
   id: string;
   email: string;
   role: TenantRole;
+  workspace?: string;
+  workspace_name?: string;
   invited_by: {
     email: string;
     full_name: string;
@@ -64,6 +68,7 @@ export interface OrganizationInvitation {
   token: string;
   status: InvitationStatus;
   expires_at: string;
+  canceled_at?: string;
   created_at: string;
 }
 
@@ -82,13 +87,22 @@ export interface Plan {
   name: string;
   price_monthly: number;
   price_yearly: number;
+  is_recommended?: boolean;
+  is_popular?: boolean;
+  is_active?: boolean;
+  is_archived?: boolean;
+  savings_badge?: string;
   max_loans: number;
   max_storage_bytes: number;
   max_reports: number;
   max_ai_requests: number;
   max_blockchain_proofs: number;
   max_team_members: number;
+  workspace_limit?: number;
   allow_api_access: boolean;
+  has_priority_support?: boolean;
+  has_custom_branding?: boolean;
+  features_json?: string[];
 }
 
 export interface OrganizationSubscription {

@@ -37,6 +37,7 @@ class InvitationStatus(models.TextChoices):
     ACCEPTED = "accepted", "Accepted"
     REJECTED = "rejected", "Rejected"
     EXPIRED = "expired", "Expired"
+    CANCELED = "canceled", "Canceled"
 
 
 class SubscriptionPlanCode(models.TextChoices):
@@ -116,6 +117,14 @@ class OrganizationMember(BaseModel):
         default=TenantRole.MEMBER,
         db_index=True,
     )
+    status = models.CharField(
+        max_length=20,
+        choices=[("active", "Active"), ("suspended", "Suspended")],
+        default="active",
+        db_index=True,
+    )
+    last_login_at = models.DateTimeField(null=True, blank=True)
+    assigned_workspaces = models.ManyToManyField("Workspace", blank=True, related_name="assigned_members")
 
     class Meta:
         db_table = "organization_members"
@@ -202,6 +211,13 @@ class OrganizationInvitation(BaseModel):
         on_delete=models.CASCADE,
         related_name="invitations",
     )
+    workspace = models.ForeignKey(
+        Workspace,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invitations",
+    )
     email = models.EmailField(db_index=True)
     role = models.CharField(
         max_length=20,
@@ -221,6 +237,7 @@ class OrganizationInvitation(BaseModel):
         db_index=True,
     )
     expires_at = models.DateTimeField()
+    canceled_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "organization_invitations"
@@ -284,6 +301,13 @@ class Plan(BaseModel):
     price_monthly = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     price_yearly = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
 
+    # Badges & Visibility
+    is_recommended = models.BooleanField(default=False)
+    is_popular = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_archived = models.BooleanField(default=False)
+    savings_badge = models.CharField(max_length=100, blank=True)
+
     # Quotas & Limits
     max_loans = models.IntegerField(default=5, help_text="-1 for unlimited")
     max_storage_bytes = models.BigIntegerField(default=104857600)  # 100 MB default
@@ -291,7 +315,13 @@ class Plan(BaseModel):
     max_ai_requests = models.IntegerField(default=20)
     max_blockchain_proofs = models.IntegerField(default=5)
     max_team_members = models.IntegerField(default=1)
+    workspace_limit = models.IntegerField(default=1)
+
+    # Feature Toggles
     allow_api_access = models.BooleanField(default=False)
+    has_priority_support = models.BooleanField(default=False)
+    has_custom_branding = models.BooleanField(default=False)
+    features_json = models.JSONField(default=list, blank=True)
 
     class Meta:
         db_table = "plans"

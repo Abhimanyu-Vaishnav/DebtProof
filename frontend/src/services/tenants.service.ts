@@ -78,9 +78,39 @@ export const tenantsService = {
     }
   },
 
-  async sendInvitation(email: string, role: TenantRole): Promise<OrganizationInvitation> {
-    const res = await apiClient.post("/tenants/invitations/", { email, role });
+  async sendInvitation(email: string, role: TenantRole, workspaceId?: string): Promise<OrganizationInvitation> {
+    const res = await apiClient.post("/tenants/invitations/", { email, role, workspace: workspaceId });
     return res.data.invitation;
+  },
+
+  async resendInvitation(inviteId: string): Promise<void> {
+    await apiClient.post(`/tenants/invitations/${inviteId}/resend/`);
+  },
+
+  async cancelInvitation(inviteId: string): Promise<void> {
+    await apiClient.post(`/tenants/invitations/${inviteId}/cancel/`);
+  },
+
+  async removeMember(memberId: string): Promise<void> {
+    await apiClient.delete(`/tenants/members/${memberId}/`);
+  },
+
+  async updateMemberStatus(memberId: string, status: "active" | "suspended"): Promise<void> {
+    await apiClient.patch(`/tenants/members/${memberId}/status/`, { status });
+  },
+
+  async transferOwnership(email: string): Promise<void> {
+    await apiClient.post("/tenants/transfer-ownership/", { email });
+  },
+
+  async createAdminPlan(data: Partial<Plan>): Promise<Plan> {
+    const res = await apiClient.post("/tenants/admin/plans/", data);
+    return res.data.plan;
+  },
+
+  async updateAdminPlan(planId: string, data: Partial<Plan>): Promise<Plan> {
+    const res = await apiClient.patch(`/tenants/admin/plans/${planId}/`, data);
+    return res.data.plan;
   },
 
   async respondInvitation(token: string, action: "accept" | "reject"): Promise<void> {

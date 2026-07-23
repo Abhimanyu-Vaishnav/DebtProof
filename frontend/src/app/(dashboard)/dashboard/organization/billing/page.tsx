@@ -14,6 +14,7 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<OrganizationSubscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const [subscribing, setSubscribing] = useState("");
   const [msg, setMsg] = useState("");
 
@@ -81,19 +82,51 @@ export default function BillingPage() {
 
       {/* Subscription Plans Grid */}
       <div className="space-y-4">
-        <h2 className="text-lg font-black text-[var(--color-text-primary)]">Available Subscription Plans</h2>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-lg font-black text-[var(--color-text-primary)]">Available Subscription Plans</h2>
+          <div className="flex items-center gap-2 bg-[var(--color-surface-secondary)] border border-[var(--color-border)] p-1 rounded-xl">
+            <button
+              onClick={() => setBillingCycle("monthly")}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                billingCycle === "monthly" ? "bg-[var(--color-primary)] text-white shadow" : "text-[var(--color-text-secondary)]"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle("yearly")}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                billingCycle === "yearly" ? "bg-[var(--color-primary)] text-white shadow" : "text-[var(--color-text-secondary)]"
+              }`}
+            >
+              <span>Yearly</span>
+              <span className="text-[9px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase">
+                Save 20%
+              </span>
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map((p) => {
             const isCurrent = subscription?.plan?.code === p.code;
+            const displayPrice = billingCycle === "yearly" ? (p.price_yearly > 0 ? (p.price_yearly / 12).toFixed(0) : 0) : p.price_monthly;
             return (
               <div
                 key={p.id}
-                className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm transition ${
+                className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 shadow-sm transition relative ${
                   isCurrent
                     ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]/5 ring-1 ring-[var(--color-primary)]"
+                    : p.is_recommended || p.is_popular
+                    ? "border-amber-500/50 bg-[var(--color-surface)] shadow-md"
                     : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/40"
                 }`}
               >
+                {p.is_recommended && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white px-2.5 py-0.5 rounded-full shadow">
+                    Recommended
+                  </span>
+                )}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-black text-[var(--color-text-primary)]">{p.name}</h3>
@@ -104,7 +137,10 @@ export default function BillingPage() {
                     )}
                   </div>
                   <p className="text-2xl font-black text-[var(--color-text-primary)]">
-                    ₹{p.price_monthly}<span className="text-xs font-semibold text-[var(--color-text-tertiary)]">/mo</span>
+                    ₹{displayPrice}<span className="text-xs font-semibold text-[var(--color-text-tertiary)]">/mo</span>
+                    {billingCycle === "yearly" && p.price_yearly > 0 && (
+                      <span className="block text-[10px] text-emerald-400 font-bold">billed ₹{p.price_yearly}/yr</span>
+                    )}
                   </p>
                   <ul className="space-y-1.5 text-xs text-[var(--color-text-secondary)] font-medium pt-2 border-t border-[var(--color-border-light)]">
                     <li>• Loans: {p.max_loans === -1 ? "Unlimited" : p.max_loans}</li>
@@ -112,6 +148,7 @@ export default function BillingPage() {
                     <li>• Reports: {p.max_reports === -1 ? "Unlimited" : p.max_reports}</li>
                     <li>• AI Requests: {p.max_ai_requests === -1 ? "Unlimited" : p.max_ai_requests}</li>
                     <li>• Team Members: {p.max_team_members}</li>
+                    <li>• Workspaces: {p.workspace_limit || 1}</li>
                     <li>• API Access: {p.allow_api_access ? "Included ✅" : "No ❌"}</li>
                   </ul>
                 </div>
