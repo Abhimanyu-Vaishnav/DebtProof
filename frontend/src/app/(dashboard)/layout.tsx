@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { GlobalFloatingUI } from "@/components/ui/GlobalFloatingUI";
-import TenantProvider from "@/contexts/TenantContext";
+import { TenantProvider } from "@/contexts/TenantContext";
 
 export const metadata: Metadata = {
   title: {
