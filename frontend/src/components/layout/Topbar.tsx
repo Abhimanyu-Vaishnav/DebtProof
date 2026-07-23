@@ -73,7 +73,8 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
         notificationsService.getNotifications(),
         notificationsService.getUnreadCount(),
       ]);
-      setNotifications(listResp.results ?? []);
+      const notifArray = Array.isArray(listResp) ? listResp : listResp.results ?? [];
+      setNotifications(notifArray);
       setUnreadCount(count);
     } catch {
       // Silent fail — don't break UI if notification API is unavailable
