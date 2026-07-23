@@ -94,6 +94,16 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("dp_access_token");
+      if (!token) {
+        setIsLoading(false);
+        if (!window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/register")) {
+          window.location.href = "/login";
+        }
+        return;
+      }
+    }
     refreshTenants();
   }, [refreshTenants]);
 
