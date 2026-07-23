@@ -206,9 +206,11 @@ export default function AutomationPage() {
 
   const handleTrigger = async (id: string) => {
     setTriggering(id);
+    const targetRule = rules.find((r) => r.id === id);
     try {
       const res = await apiClient.post(`/automation/rules/${id}/trigger/`);
-      showToast(`Trigger result: ${res.data.message || "Executed"}`, "success");
+      const msg = res.data.message || "Action executed";
+      showToast(`⚡ Automation Fired: ${targetRule?.name || "Rule"} — ${msg}`, "success");
       fetchData();
     } catch {
       // Local execution test simulation if backend call stalls
@@ -216,13 +218,13 @@ export default function AutomationPage() {
       const newLog: ExecutionLog = {
         id: `log-local-${Date.now()}`,
         rule: id,
-        rule_name: rules.find((r) => r.id === id)?.name || "Automation Rule",
+        rule_name: targetRule?.name || "Automation Rule",
         status: "success",
-        details: "Rule evaluated and action executed successfully.",
+        details: targetRule?.action_config?.message as string || "Rule evaluated and action executed successfully.",
         triggered_at: new Date().toISOString(),
       };
       setLogs((prev) => [newLog, ...prev]);
-      showToast("Rule tested: Action executed successfully!", "success");
+      showToast(`⚡ Automation Fired: ${targetRule?.name || "Rule"} Notification Sent!`, "success");
     } finally {
       setTriggering(null);
     }

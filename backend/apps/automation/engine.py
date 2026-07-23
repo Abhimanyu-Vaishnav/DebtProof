@@ -121,15 +121,14 @@ def _execute_action(rule, user, context: dict):
     msg = aconf.get("message") or f"Automation rule '{rule.name}' triggered."
 
     if atype in ("send_notification", "show_warning", "recommend_payment"):
-        dedup = f"automation-{rule.id}-{timezone.now().date()}"
-        if not Notification.objects.filter(user=user, dedup_key=dedup).exists():
-            Notification.objects.create(
-                user=user,
-                title=rule.name,
-                body=msg,
-                notif_type=NotificationType.INFO,
-                dedup_key=dedup,
-            )
+        dedup = f"automation-{rule.id}-{timezone.now().timestamp()}"
+        Notification.objects.create(
+            user=user,
+            title=f"⚡ Automation Alert: {rule.name}",
+            body=msg,
+            notif_type=NotificationType.INFO,
+            dedup_key=dedup,
+        )
 
     elif atype == "send_email":
         # Email sending placeholder — wire up SMTP/SendGrid in production
