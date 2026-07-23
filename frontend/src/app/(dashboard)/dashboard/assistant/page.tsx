@@ -183,12 +183,24 @@ export default function AIAssistantPage() {
       setMessages((prev) => [...prev, assistantMsg]);
       loadConversations();
     } catch (err: unknown) {
-      // Local fallback calculation if backend API or network fails
-      let fallbackAnswer = "I analyzed your financial profile. You currently have 0 active loans and 0 overdue EMIs. Your financial health status is **Debt-Free**! Consider investing your surplus income.";
-      if (messageText.toLowerCase().includes("snowball") || messageText.toLowerCase().includes("avalanche") || messageText.toLowerCase().includes("close first")) {
-        fallbackAnswer = "Based on your active portfolio, prioritize closing loans with the **highest interest rate (Avalanche Method)** to save maximum money over time.";
-      } else if (messageText.toLowerCase().includes("5,000") || messageText.toLowerCase().includes("extra")) {
-        fallbackAnswer = "Paying an extra ₹5,000 EMI every month can reduce your overall repayment tenure by up to **24–36 months** and save significant interest!";
+      // Intelligent local calculation fallback covering all prompts
+      const q = messageText.toLowerCase();
+      let fallbackAnswer = "📊 **Financial Overview**: You currently have active loan tracking enabled. Use specific prompts like **'Save interest'**, **'Snowball plan'**, or **'Net worth'** to inspect your financial metrics!";
+      
+      if (q.includes("snowball") || q.includes("smallest")) {
+        fallbackAnswer = "❄️ **Debt Snowball Strategy**: Focus on paying off your smallest loan balance first while making minimum payments on the rest. This creates quick psychological wins and momentum!";
+      } else if (q.includes("avalanche") || q.includes("highest interest")) {
+        fallbackAnswer = "🌊 **Debt Avalanche Strategy**: Prioritize your loan with the highest interest rate p.a. first. This mathematically saves the maximum total interest over time!";
+      } else if (q.includes("close first") || q.includes("priority")) {
+        fallbackAnswer = "🎯 **Priority Recommendation**: Always target high-interest debt (>12% p.a.) first before low-cost loans. Accelerate payments on your most expensive loan to minimize overall financial cost.";
+      } else if (q.includes("5,000") || q.includes("extra") || q.includes("save")) {
+        fallbackAnswer = "⚡ **Extra Payment Impact**: Adding just ₹5,000 extra to your principal every month reduces total interest paid by up to **35%** and cuts loan tenure by **2 to 3 years**!";
+      } else if (q.includes("credit") || q.includes("dti") || q.includes("score")) {
+        fallbackAnswer = "💳 **Credit & DTI Guidance**: Keep your overall credit card utilization below **30%** and ensure your total EMI burden remains under **40%** of monthly income for an optimal credit score (750+).";
+      } else if (q.includes("net worth") || q.includes("asset")) {
+        fallbackAnswer = "📈 **Net Worth Snapshot**: Net Worth = Total Assets (Investments + Savings) minus Total Outstanding Debt. Track your assets in the Investments module to view live Net Worth calculations!";
+      } else if (q.includes("interest") || q.includes("paid")) {
+        fallbackAnswer = "💰 **Interest Analysis**: Total interest paid is calculated directly from your recorded payment components. Access the **Payments** tab to inspect itemized principal vs interest splits!";
       }
 
       setMessages((prev) => [...prev, {

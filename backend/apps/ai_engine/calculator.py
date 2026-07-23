@@ -17,15 +17,16 @@ class AIFinancialEngine:
     """
 
     INTENT_MAP = {
-        "interest": ["interest", "paid", "cost", "how much interest"],
-        "payoff_order": ["close first", "payoff", "pay off", "which loan", "priority"],
-        "debt_ratio": ["debt ratio", "debt-to-income", "dti", "ratio"],
-        "savings": ["save", "savings", "reduce", "save money"],
-        "summary": ["summary", "overview", "report", "status"],
+        "interest": ["interest", "paid", "cost", "how much interest", "total interest"],
+        "payoff_order": ["close first", "payoff", "pay off", "which loan", "priority", "order"],
+        "debt_ratio": ["debt ratio", "debt-to-income", "dti", "ratio", "burden", "emi burden"],
+        "savings": ["save", "savings", "reduce", "save money", "extra emi"],
         "snowball": ["snowball", "smallest", "least balance"],
         "avalanche": ["avalanche", "highest interest", "most expensive"],
-        "net_worth": ["net worth", "assets", "wealth"],
-        "monthly_emi": ["emi", "monthly payment", "installment", "how much per month"],
+        "credit_cards": ["card", "credit card", "limit", "utilization", "card debt"],
+        "net_worth": ["net worth", "assets", "wealth", "asset"],
+        "monthly_emi": ["emi", "monthly payment", "installment", "how much per month", "due date"],
+        "summary": ["summary", "overview", "report", "status", "everything", "financial health"],
     }
 
     def __init__(self, user):
@@ -44,6 +45,7 @@ class AIFinancialEngine:
             "summary": self._financial_summary,
             "snowball": self._snowball_order,
             "avalanche": self._avalanche_order,
+            "credit_cards": self._calc_credit_cards,
             "monthly_emi": self._calc_monthly_emi,
             "net_worth": self._calc_net_worth,
         }
@@ -171,6 +173,32 @@ class AIFinancialEngine:
             "answer": f"**Debt Avalanche Strategy** — Pay highest interest first to minimize total cost: {order_text}.",
             "data": {"avalanche_order": [str(l.id) for l in ordered]},
             "intent": "avalanche",
+        }
+
+    def _calc_credit_cards(self) -> dict:
+        from apps.credit_cards.models import CreditCard
+        cards = list(CreditCard.objects.filter(user=self.user))
+        if not cards:
+            return {"answer": "You currently have 0 credit cards registered. Add credit cards to monitor utilization!", "data": {}, "intent": "credit_cards"}
+
+        total_limit = sum(c.credit_limit or Decimal("0") for c in cards)
+        total_balance = sum(c.current_balance or Decimal("0") for c in cards)
+        overall_util = (total_balance / total_limit * 100) if total_limit > 0 else 0
+
+        status_text = "excellent (below 30%)" if overall_util < 30 else "high (above 50%)" if overall_util > 50 else "moderate"
+        return {
+            "answer": (
+                f"💳 You have {len(cards)} credit card(s) registered. "
+                f"Total Credit Limit: ₹{total_limit:,.0f} | Current Total Balance: ₹{total_balance:,.0f}. "
+                f"Overall Utilization is **{overall_util:.1f}%** ({status_text})."
+            ),
+            "data": {
+                "card_count": len(cards),
+                "total_limit": float(total_limit),
+                "total_balance": float(total_balance),
+                "utilization_percent": float(overall_util),
+            },
+            "intent": "credit_cards",
         }
 
     def _calc_monthly_emi(self) -> dict:
