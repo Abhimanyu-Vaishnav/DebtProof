@@ -150,3 +150,4 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useTenant = () => useContext(TenantContext);
+export default TenantProvider;
