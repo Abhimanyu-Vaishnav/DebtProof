@@ -80,8 +80,22 @@ def _recalculate_outstanding(loan) -> None:
 
 @receiver(post_save, sender=Payment)
 def on_payment_saved(sender, instance: Payment, created: bool, **kwargs) -> None:
-    """Recalculate loan outstanding after any payment save."""
+    """Recalculate loan outstanding and record activity entry after any payment save."""
     _recalculate_outstanding(instance.loan)
+    if created:
+        try:
+            from apps.ai_engine.models import ActivityTimelineEntry
+            lender = instance.loan.lender_name if instance.loan else "Loan"
+            ActivityTimelineEntry.objects.create(
+                user=instance.loan.user if instance.loan else None,
+                event_type="payment_added",
+                title=f"Payment Recorded: ₹{instance.amount:,.0f}",
+                description=f"Paid for {lender} on {instance.payment_date or 'today'}",
+                icon="💸",
+                color="green",
+            )
+        except Exception as e:
+            logger.error("Failed to log payment activity entry: %s", e)
 
 
 @receiver(post_delete, sender=Payment)

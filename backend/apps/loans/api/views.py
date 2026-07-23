@@ -86,6 +86,18 @@ class LoanListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         loan = serializer.save()
         logger.info("Loan created: %s by %s", loan.name, request.user.email)
+        try:
+            from apps.ai_engine.models import ActivityTimelineEntry
+            ActivityTimelineEntry.objects.create(
+                user=request.user,
+                event_type="loan_created",
+                title=f"Loan Added: {loan.lender_name or loan.name}",
+                description=f"Principal ₹{loan.principal_amount:,.0f} at {loan.interest_rate}% p.a.",
+                icon="🏦",
+                color="blue",
+            )
+        except Exception:
+            pass
         return Response(
             {"success": True, "message": "Loan created successfully.", "loan": LoanSerializer(loan, context={"request": request}).data},
             status=status.HTTP_201_CREATED,
