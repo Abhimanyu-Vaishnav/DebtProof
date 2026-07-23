@@ -22,6 +22,18 @@ class TenantMiddleware:
         request.organization = None
         request.workspace = None
 
+        # Inline JWT resolution for DRF requests if user is not authenticated yet
+        if not hasattr(request, "user") or not request.user.is_authenticated:
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer "):
+                try:
+                    from rest_framework_simplejwt.authentication import JWTAuthentication
+                    auth_result = JWTAuthentication().authenticate(request)
+                    if auth_result:
+                        request.user = auth_result[0]
+                except Exception:
+                    pass
+
         if hasattr(request, "user") and request.user.is_authenticated:
             org_header = request.headers.get("X-Organization-ID") or request.headers.get("X-Organization-Slug")
             ws_header = request.headers.get("X-Workspace-ID") or request.headers.get("X-Workspace-Slug")

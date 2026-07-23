@@ -41,8 +41,8 @@ export default function TeamManagementPage() {
       setInviteEmail("");
       setMsg(`Invitation sent to ${inviteEmail}!`);
       loadData();
-    } catch {
-      setMsg("Failed to send invitation.");
+    } catch (err: any) {
+      setMsg(err.response?.data?.message || err.message || "Failed to send invitation.");
     }
   };
 
@@ -51,7 +51,9 @@ export default function TeamManagementPage() {
       await tenantsService.resendInvitation(inviteId);
       setMsg("Invitation resent successfully!");
       loadData();
-    } catch {}
+    } catch (err: any) {
+      setMsg(err.response?.data?.message || "Failed to resend invitation.");
+    }
   };
 
   const handleCancelInvite = async (inviteId: string) => {
@@ -59,14 +61,19 @@ export default function TeamManagementPage() {
       await tenantsService.cancelInvitation(inviteId);
       setMsg("Invitation canceled.");
       loadData();
-    } catch {}
+    } catch (err: any) {
+      setMsg(err.response?.data?.message || "Failed to cancel invitation.");
+    }
   };
 
   const handleRoleChange = async (memberId: string, newRole: TenantRole) => {
     try {
       await tenantsService.updateMemberRole(memberId, newRole);
+      setMsg(`Member role updated to ${newRole}.`);
       loadData();
-    } catch {}
+    } catch (err: any) {
+      setMsg(err.response?.data?.message || "Failed to update role.");
+    }
   };
 
   const handleToggleStatus = async (memberId: string, currentStatus: string) => {
@@ -75,7 +82,9 @@ export default function TeamManagementPage() {
       await tenantsService.updateMemberStatus(memberId, nextStatus);
       setMsg(`Member status set to ${nextStatus}.`);
       loadData();
-    } catch {}
+    } catch (err: any) {
+      setMsg(err.response?.data?.message || "Failed to update status.");
+    }
   };
 
   const handleRemoveMember = async (memberId: string) => {
@@ -84,7 +93,9 @@ export default function TeamManagementPage() {
       await tenantsService.removeMember(memberId);
       setMsg("Member removed.");
       loadData();
-    } catch {}
+    } catch (err: any) {
+      setMsg(err.response?.data?.message || "Failed to remove member.");
+    }
   };
 
   const handleTransferOwnership = async (e: React.FormEvent) => {
@@ -94,8 +105,8 @@ export default function TeamManagementPage() {
       setTransferModal(false);
       setMsg(`Organization ownership transferred to ${transferEmail}.`);
       loadData();
-    } catch {
-      setMsg("Transfer failed. Ensure email belongs to an existing member.");
+    } catch (err: any) {
+      setMsg(err.response?.data?.message || "Transfer failed. Ensure email belongs to an existing member.");
     }
   };
 

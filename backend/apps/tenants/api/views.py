@@ -3,6 +3,7 @@ DebtProof — Multi-Tenant SaaS Views
 REST API views for Organizations, Workspaces, RBAC Roles, Invitations,
 Feature Flags, Subscription Plans, Usage Limits, Billing, Settings, and Super Admin.
 """
+import uuid
 from datetime import timedelta
 from decimal import Decimal
 from django.utils import timezone
@@ -203,6 +204,11 @@ class InvitationListCreateAPIView(views.APIView):
         # Check if already a member
         if OrganizationMember.objects.filter(organization=org, user__email=email).exists():
             return Response({"success": False, "message": f"{email} is already a member of this organization."}, status=400)
+
+        # Check if already invited and pending
+        existing_invite = OrganizationInvitation.objects.filter(organization=org, email=email, status=InvitationStatus.PENDING).first()
+        if existing_invite:
+            return Response({"success": False, "message": f"A pending invitation for {email} already exists. You can resend it from the table below."}, status=400)
 
         invite = OrganizationInvitation.objects.create(
             organization=org,
