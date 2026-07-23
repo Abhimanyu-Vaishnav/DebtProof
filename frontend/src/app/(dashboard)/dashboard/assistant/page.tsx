@@ -335,13 +335,15 @@ export default function AIAssistantPage() {
                           🤖
                         </div>
                       )}
-                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
                         msg.role === "user"
-                          ? "bg-[var(--color-primary)] text-white rounded-br-md"
-                          : "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] rounded-bl-md border border-[var(--color-border-light)]"
+                          ? "bg-[var(--color-primary)] text-white font-medium rounded-br-md"
+                          : "bg-white text-[var(--color-text-primary)] rounded-bl-md border border-[var(--color-border)] shadow-xs"
                       }`}>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                        <p className={`text-[10px] mt-1 ${msg.role === "user" ? "text-white/70" : "text-[var(--color-text-tertiary)]"}`}>
+                        <p className={`text-sm leading-relaxed whitespace-pre-wrap ${msg.role === "user" ? "text-white" : "text-slate-800"}`}>
+                          {msg.content}
+                        </p>
+                        <p className={`text-[10px] mt-1 font-mono ${msg.role === "user" ? "text-white/80" : "text-slate-400"}`}>
                           {formatTime(msg.created_at)}
                         </p>
                       </div>
@@ -398,7 +400,7 @@ export default function AIAssistantPage() {
                   <button
                     onClick={() => sendMessage()}
                     disabled={loading || !input.trim()}
-                    className="btn-primary px-5 flex-shrink-0 cursor-pointer disabled:opacity-50"
+                    className="btn bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-light)] px-6 font-bold flex-shrink-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition"
                   >
                     {loading ? "..." : "Send →"}
                   </button>
