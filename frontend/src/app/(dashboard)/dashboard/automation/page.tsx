@@ -146,9 +146,9 @@ export default function AutomationPage() {
         action_config: form.action_config,
         priority: form.priority,
         is_enabled: true,
+        last_triggered_at: null,
         trigger_count: 0,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
       setRules((prev) => [newRule, ...prev]);
       showToast("Automation rule created successfully!", "success");
