@@ -1,7 +1,6 @@
 /**
- * DebtProof — AI Financial Assistant Page
- * Real-data chat interface powered by DebtProof's own calculation engine.
- * Zero mock responses — all answers computed from actual user DB.
+ * DebtProof — Unified AI Financial Assistant & Strategy Coach Page
+ * Combines real-data backend intelligence, conversation history, and live financial insights.
  */
 "use client";
 
@@ -17,6 +16,14 @@ interface Message {
   created_at: string;
 }
 
+interface Conversation {
+  id: string;
+  title: string;
+  is_active: boolean;
+  messages: Message[];
+  created_at: string;
+}
+
 interface Insight {
   id: string;
   icon: string;
@@ -27,14 +34,14 @@ interface Insight {
 }
 
 const QUICK_PROMPTS = [
-  { label: "💰 Interest paid", text: "How much total interest have I paid across all my loans?" },
+  { label: "💡 Save interest", text: "How can I save maximum interest on my current loans?" },
+  { label: "⚡ ₹5,000 Extra EMI", text: "What happens if I pay ₹5,000 extra EMI every month?" },
+  { label: "🎯 Snowball vs Avalanche", text: "Should I choose Snowball or Avalanche strategy for my loans?" },
+  { label: "💳 Credit & DTI tips", text: "How can I improve my credit score and DTI ratio?" },
   { label: "🏆 Close first", text: "Which loan should I close first to save maximum money?" },
   { label: "📊 Debt ratio", text: "What is my current debt ratio and monthly EMI burden?" },
-  { label: "❄️ Snowball plan", text: "Show me the debt snowball repayment order for my loans." },
-  { label: "🌊 Avalanche plan", text: "Show me the debt avalanche repayment order for my loans." },
   { label: "💸 Net worth", text: "What is my estimated net worth right now?" },
-  { label: "📝 Summary", text: "Give me a complete financial summary of my current situation." },
-  { label: "💡 Save money", text: "How can I save money on interest and accelerate debt payoff?" },
+  { label: "📝 Financial Summary", text: "Give me a complete financial summary of my current situation." },
 ];
 
 const INSIGHT_COLORS: Record<string, string> = {
@@ -49,13 +56,19 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-IN", { month: "short", day: "numeric" });
+}
+
 export default function AIAssistantPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [insightsLoading, setInsightsLoading] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const [activeView, setActiveView] = useState<"chat" | "insights">("chat");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { showToast } = useToast();
@@ -66,29 +79,78 @@ export default function AIAssistantPage() {
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
+  // Load Insights
   const loadInsights = useCallback(async () => {
     setInsightsLoading(true);
     try {
       const res = await apiClient.get("/ai/insights/");
       setInsights(res.data.insights || []);
     } catch {
-      // insights are optional
+      /* insights optional */
     } finally {
       setInsightsLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadInsights(); }, [loadInsights]);
+  // Load Conversations History
+  const loadConversations = useCallback(async () => {
+    try {
+      const res = await apiClient.get("/ai/conversations/");
+      const data = Array.isArray(res.data) ? res.data : res.data.results || [];
+      setConversations(data);
+    } catch {
+      /* conversations history optional */
+    }
+  }, []);
 
-  // Add welcome message on first load
   useEffect(() => {
+    loadInsights();
+    loadConversations();
+  }, [loadInsights, loadConversations]);
+
+  // Welcome message when starting a fresh chat
+  const resetToWelcomeMessage = useCallback(() => {
+    setConversationId(null);
     setMessages([{
       id: "welcome",
       role: "assistant",
-      content: "👋 Hi! I'm your DebtProof AI Financial Assistant.\n\nI analyze your actual loan data, payment history, and interest records to give you precise financial insights.\n\nAsk me anything — or pick a quick prompt below!",
+      content: "Namaste! 👋 I'm your **DebtProof AI Strategy Coach**.\n\nI analyze your actual loan data, payment history, and interest records to give you precise financial guidance.\n\nAsk me anything — or pick a strategy prompt below!",
       created_at: new Date().toISOString(),
     }]);
   }, []);
+
+  useEffect(() => {
+    resetToWelcomeMessage();
+  }, [resetToWelcomeMessage]);
+
+  // Select past conversation history
+  const selectConversation = (conv: Conversation) => {
+    setConversationId(conv.id);
+    if (conv.messages && conv.messages.length > 0) {
+      setMessages(conv.messages);
+    } else {
+      setMessages([{
+        id: `conv-${conv.id}`,
+        role: "assistant",
+        content: `Loaded conversation: **${conv.title}**`,
+        created_at: conv.created_at,
+      }]);
+    }
+    setShowHistory(false);
+  };
+
+  // Delete past conversation
+  const deleteConversation = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await apiClient.delete(`/ai/conversations/${id}/`);
+      setConversations((prev) => prev.filter((c) => c.id !== id));
+      if (conversationId === id) resetToWelcomeMessage();
+      showToast("Chat history deleted.", "success");
+    } catch {
+      showToast("Failed to delete chat.", "error");
+    }
+  };
 
   const sendMessage = async (text?: string) => {
     const messageText = text || input.trim();
@@ -119,6 +181,7 @@ export default function AIAssistantPage() {
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
+      loadConversations();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
       const errorText = axiosErr?.response?.data?.error || "Failed to get AI response. Please try again.";
@@ -140,24 +203,48 @@ export default function AIAssistantPage() {
 
   return (
     <>
-      <Topbar title="AI Financial Assistant" subtitle="Real-data intelligence powered by your actual financial records" />
+      <Topbar title="AI Financial Coach" subtitle="Unified Strategy Coach & Real-Data Financial Assistant" />
       <main className="page-content">
         <div className="max-w-5xl mx-auto space-y-4 animate-fade-in" style={{ height: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
-          {/* Tab switcher */}
-          <div className="flex gap-2 flex-shrink-0">
-            {(["chat", "insights"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveView(tab)}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition cursor-pointer ${
-                  activeView === tab
-                    ? "bg-[var(--color-primary)] text-white shadow"
-                    : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
-                }`}
-              >
-                {tab === "chat" ? "🤖 AI Chat" : `💡 Live Insights (${insights.length})`}
-              </button>
-            ))}
+
+          {/* Top Bar Navigation & Controls */}
+          <div className="flex items-center justify-between gap-4 flex-wrap flex-shrink-0">
+            <div className="flex gap-2">
+              {(["chat", "insights"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveView(tab)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition cursor-pointer ${
+                    activeView === tab
+                      ? "bg-[var(--color-primary)] text-white shadow"
+                      : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
+                  }`}
+                >
+                  {tab === "chat" ? "🤖 AI Coach Chat" : `💡 Live Insights (${insights.length})`}
+                </button>
+              ))}
+            </div>
+
+            {activeView === "chat" && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    showHistory
+                      ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/40"
+                      : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
+                  }`}
+                >
+                  📜 <span>History ({conversations.length})</span>
+                </button>
+                <button
+                  onClick={resetToWelcomeMessage}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition cursor-pointer flex items-center gap-1"
+                >
+                  <span>+</span> <span>New Chat</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Insights View */}
@@ -171,7 +258,7 @@ export default function AIAssistantPage() {
                 <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-12 text-center">
                   <div className="text-5xl mb-3">📊</div>
                   <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-                    Add loans and record payments to generate real AI insights.
+                    Add loans and record payments to generate real AI financial insights.
                   </p>
                 </div>
               ) : (
@@ -195,85 +282,124 @@ export default function AIAssistantPage() {
 
           {/* Chat View */}
           {activeView === "chat" && (
-            <>
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 space-y-4">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    {msg.role === "assistant" && (
-                      <div className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white text-xs font-black mr-2 flex-shrink-0 mt-1">
-                        AI
-                      </div>
-                    )}
-                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      msg.role === "user"
-                        ? "bg-[var(--color-primary)] text-white rounded-br-md"
-                        : "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] rounded-bl-md border border-[var(--color-border-light)]"
-                    }`}>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                      <p className={`text-[10px] mt-1 ${msg.role === "user" ? "text-white/70" : "text-[var(--color-text-tertiary)]"}`}>
-                        {formatTime(msg.created_at)}
-                      </p>
-                    </div>
+            <div className="flex-1 flex gap-4 min-h-0 relative">
+              {/* History Drawer Sidebar */}
+              {showHistory && (
+                <div className="w-64 flex-shrink-0 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3 flex flex-col space-y-2 overflow-y-auto z-20 shadow-lg">
+                  <div className="flex items-center justify-between px-2 py-1 border-b border-[var(--color-border-light)]">
+                    <span className="text-xs font-black text-[var(--color-text-primary)] uppercase">Chat History</span>
+                    <button onClick={() => setShowHistory(false)} className="text-xs text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]">✕</button>
                   </div>
-                ))}
-                {loading && (
-                  <div className="flex justify-start">
-                    <div className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white text-xs font-black mr-2 flex-shrink-0">
-                      AI
-                    </div>
-                    <div className="bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] rounded-2xl rounded-bl-md px-4 py-3">
-                      <div className="flex gap-1 items-center h-5">
-                        {[0, 1, 2].map((i) => (
-                          <div
-                            key={i}
-                            className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] animate-bounce"
-                            style={{ animationDelay: `${i * 150}ms` }}
-                          />
-                        ))}
+                  {conversations.length === 0 ? (
+                    <p className="text-xs text-[var(--color-text-tertiary)] p-3 text-center">No past chats yet.</p>
+                  ) : (
+                    conversations.map((conv) => (
+                      <div
+                        key={conv.id}
+                        onClick={() => selectConversation(conv)}
+                        className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-center justify-between group ${
+                          conversationId === conv.id
+                            ? "bg-[var(--color-primary)]/10 border-[var(--color-primary)]/40 text-[var(--color-primary)]"
+                            : "border-[var(--color-border-light)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)]"
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1 pr-2">
+                          <p className="text-xs font-bold truncate">{conv.title}</p>
+                          <p className="text-[10px] text-[var(--color-text-tertiary)]">{formatDate(conv.created_at)}</p>
+                        </div>
+                        <button
+                          onClick={(e) => deleteConversation(conv.id, e)}
+                          className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-500 p-1 transition"
+                        >
+                          🗑
+                        </button>
                       </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+                    ))
+                  )}
+                </div>
+              )}
 
-              {/* Quick Prompts */}
-              <div className="flex-shrink-0 overflow-x-auto">
-                <div className="flex gap-2 pb-1" style={{ minWidth: "max-content" }}>
-                  {QUICK_PROMPTS.map((p) => (
-                    <button
-                      key={p.text}
-                      onClick={() => sendMessage(p.text)}
-                      disabled={loading}
-                      className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] border border-[var(--color-border)] transition whitespace-nowrap cursor-pointer disabled:opacity-50"
-                    >
-                      {p.label}
-                    </button>
+              {/* Main Chat Box Container */}
+              <div className="flex-1 flex flex-col min-w-0 space-y-3">
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 space-y-4">
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                      {msg.role === "assistant" && (
+                        <div className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white text-xs font-black mr-2 flex-shrink-0 mt-1">
+                          🤖
+                        </div>
+                      )}
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                        msg.role === "user"
+                          ? "bg-[var(--color-primary)] text-white rounded-br-md"
+                          : "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] rounded-bl-md border border-[var(--color-border-light)]"
+                      }`}>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                        <p className={`text-[10px] mt-1 ${msg.role === "user" ? "text-white/70" : "text-[var(--color-text-tertiary)]"}`}>
+                          {formatTime(msg.created_at)}
+                        </p>
+                      </div>
+                    </div>
                   ))}
+                  {loading && (
+                    <div className="flex justify-start">
+                      <div className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white text-xs font-black mr-2 flex-shrink-0">
+                        🤖
+                      </div>
+                      <div className="bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] rounded-2xl rounded-bl-md px-4 py-3">
+                        <div className="flex gap-1 items-center h-5">
+                          {[0, 1, 2].map((i) => (
+                            <div
+                              key={i}
+                              className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] animate-bounce"
+                              style={{ animationDelay: `${i * 150}ms` }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Quick Prompts */}
+                <div className="flex-shrink-0 overflow-x-auto">
+                  <div className="flex gap-2 pb-1" style={{ minWidth: "max-content" }}>
+                    {QUICK_PROMPTS.map((p) => (
+                      <button
+                        key={p.text}
+                        onClick={() => sendMessage(p.text)}
+                        disabled={loading}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] border border-[var(--color-border)] transition whitespace-nowrap cursor-pointer disabled:opacity-50"
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Input Box */}
+                <div className="flex-shrink-0 flex gap-3">
+                  <textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    rows={1}
+                    placeholder="Ask AI Coach anything about loans, interest, payoff strategies... (Enter to send)"
+                    className="flex-1 input text-sm resize-none"
+                    disabled={loading}
+                  />
+                  <button
+                    onClick={() => sendMessage()}
+                    disabled={loading || !input.trim()}
+                    className="btn-primary px-5 flex-shrink-0 cursor-pointer disabled:opacity-50"
+                  >
+                    {loading ? "..." : "Send →"}
+                  </button>
                 </div>
               </div>
-
-              {/* Input Box */}
-              <div className="flex-shrink-0 flex gap-3">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  rows={1}
-                  placeholder="Ask me anything about your finances… (Enter to send)"
-                  className="flex-1 input text-sm resize-none"
-                  disabled={loading}
-                />
-                <button
-                  onClick={() => sendMessage()}
-                  disabled={loading || !input.trim()}
-                  className="btn-primary px-5 flex-shrink-0 cursor-pointer disabled:opacity-50"
-                >
-                  {loading ? "..." : "Send →"}
-                </button>
-              </div>
-            </>
+            </div>
           )}
         </div>
       </main>
