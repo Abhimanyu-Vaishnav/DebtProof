@@ -36,10 +36,6 @@ export const authService = {
       if (data.user) {
         setLocalDemoUser(data.user);
       }
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("debtproof_local_loans");
-        localStorage.removeItem("debtproof_local_payments");
-      }
       return data;
     } catch (err: any) {
       // If server responded with a validation error (e.g. email exists), throw it
