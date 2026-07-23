@@ -128,9 +128,30 @@ class ActivityTimelineView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ActivityTimelineEntrySerializer
 
-    def get_queryset(self):
-        qs = ActivityTimelineEntry.objects.filter(user=self.request.user)
-        event_type = self.request.query_params.get("event_type")
-        if event_type:
-            qs = qs.filter(event_type=event_type)
-        return qs[:100]
+    def list(self, request, *args, **kwargs):
+        # 1. Fetch AI Activity Entries
+        timeline_entries = list(ActivityTimelineEntry.objects.filter(user=request.user))
+        
+        # 2. Fetch System Audit Logs and convert to timeline entries if needed
+        from apps.audit.models import AuditLog
+        audit_logs = AuditLog.objects.filter(user=request.user)[:50]
+        
+        existing_titles = {e.title for e in timeline_entries}
+        for alog in audit_logs:
+            title = f"{alog.action.replace('_', ' ').title()}: {alog.target_resource or 'System'}"
+            if title not in existing_titles:
+                timeline_entries.append(ActivityTimelineEntry(
+                    id=alog.id,
+                    user=request.user,
+                    event_type="loan_created" if "loan" in alog.action.lower() else "login" if "login" in alog.action.lower() else "report_generated",
+                    title=title,
+                    description=f"Action '{alog.action}' from IP {alog.ip_address or '127.0.0.1'}",
+                    icon="📋",
+                    color="blue",
+                    created_at=alog.timestamp,
+                ))
+        
+        # Sort combined timeline by created_at DESC
+        timeline_entries.sort(key=lambda x: x.created_at, reverse=True)
+        serializer = self.get_serializer(timeline_entries[:100], many=True)
+        return Response(serializer.data)

@@ -224,44 +224,54 @@ export default function AIAssistantPage() {
       <main className="page-content">
         <div className="max-w-5xl mx-auto space-y-4 animate-fade-in" style={{ height: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
 
-          {/* Top Bar Navigation & Controls */}
-          <div className="flex items-center justify-between gap-4 flex-wrap flex-shrink-0">
-            <div className="flex gap-2">
+          {/* Premium Header Banner */}
+          <div className="bg-gradient-to-r from-[var(--color-primary)] via-slate-800 to-[var(--color-primary)] rounded-2xl p-5 text-white shadow-lg flex items-center justify-between flex-wrap gap-4 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center text-2xl">
+                🤖
+              </div>
+              <div>
+                <h2 className="text-base font-black tracking-tight text-white">DebtProof AI Strategy Coach</h2>
+                <p className="text-xs text-blue-200 mt-0.5">Real-time DB analytics, payoff priority & portfolio optimization</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
               {(["chat", "insights"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveView(tab)}
                   className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition cursor-pointer ${
                     activeView === tab
-                      ? "bg-[var(--color-primary)] text-white shadow"
-                      : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
+                      ? "bg-white text-[var(--color-primary)] shadow-md"
+                      : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
                   }`}
                 >
-                  {tab === "chat" ? "🤖 AI Coach Chat" : `💡 Live Insights (${insights.length})`}
+                  {tab === "chat" ? "💬 Chat" : `💡 Insights (${insights.length})`}
                 </button>
               ))}
-            </div>
 
-            {activeView === "chat" && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowHistory(!showHistory)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                    showHistory
-                      ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/40"
-                      : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)]"
-                  }`}
-                >
-                  📜 <span>History ({conversations.length})</span>
-                </button>
-                <button
-                  onClick={resetToWelcomeMessage}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition cursor-pointer flex items-center gap-1"
-                >
-                  <span>+</span> <span>New Chat</span>
-                </button>
-              </div>
-            )}
+              {activeView === "chat" && (
+                <>
+                  <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                      showHistory
+                        ? "bg-emerald-500 text-white font-black shadow"
+                        : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
+                    }`}
+                  >
+                    📜 <span>History ({conversations.length})</span>
+                  </button>
+                  <button
+                    onClick={resetToWelcomeMessage}
+                    className="px-3.5 py-2 rounded-xl text-xs font-black bg-emerald-500 text-white hover:bg-emerald-600 transition cursor-pointer flex items-center gap-1 shadow"
+                  >
+                    <span>+</span> <span>New Chat</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Insights View */}
