@@ -148,7 +148,7 @@ class ActivityTimelineView(generics.ListAPIView):
                     description=f"Action '{alog.action}' from IP {alog.ip_address or '127.0.0.1'}",
                     icon="📋",
                     color="blue",
-                    created_at=alog.timestamp,
+                    created_at=alog.created_at,
                 ))
         
         # Sort combined timeline by created_at DESC

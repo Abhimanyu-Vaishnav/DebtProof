@@ -53,6 +53,18 @@ def evaluate_and_execute_rule(rule, force: bool = False) -> dict:
             details=f"Action '{rule.action_type}' executed successfully.",
             context_data=context,
         )
+        try:
+            from apps.ai_engine.models import ActivityTimelineEntry
+            ActivityTimelineEntry.objects.create(
+                user=user,
+                event_type="automation_triggered",
+                title=f"Automation Fired: {rule.name}",
+                description=f"Action '{rule.action_type}' executed for rule context.",
+                icon="⚡",
+                color="amber",
+            )
+        except Exception:
+            pass
         return {"status": "success", "message": f"Action '{rule.action_type}' executed.", "context": context}
     except Exception as e:
         logger.error("Action execution error for rule %s: %s", rule.id, e)
