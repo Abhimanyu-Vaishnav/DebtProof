@@ -117,29 +117,11 @@ export default function AutomationPage() {
       const loadedRules = Array.isArray(rulesRes.data) ? rulesRes.data : rulesRes.data.results || [];
       const loadedLogs = Array.isArray(logsRes.data) ? logsRes.data : logsRes.data.results || [];
       
-      setRules((prev) => loadedRules.length > 0 ? loadedRules : prev);
+      setRules(loadedRules);
       setLogs(loadedLogs);
     } catch {
-      // Keep existing rules if network fails silently, populate sample rule if empty
-      setRules((prev) => {
-        if (prev.length > 0) return prev;
-        return [
-          {
-            id: "rule-default-1",
-            name: "EMI Due Alert",
-            description: "Send notification 3 days before loan EMI date",
-            condition_type: "emi_due_in_days",
-            condition_value: { days: 3 },
-            action_type: "send_notification",
-            action_config: { message: "EMI payment due in 3 days!" },
-            priority: 1,
-            is_enabled: true,
-            last_triggered_at: null,
-            trigger_count: 0,
-            created_at: new Date().toISOString(),
-          },
-        ];
-      });
+      // Do not force sample rule if user deleted rules
+      setRules([]);
     } finally {
       setLoading(false);
     }
