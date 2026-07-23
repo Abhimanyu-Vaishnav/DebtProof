@@ -106,6 +106,16 @@ class TenantMiddleware:
             role="owner",
         )
 
+        Workspace.objects.get_or_create(
+            organization=org,
+            slug="personal",
+            defaults={
+                "name": "Personal Workspace",
+                "workspace_type": WorkspaceType.PERSONAL,
+                "created_by": user,
+            },
+        )
+
         # Default free plan
         free_plan, _ = Plan.objects.get_or_create(
             code=SubscriptionPlanCode.FREE,

@@ -39,6 +39,13 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user: User = serializer.save()
 
+        # Phase 1: Auto-provision Personal Organization, Workspace & Subscription
+        try:
+            from apps.tenants.middleware import TenantMiddleware
+            TenantMiddleware(None)._provision_default_tenant(user)
+        except Exception as e:
+            logger.warning("Auto tenant provisioning failed for user %s: %s", user.email, e)
+
         # Generate JWT tokens immediately after registration
         refresh = RefreshToken.for_user(user)
 

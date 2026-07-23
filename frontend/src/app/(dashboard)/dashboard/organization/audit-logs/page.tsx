@@ -27,20 +27,30 @@ export default function AuditLogsPage() {
           <p className="text-sm text-[var(--color-text-secondary)]">Immutable records of all user actions, security events, and configuration changes.</p>
         </div>
 
-        <select
-          value={filterAction}
-          onChange={(e) => setFilterAction(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] text-xs font-bold text-[var(--color-text-primary)]"
-        >
-          <option value="">All Actions</option>
-          <option value="login">User Login</option>
-          <option value="loan_created">Loan Created</option>
-          <option value="payment_recorded">Payment Recorded</option>
-          <option value="role_changed">Role Changed</option>
-          <option value="plan_changed">Plan Changed</option>
-          <option value="feature_flag_toggled">Feature Flag Toggled</option>
-          <option value="setting_updated">Setting Updated</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={filterAction}
+            onChange={(e) => setFilterAction(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] text-xs font-bold text-[var(--color-text-primary)]"
+          >
+            <option value="">All Actions</option>
+            <option value="login">User Login</option>
+            <option value="loan_created">Loan Created</option>
+            <option value="payment_recorded">Payment Recorded</option>
+            <option value="role_changed">Role Changed</option>
+            <option value="plan_changed">Plan Changed</option>
+            <option value="feature_flag_toggled">Feature Flag Toggled</option>
+            <option value="setting_updated">Setting Updated</option>
+          </select>
+          <a
+            href="http://localhost:8000/api/v1/audit/logs/export/"
+            download="debtproof_audit_logs.csv"
+            className="px-3.5 py-2 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-light)] text-white text-xs font-bold transition shadow cursor-pointer flex items-center gap-1.5"
+          >
+            <span>📥</span>
+            <span>Export CSV</span>
+          </a>
+        </div>
       </div>
 
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 space-y-4 shadow-sm">
