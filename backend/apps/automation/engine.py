@@ -136,7 +136,7 @@ def _execute_action(rule, user, context: dict):
         dedup = f"automation-{rule.id}-{timezone.now().timestamp()}"
         Notification.objects.create(
             user=user,
-            title=f"⚡ Automation Alert: {rule.name}",
+            title=f"Automation Alert: {rule.name}",
             body=msg,
             notif_type=NotificationType.INFO,
             dedup_key=dedup,
