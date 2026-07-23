@@ -225,40 +225,35 @@ class LoanDashboardView(APIView):
             loans.values("loan_type").annotate(count=Count("id")).order_by("-count")
         )
 
-        # Monthly payment trend (last 6 months)
-        from django.db.models.functions import TruncMonth
-        from datetime import timedelta
+        # Monthly payment trend (last 6 months continuous timeline from actual database payments)
+        today = date.today()
+        months_list = []
+        curr_year = today.year
+        curr_month = today.month
 
-        six_months_ago = date.today().replace(day=1)
-        # Go back 6 months
-        for _ in range(5):
-            first_of_month = six_months_ago.replace(day=1)
-            # Go back one month
-            if first_of_month.month == 1:
-                six_months_ago = first_of_month.replace(year=first_of_month.year - 1, month=12)
-            else:
-                six_months_ago = first_of_month.replace(month=first_of_month.month - 1)
+        for i in range(5, -1, -1):
+            m = curr_month - i
+            y = curr_year
+            while m <= 0:
+                m += 12
+                y -= 1
+            month_str = f"{y}-{m:02d}"
+            months_list.append((month_str, y, m))
 
-        monthly_trend = list(
-            Payment.objects.filter(
-                loan__user=user,
-                status="confirmed",
-                payment_date__gte=six_months_ago,
-            )
-            .annotate(month=TruncMonth("payment_date"))
-            .values("month")
-            .annotate(total=Sum("amount"), count=Count("id"))
-            .order_by("month")
-        )
+        user_payments = Payment.objects.filter(loan__user=user, status="confirmed")
 
-        monthly_trend_serialized = [
-            {
-                "month": str(item["month"])[:7],  # YYYY-MM
-                "total": float(item["total"]),
-                "count": item["count"],
-            }
-            for item in monthly_trend
-        ]
+        monthly_trend_serialized = []
+        for month_str, y, m in months_list:
+            agg = user_payments.filter(
+                payment_date__year=y,
+                payment_date__month=m
+            ).aggregate(total=Sum("amount"), count=Count("id"))
+
+            monthly_trend_serialized.append({
+                "month": month_str,
+                "total": float(agg["total"] or 0),
+                "count": agg["count"] or 0,
+            })
 
         # ── Dashboard V2 Projections & Simulations ───────────────────
         # Define simulation helper inside get

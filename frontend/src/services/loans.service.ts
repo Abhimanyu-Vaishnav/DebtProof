@@ -3,6 +3,7 @@
  * All loan-related API calls with automatic offline/demo fallback.
  */
 import apiClient from "./api";
+import { getStoredPayments } from "./payments.service";
 import type {
   Loan,
   LoanFormData,
@@ -283,6 +284,27 @@ function syncLoanWithPayments(loan: Loan): Loan {
     const outstanding = Math.max(0, principal - totalPrincipalPaid);
     const progress = Math.min(100, (totalPrincipalPaid / principal) * 100);
 
+    let nextEmiDate = loan.next_emi_date;
+    if (nextEmiDate && sortedLoanPayments.length > 0) {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const latestPayment = sortedLoanPayments[sortedLoanPayments.length - 1];
+      if (latestPayment.payment_date && (nextEmiDate <= latestPayment.payment_date || nextEmiDate <= todayStr)) {
+        const parts = nextEmiDate.split("-").map(Number);
+        if (parts.length === 3 && !isNaN(parts[0])) {
+          let [y, m, d] = parts;
+          let nextM = m + 1;
+          let nextY = y;
+          if (nextM > 12) { nextM = 1; nextY += 1; }
+          const maxDays = new Date(nextY, nextM, 0).getDate();
+          const nextD = Math.min(d, maxDays);
+          nextEmiDate = `${nextY}-${String(nextM).padStart(2, "0")}-${String(nextD).padStart(2, "0")}`;
+        }
+      }
+    }
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const isOverdue = nextEmiDate ? nextEmiDate < todayStr : false;
+
     return {
       ...loan,
       paid_amount: totalPaid.toFixed(2),
@@ -290,6 +312,9 @@ function syncLoanWithPayments(loan: Loan): Loan {
       outstanding_amount: outstanding.toFixed(2),
       total_payments: loanPayments.length,
       repayment_progress_percent: parseFloat(progress.toFixed(1)),
+      next_emi_date: nextEmiDate,
+      is_overdue: isOverdue,
+      status: outstanding <= 0 ? "closed" : loan.status,
     };
   } else {
     // Zero payments recorded - reset values to exact 0
@@ -463,6 +488,30 @@ export const loansService = {
     const totalPaid = activeLoans.reduce((sum, l) => sum + parseFloat(l.paid_amount || "0"), 0);
     const totalEmi = activeLoans.reduce((sum, l) => sum + parseFloat(l.monthly_emi || "0"), 0);
 
+    const storedPayments = getStoredPayments();
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+
+    const computedMonthlyTrend = [];
+    for (let i = 5; i >= 0; i--) {
+      let m = currentMonth - i;
+      let y = currentYear;
+      while (m <= 0) {
+        m += 12;
+        y -= 1;
+      }
+      const monthStr = `${y}-${String(m).padStart(2, "0")}`;
+      const matchingPayments = storedPayments.filter(p => p.payment_date && p.payment_date.startsWith(monthStr));
+      const monthTotal = matchingPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+
+      computedMonthlyTrend.push({
+        month: monthStr,
+        total: monthTotal,
+        count: matchingPayments.length,
+      });
+    }
+
     return {
       total_loans: loans.length,
       active_loans: activeLoans.length,
@@ -481,15 +530,8 @@ export const loansService = {
         { loan_type: "vehicle", count: loans.filter(l => l.loan_type === "vehicle").length },
         { loan_type: "personal", count: loans.filter(l => l.loan_type === "personal").length },
       ],
-      monthly_trend: [
-        { month: "2026-02", total: totalEmi, count: activeLoans.length },
-        { month: "2026-03", total: totalEmi, count: activeLoans.length },
-        { month: "2026-04", total: totalEmi, count: activeLoans.length },
-        { month: "2026-05", total: totalEmi, count: activeLoans.length },
-        { month: "2026-06", total: totalEmi, count: activeLoans.length },
-        { month: "2026-07", total: totalEmi, count: activeLoans.length },
-      ],
-      recent_payments: [],
+      monthly_trend: computedMonthlyTrend,
+      recent_payments: storedPayments.slice(0, 10),
       projected_debt_free_date: "2030-12",
       monthly_interest_burn: Math.round(totalOutstanding * 0.10 / 12),
       simulations: MOCK_DASHBOARD.simulations,

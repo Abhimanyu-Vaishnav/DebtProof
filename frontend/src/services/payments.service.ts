@@ -83,7 +83,7 @@ const MOCK_PAYMENTS: Payment[] = [
 
 const PAYMENTS_STORAGE_KEY = "debtproof_local_payments";
 
-function getStoredPayments(): Payment[] {
+export function getStoredPayments(): Payment[] {
   if (typeof window === "undefined") return MOCK_PAYMENTS;
   try {
     const raw = localStorage.getItem(PAYMENTS_STORAGE_KEY);
@@ -161,22 +161,26 @@ export const paymentsService = {
       const { data } = await apiClient.post<{ success: boolean; payment: Payment }>(`/loans/${loanId}/payments/`, paymentData);
       if (data && data.payment) {
         const current = getStoredPayments();
-        current.unshift(data.payment);
-        setStoredPayments(current);
+        const exists = current.some(p => p.id === data.payment.id);
+        if (!exists) {
+          current.unshift(data.payment);
+          setStoredPayments(current);
+        }
       }
       return data.payment;
     } catch {
       let iComp = paymentData.interest_component;
       let pComp = paymentData.principal_component;
 
+      const PAYMENTS_KEY = "debtproof_local_loans";
+      let localLoans: any[] = [];
+      try {
+        const raw = typeof window !== "undefined" ? localStorage.getItem(PAYMENTS_KEY) : null;
+        if (raw) localLoans = JSON.parse(raw);
+      } catch {}
+      const foundLoan = localLoans.find(l => l.id === loanId);
+
       if (!iComp || parseFloat(iComp) === 0) {
-        const PAYMENTS_KEY = "debtproof_local_loans";
-        let localLoans: any[] = [];
-        try {
-          const raw = typeof window !== "undefined" ? localStorage.getItem(PAYMENTS_KEY) : null;
-          if (raw) localLoans = JSON.parse(raw);
-        } catch {}
-        const foundLoan = localLoans.find(l => l.id === loanId);
         const rate = foundLoan ? (parseFloat(foundLoan.interest_rate) || 12) / 1200 : 0.01;
         const currentBal = foundLoan ? (parseFloat(foundLoan.outstanding_amount) || parseFloat(foundLoan.principal_amount) || 0) : 100000;
         const amt = parseFloat(paymentData.amount) || 0;
@@ -191,7 +195,7 @@ export const paymentsService = {
       const newPay: Payment = {
         id: `pay-${Date.now()}`,
         loan: loanId,
-        loan_name: "Repayment",
+        loan_name: foundLoan?.name || "Repayment",
         amount: paymentData.amount,
         payment_date: paymentData.payment_date,
         payment_method: paymentData.payment_method || "bank_transfer",

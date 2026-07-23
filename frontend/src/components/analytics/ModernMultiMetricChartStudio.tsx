@@ -28,39 +28,57 @@ const METRICS: Metric[] = [
   { id: "income",      label: "Income Cashflow",     icon: "💵", hex: "#f59e0b", description: "Monthly income streams" },
 ];
 
-const SERIES: Record<MetricId, Record<Horizon, number[]>> = {
-  payments: {
-    "6m": [45000, 45000, 68800, 68800, 91508, 91508],
-    "1y": [35000, 38000, 42000, 45000, 55000, 68800, 75000, 82000, 91508, 91508, 91508, 91508],
-    "3y": [420000, 490000, 560000, 620000, 580000, 450000],
-  },
-  investments: {
-    "6m": [1120000, 1150000, 1195000, 1240000, 1290000, 1345000],
-    "1y": [950000, 1000000, 1060000, 1120000, 1175000, 1220000, 1265000, 1295000, 1320000, 1335000, 1340000, 1345000],
-    "3y": [450000, 850000, 1345000, 1950000, 2750000, 3800000],
-  },
-  networth: {
-    "6m": [680000, 750000, 820000, 890000, 960000, 1045000],
-    "1y": [380000, 450000, 540000, 620000, 700000, 780000, 840000, 900000, 955000, 1000000, 1025000, 1045000],
-    "3y": [120000, 420000, 1045000, 1850000, 2900000, 4200000],
-  },
-  debt: {
-    "6m": [1420000, 1380000, 1320000, 1260000, 1200000, 1150000],
-    "1y": [1750000, 1700000, 1640000, 1570000, 1500000, 1440000, 1390000, 1340000, 1290000, 1240000, 1195000, 1150000],
-    "3y": [2200000, 1800000, 1150000, 650000, 250000, 0],
-  },
-  income: {
-    "6m": [135000, 135000, 145000, 145000, 150000, 155000],
-    "1y": [120000, 125000, 125000, 135000, 135000, 140000, 145000, 145000, 145000, 150000, 152000, 155000],
-    "3y": [1200000, 1500000, 1750000, 2100000, 2500000, 3000000],
-  },
-};
+function buildSeries(data: DashboardData): Record<MetricId, Record<Horizon, number[]>> {
+  const payment6m = (data.monthly_trend && data.monthly_trend.length === 6)
+    ? data.monthly_trend.map(m => m.total)
+    : [0, 0, 0, 0, 0, 0];
 
-const LABELS: Record<Horizon, string[]> = {
-  "6m": ["Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-  "1y": ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-  "3y": ["2024", "2025", "2026", "2027\nProj", "2028\nProj", "2029\nProj"],
-};
+  const totalOutstanding = data.total_outstanding || 0;
+  const totalPrincipal = data.total_principal_all || data.total_principal_active || 1;
+  const monthlyEmi = data.upcoming_emi_amount || 0;
+
+  const avg6m = payment6m.reduce((a, b) => a + b, 0) / (payment6m.length || 1);
+  const payment1y = [...payment6m, ...Array(6).fill(Math.round(avg6m))];
+  const payment3y = [
+    Math.round(avg6m * 12),
+    Math.round(avg6m * 12),
+    Math.round(avg6m * 12),
+    Math.round(avg6m * 10),
+    Math.round(avg6m * 8),
+    Math.round(avg6m * 5),
+  ];
+
+  const debt6m = payment6m.map((_, idx) => Math.max(0, Math.round(totalOutstanding + (5 - idx) * (monthlyEmi || 5000))));
+  const debt1y = payment1y.map((_, idx) => Math.max(0, Math.round(totalOutstanding + (11 - idx) * (monthlyEmi || 5000))));
+  const debt3y = [
+    Math.round(totalPrincipal * 1.2),
+    Math.round(totalPrincipal),
+    Math.round(totalOutstanding),
+    Math.max(0, Math.round(totalOutstanding * 0.6)),
+    Math.max(0, Math.round(totalOutstanding * 0.2)),
+    0,
+  ];
+
+  return {
+    payments: { "6m": payment6m, "1y": payment1y, "3y": payment3y },
+    investments: {
+      "6m": [1120000, 1150000, 1195000, 1240000, 1290000, 1345000],
+      "1y": [950000, 1000000, 1060000, 1120000, 1175000, 1220000, 1265000, 1295000, 1320000, 1335000, 1340000, 1345000],
+      "3y": [450000, 850000, 1345000, 1950000, 2750000, 3800000],
+    },
+    networth: {
+      "6m": [680000, 750000, 820000, 890000, 960000, 1045000],
+      "1y": [380000, 450000, 540000, 620000, 700000, 780000, 840000, 900000, 955000, 1000000, 1025000, 1045000],
+      "3y": [120000, 420000, 1045000, 1850000, 2900000, 4200000],
+    },
+    debt: { "6m": debt6m, "1y": debt1y, "3y": debt3y },
+    income: {
+      "6m": [135000, 135000, 145000, 145000, 150000, 155000],
+      "1y": [120000, 125000, 125000, 135000, 135000, 140000, 145000, 145000, 145000, 150000, 152000, 155000],
+      "3y": [1200000, 1500000, 1750000, 2100000, 2500000, 3000000],
+    },
+  };
+}
 
 export function ModernMultiMetricChartStudio({ data }: { data: DashboardData }) {
   const { format } = useCurrency();
@@ -71,9 +89,25 @@ export function ModernMultiMetricChartStudio({ data }: { data: DashboardData }) 
   const [horizon, setHorizon] = useState<Horizon>("6m");
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const labels = LABELS[horizon];
-  const primaryVals = SERIES[primary][horizon];
-  const overlayVals = overlay !== "none" ? SERIES[overlay][horizon] : null;
+  const series = buildSeries(data);
+
+  const dynamic6mLabels = (data.monthly_trend && data.monthly_trend.length === 6)
+    ? data.monthly_trend.map(m => {
+        const [y, mon] = m.month.split("-");
+        const d = new Date(parseInt(y), parseInt(mon) - 1, 1);
+        return d.toLocaleDateString("en-US", { month: "short" });
+      })
+    : ["Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+
+  const labelsMap: Record<Horizon, string[]> = {
+    "6m": dynamic6mLabels,
+    "1y": ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+    "3y": ["2024", "2025", "2026", "2027\nProj", "2028\nProj", "2029\nProj"],
+  };
+
+  const labels = labelsMap[horizon];
+  const primaryVals = series[primary][horizon];
+  const overlayVals = overlay !== "none" ? series[overlay][horizon] : null;
 
   const primaryMeta = METRICS.find(m => m.id === primary)!;
   const overlayMeta = overlay !== "none" ? METRICS.find(m => m.id === overlay) : null;

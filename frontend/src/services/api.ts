@@ -57,12 +57,17 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// ── Request Interceptor: Attach JWT ─────────────────────────
+// ── Request Interceptor: Attach JWT & No-Cache ──────────────
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     const token = tokenStorage.getAccess();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (config.headers) {
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      config.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+      config.headers["Pragma"] = "no-cache";
+      config.headers["Expires"] = "0";
     }
     return config;
   },

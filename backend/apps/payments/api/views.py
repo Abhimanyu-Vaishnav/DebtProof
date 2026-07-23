@@ -27,6 +27,50 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 
+def sync_loan_after_payment(payment: Payment):
+    """
+    Recalculates loan outstanding balance, advances next_emi_date, and updates loan status.
+    """
+    loan = payment.loan
+    if not loan:
+        return
+
+    from decimal import Decimal
+    from apps.loans.models import LoanStatus
+    from apps.payments.models import PaymentStatus
+    from datetime import date
+    import calendar
+
+    confirmed_payments = loan.payments.filter(status=PaymentStatus.CONFIRMED)
+
+    total_principal_paid = Decimal("0.00")
+    for p in confirmed_payments:
+        p_comp = p.principal_component
+        if not p_comp or p_comp == Decimal("0.00"):
+            rate = (loan.interest_rate / Decimal("1200"))
+            interest_est = min(p.amount, round(loan.principal_amount * rate, 2))
+            p_comp = max(Decimal("0.00"), p.amount - interest_est)
+        total_principal_paid += p_comp
+
+    loan.outstanding_amount = max(Decimal("0.00"), loan.principal_amount - total_principal_paid)
+
+    if loan.next_emi_date and confirmed_payments.exists():
+        latest_payment_date = confirmed_payments.order_by("-payment_date").first().payment_date
+        today = date.today()
+
+        if loan.next_emi_date <= latest_payment_date or loan.next_emi_date <= today:
+            y = loan.next_emi_date.year + (loan.next_emi_date.month // 12)
+            m = (loan.next_emi_date.month % 12) + 1
+            max_days = calendar.monthrange(y, m)[1]
+            day = min(loan.next_emi_date.day, max_days)
+            loan.next_emi_date = date(y, m, day)
+
+    if loan.outstanding_amount <= Decimal("0.00"):
+        loan.status = LoanStatus.CLOSED
+
+    loan.save()
+
+
 class LoanPaymentListCreateView(generics.ListCreateAPIView):
     """
     GET  /api/v1/loans/{loan_id}/payments/  — List payments for a specific loan
@@ -72,6 +116,7 @@ class LoanPaymentListCreateView(generics.ListCreateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         payment = serializer.save()
+        sync_loan_after_payment(payment)
         logger.info("Payment created: INR %s for loan %s", payment.amount, loan.name)
         return Response(
             {
@@ -107,6 +152,7 @@ class PaymentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         serializer = PaymentSerializer(instance, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         payment = serializer.save()
+        sync_loan_after_payment(payment)
         logger.info("Payment updated: %s", payment.id)
         return Response(
             {"success": True, "message": "Payment updated.", "payment": PaymentSerializer(payment, context={"request": request}).data}

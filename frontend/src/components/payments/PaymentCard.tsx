@@ -214,6 +214,24 @@ export function PaymentCard({ payment, showLoan = false, onDelete, onUpdate }: P
             <span className={`${className} text-[9px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded-md`}>
               {label}
             </span>
+            {localPayment.status === "pending" && (
+              <button
+                onClick={async () => {
+                  try {
+                    await paymentsService.updatePayment(localPayment.id, { status: "confirmed" });
+                    setLocalPayment(prev => ({ ...prev, status: "confirmed" }));
+                    showToast("Payment status marked as Confirmed!", "success");
+                    if (onUpdate) onUpdate();
+                  } catch {
+                    showToast("Failed to update status.", "error");
+                  }
+                }}
+                className="px-2 py-0.5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/20 transition cursor-pointer"
+                title="Mark this pending payment as confirmed"
+              >
+                ✓ Confirm
+              </button>
+            )}
             {receipt && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}

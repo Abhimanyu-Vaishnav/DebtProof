@@ -183,9 +183,21 @@ export default function AnalyticsPage() {
   }));
 
   // Monthly trend for the mini bar chart
-  const trend = data.monthly_trend.length > 0
+  const trend = (data.monthly_trend && data.monthly_trend.length > 0)
     ? data.monthly_trend
-    : Array.from({ length: 6 }, (_, i) => ({ month: `Month ${i + 1}`, total: 45000 + i * 10000, count: 2 + i }));
+    : (() => {
+        const today = new Date();
+        const cY = today.getFullYear();
+        const cM = today.getMonth() + 1;
+        const list = [];
+        for (let i = 5; i >= 0; i--) {
+          let m = cM - i;
+          let y = cY;
+          while (m <= 0) { m += 12; y -= 1; }
+          list.push({ month: `${y}-${String(m).padStart(2, "0")}`, total: 0, count: 0 });
+        }
+        return list;
+      })();
   const maxTrend = Math.max(...trend.map(t => t.total)) || 1;
 
   return (
