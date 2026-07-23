@@ -82,9 +82,13 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll every 60s for new notifications
-    const interval = setInterval(fetchNotifications, 60_000);
-    return () => clearInterval(interval);
+    const handleRefresh = () => fetchNotifications();
+    window.addEventListener("debtproof_refresh_notifications", handleRefresh);
+    const interval = setInterval(fetchNotifications, 15_000);
+    return () => {
+      window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
+      clearInterval(interval);
+    };
   }, [fetchNotifications]);
 
   // ── Actions ────────────────────────────────────────────────────

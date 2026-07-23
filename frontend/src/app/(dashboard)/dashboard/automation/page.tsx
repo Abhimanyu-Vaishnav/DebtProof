@@ -212,6 +212,7 @@ export default function AutomationPage() {
       const msg = res.data.message || "Action executed";
       showToast(`⚡ Automation Fired: ${targetRule?.name || "Rule"} — ${msg}`, "success");
       fetchData();
+      window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));
     } catch {
       // Local execution test simulation if backend call stalls
       setRules((prev) => prev.map((r) => r.id === id ? { ...r, trigger_count: r.trigger_count + 1, last_triggered_at: new Date().toISOString() } : r));
@@ -225,6 +226,7 @@ export default function AutomationPage() {
       };
       setLogs((prev) => [newLog, ...prev]);
       showToast(`⚡ Automation Fired: ${targetRule?.name || "Rule"} Notification Sent!`, "success");
+      window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));
     } finally {
       setTriggering(null);
     }
