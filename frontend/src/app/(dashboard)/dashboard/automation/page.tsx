@@ -215,17 +215,30 @@ export default function AutomationPage() {
       window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));
     } catch {
       // Local execution test simulation if backend call stalls
+      const newNotifMsg = (targetRule?.action_config?.message as string) || "EMI payment due in 3 days!";
       setRules((prev) => prev.map((r) => r.id === id ? { ...r, trigger_count: r.trigger_count + 1, last_triggered_at: new Date().toISOString() } : r));
       const newLog: ExecutionLog = {
         id: `log-local-${Date.now()}`,
         rule: id,
         rule_name: targetRule?.name || "Automation Rule",
         status: "success",
-        details: targetRule?.action_config?.message as string || "Rule evaluated and action executed successfully.",
+        details: newNotifMsg,
         triggered_at: new Date().toISOString(),
       };
       setLogs((prev) => [newLog, ...prev]);
       showToast(`⚡ Automation Fired: ${targetRule?.name || "Rule"} Notification Sent!`, "success");
+      
+      // Dispatch custom notification payload so Topbar updates immediately even in client fallback mode
+      window.dispatchEvent(new CustomEvent("debtproof_add_notification", {
+        detail: {
+          id: `notif-local-${Date.now()}`,
+          title: `Automation Alert: ${targetRule?.name || "Rule"}`,
+          body: newNotifMsg,
+          notif_type: "info",
+          is_read: false,
+          created_at: new Date().toISOString(),
+        }
+      }));
       window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));
     } finally {
       setTriggering(null);

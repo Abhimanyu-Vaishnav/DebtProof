@@ -84,10 +84,20 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   useEffect(() => {
     fetchNotifications();
     const handleRefresh = () => fetchNotifications();
+    const handleAddNotif = (e: Event) => {
+      const custom = e as CustomEvent<Notification>;
+      if (custom.detail) {
+        setNotifications((prev) => [custom.detail, ...prev]);
+        setUnreadCount((prev) => prev + 1);
+      }
+    };
+
     window.addEventListener("debtproof_refresh_notifications", handleRefresh);
+    window.addEventListener("debtproof_add_notification", handleAddNotif);
     const interval = setInterval(fetchNotifications, 15_000);
     return () => {
       window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
+      window.removeEventListener("debtproof_add_notification", handleAddNotif);
       clearInterval(interval);
     };
   }, [fetchNotifications]);
