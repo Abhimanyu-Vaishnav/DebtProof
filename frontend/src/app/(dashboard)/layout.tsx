@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { GlobalFloatingUI } from "@/components/ui/GlobalFloatingUI";
+import { TenantProvider } from "@/contexts/TenantContext";
 
 export const metadata: Metadata = {
   title: {
@@ -17,12 +18,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="dashboard-layout">
-      <Sidebar />
-      <div className="main-content">{children}</div>
-      <BottomTabBar />
-      {/* Client-hydrated Global floating UI */}
-      <GlobalFloatingUI />
-    </div>
+    <TenantProvider>
+      <div className="dashboard-layout">
+        <Sidebar />
+        <div className="main-content">{children}</div>
+        <BottomTabBar />
+        {/* Client-hydrated Global floating UI */}
+        <GlobalFloatingUI />
+      </div>
+    </TenantProvider>
   );
 }

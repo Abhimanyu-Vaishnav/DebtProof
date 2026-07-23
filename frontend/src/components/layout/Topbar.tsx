@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { notificationsService } from "@/services/notifications.service";
 import type { Notification } from "@/types";
+import { TenantSwitcher } from "@/components/tenant/TenantSwitcher";
 
 import { THEME_PRESETS, applyGlobalTheme } from "@/utils/theme";
 
@@ -149,13 +150,20 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       </button>
 
       {/* Page Title */}
-      <div className="flex-1 min-w-0">
-        <h1 className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate leading-none">
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{subtitle}</p>
-        )}
+      <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div>
+          <h1 className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate leading-none">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{subtitle}</p>
+          )}
+        </div>
+
+        {/* Tenant / Workspace Switcher */}
+        <div className="hidden sm:block">
+          <TenantSwitcher />
+        </div>
       </div>
 
       {/* Actions */}
