@@ -119,6 +119,29 @@ const LOCALE_TO_CURRENCY: Record<string, string> = {
 
 function detectCurrencyFromBrowser(): string {
   if (typeof navigator === "undefined") return "INR";
+
+  // 1. Try Timezone offset & timezone name matching
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) {
+      if (tz.includes("Kolkata") || tz.includes("Calcutta") || tz.includes("Asia/Colombo") === false && tz.startsWith("Asia/Kolkata")) return "INR";
+      if (tz.includes("America/") || tz.includes("US/")) return "USD";
+      if (tz.includes("Europe/London")) return "GBP";
+      if (tz.includes("Europe/")) return "EUR";
+      if (tz.includes("Dubai") || tz.includes("Muscat")) return "AED";
+      if (tz.includes("Singapore")) return "SGD";
+      if (tz.includes("Tokyo")) return "JPY";
+      if (tz.includes("Shanghai") || tz.includes("Chongqing") || tz.includes("Urumqi")) return "CNY";
+      if (tz.includes("Seoul")) return "KRW";
+      if (tz.includes("Dhaka")) return "BDT";
+      if (tz.includes("Karachi")) return "PKR";
+      if (tz.includes("Kathmandu")) return "NPR";
+      if (tz.includes("Sydney") || tz.includes("Melbourne") || tz.includes("Brisbane")) return "AUD";
+      if (tz.includes("Toronto") || tz.includes("Vancouver")) return "CAD";
+    }
+  } catch {/* ignore */}
+
+  // 2. Try browser languages
   const langs = [...(navigator.languages || [navigator.language || "en"])];
   for (const lang of langs) {
     const code = LOCALE_TO_CURRENCY[lang.toLowerCase()];
@@ -128,7 +151,8 @@ function detectCurrencyFromBrowser(): string {
     const fallback = LOCALE_TO_CURRENCY[primary];
     if (fallback) return fallback;
   }
-  return "INR"; // Global default
+
+  return "INR"; // Default fallback
 }
 
 // ── Format Helpers ───────────────────────────────────────────────────────────
@@ -239,7 +263,7 @@ interface CurrencyContextValue {
   updateSettings: (patch: Partial<AppSettings>) => void;
   currency: CurrencyConfig;
   format: (amount: number | string) => string;
-  autoDetectCurrency: () => void;
+  autoDetectCurrency: () => string;
 }
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
@@ -286,6 +310,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const autoDetectCurrency = useCallback(() => {
     const detected = detectCurrencyFromBrowser();
     updateSettings({ currencyCode: detected });
+    return detected;
   }, [updateSettings]);
 
   const currency = useMemo(
@@ -323,7 +348,7 @@ export function useCurrency(): CurrencyContextValue {
       updateSettings: () => {},
       currency: fallbackCurrency,
       format: (amount) => formatAmountWithCurrency(amount, fallbackCurrency, false),
-      autoDetectCurrency: () => {},
+      autoDetectCurrency: () => "INR",
     };
   }
   return ctx;

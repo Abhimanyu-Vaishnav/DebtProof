@@ -91,8 +91,9 @@ export default function SettingsPage() {
   );
 
   const handleAutoDetect = () => {
-    autoDetectCurrency();
-    showToast(`Currency auto-detected: ${currency.code} ${currency.flag}`, "success");
+    const code = autoDetectCurrency();
+    const detectedObj = CURRENCIES.find((c) => c.code === code) || currency;
+    showToast(`Country & Currency auto-detected: ${detectedObj.name} (${detectedObj.code} ${detectedObj.flag})`, "success");
   };
 
   const handleSave = () => {

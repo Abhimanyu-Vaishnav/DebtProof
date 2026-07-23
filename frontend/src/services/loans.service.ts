@@ -225,12 +225,12 @@ const MOCK_DASHBOARD: DashboardData = {
 const LOANS_STORAGE_KEY = "debtproof_local_loans";
 
 function getStoredLoans(): Loan[] {
-  if (typeof window === "undefined") return MOCK_LOANS;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOANS_STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return MOCK_LOANS;
+  return [];
 }
 
 function setStoredLoans(loans: Loan[]): void {
