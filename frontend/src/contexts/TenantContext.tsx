@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Organization, Workspace, FeatureFlag, TenantRole } from "@/types/saas";
 import { tenantsService } from "@/services/tenants.service";
-import { apiClient } from "@/services/api";
+import apiClient from "@/services/api";
 
 interface TenantContextType {
   organizations: Organization[];

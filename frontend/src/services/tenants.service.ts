@@ -2,7 +2,7 @@
  * DebtProof — Multi-Tenant Service Layer
  */
 
-import { apiClient } from "@/services/api";
+import apiClient from "@/services/api";
 import {
   Organization,
   Workspace,
