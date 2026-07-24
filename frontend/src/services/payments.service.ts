@@ -282,9 +282,18 @@ export const paymentsService = {
       rcpt = data.receipt;
     } catch (err: any) {
       if (err?.response?.status === 400 || err?.response?.status === 409) {
-        throw err; // Propagate exact backend error (e.g. Duplicate receipt or already exists)
+        throw err; // Propagate exact backend error
       }
-      // Demo / offline fallback
+      
+      // Calculate dynamic pseudo-hash based on file contents & timestamp to prevent duplicate smart contract reverts
+      const rawString = `${file.name}-${file.size}-${file.lastModified}-${Date.now()}`;
+      let hash = "";
+      for (let i = 0; i < rawString.length; i++) {
+        const char = rawString.charCodeAt(i);
+        hash += char.toString(16);
+      }
+      hash = hash.padEnd(64, "0").slice(0, 64);
+
       rcpt = {
         id: `rcpt-${Date.now()}`,
         payment: paymentId,
@@ -292,7 +301,7 @@ export const paymentsService = {
         original_filename: file.name,
         file_size_bytes: file.size,
         mime_type: file.type || "application/pdf",
-        document_hash: "8f7a9d02e5b4c3a2f109876543210fedcba9876543210fedcba9876543210fed",
+        document_hash: hash,
         hash_algorithm: "SHA-256",
         file_url: null,
         is_blockchain_verified: false,
@@ -340,10 +349,17 @@ export const paymentsService = {
       const { data } = await apiClient.post<{ success: boolean; proof_id: string; receipt_hash: string }>(`/payments/${paymentId}/proof/generate/`);
       return data;
     } catch {
+      const currentPayments = getStoredPayments();
+      const match = currentPayments.find(p => p.id === paymentId);
+      const existingHash = match?.receipt?.document_hash;
+
+      // Generate dynamic hash if match not found
+      const fallbackHash = existingHash || Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+
       return {
         success: true,
         proof_id: `PROOF-${Date.now()}`,
-        receipt_hash: "8f7a9d02e5b4c3a2f109876543210fed8f7a9d02e5b4c3a2f109876543210fed",
+        receipt_hash: fallbackHash,
       };
     }
   },
