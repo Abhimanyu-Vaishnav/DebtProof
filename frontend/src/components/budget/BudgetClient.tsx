@@ -542,42 +542,78 @@ export function BudgetClient() {
         </div>
       )}
 
-      {/* ── TAB 3: LIVING EXPENSES ───────────────────────────── */}
+      {/* ── TAB 3: LIVING EXPENSES (Sub-Category Splitter) ───────────────────── */}
       {activeTab === "expenses" && (
         <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] space-y-6">
-          <div className="flex justify-between items-center border-b border-[var(--color-border)] pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--color-border)] pb-4">
             <div>
-              <h3 className="text-base font-black text-[var(--color-text-primary)]">Monthly Living Expenses</h3>
-              <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Adjust your category-wise monthly expenses to see real-time impact on net surplus.</p>
+              <h3 className="text-base font-black text-[var(--color-text-primary)]">Monthly Living Expenses & Custom Category Splitter 🛒</h3>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Customize category limits, view spending split percentages, and track sub-category budgets.</p>
             </div>
-            <span className="text-sm font-black text-amber-600 dark:text-amber-400">Total: {format(totalExpenses)}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                Total Expenses: {format(totalExpenses)}
+              </span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {budget.expenses.map((exp) => (
-              <div key={exp.id} className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl p-1.5 rounded-lg bg-[var(--color-surface)]">{exp.icon}</span>
-                  <span className="text-xs font-bold text-[var(--color-text-primary)]">{exp.label}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {budget.expenses.map((exp) => {
+              const categoryPercent = totalExpenses > 0 ? (exp.amount / totalExpenses) * 100 : 0;
+              const categoryIncomeRatio = totalIncome > 0 ? (exp.amount / totalIncome) * 100 : 0;
+
+              return (
+                <div key={exp.id} className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-secondary)] space-y-4 hover:border-[var(--color-primary)]/40 transition-all shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl p-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border-light)] shadow-xs">
+                        {exp.icon}
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-black text-[var(--color-text-primary)]">{exp.label}</h4>
+                        <span className="text-[10px] font-extrabold text-[var(--color-text-tertiary)] uppercase tracking-wider">
+                          {categoryPercent.toFixed(1)}% of expenses · {categoryIncomeRatio.toFixed(1)}% of income
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Budget Progress Meter */}
+                  <div className="space-y-1.5">
+                    <div className="h-2 w-full rounded-full bg-[var(--color-surface-tertiary)] overflow-hidden flex">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, categoryPercent)}%`,
+                          backgroundColor: exp.color || "#3b82f6",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Amount Input */}
+                  <div className="pt-2 border-t border-[var(--color-border-light)] flex items-center justify-between gap-3">
+                    <label className="text-xs font-extrabold text-[var(--color-text-secondary)]">Monthly Budget</label>
+                    <div className="relative flex-1 max-w-[180px]">
+                      <input
+                        type="number"
+                        min="0"
+                        value={exp.amount || ""}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setBudget(b => ({
+                            ...b,
+                            expenses: b.expenses.map(ex => ex.id === exp.id ? { ...ex, amount: val } : ex)
+                          }));
+                        }}
+                        className="w-full pl-3 pr-3 py-1.5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-black text-right text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="pt-1">
-                  <input
-                    type="number"
-                    min="0"
-                    value={exp.amount || ""}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value) || 0;
-                      setBudget(b => ({
-                        ...b,
-                        expenses: b.expenses.map(ex => ex.id === exp.id ? { ...ex, amount: val } : ex)
-                      }));
-                    }}
-                    className="w-full px-3 py-2 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-sm font-black text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
