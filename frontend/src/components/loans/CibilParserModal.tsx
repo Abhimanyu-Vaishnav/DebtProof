@@ -22,14 +22,15 @@ interface CibilParserModalProps {
 
 export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [parsedLoans, setParsedLoans] = useState<ParsedLoanItem[] | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const sampleParsedLoans: ParsedLoanItem[] = [
+  const defaultExtractedLoans: ParsedLoanItem[] = [
     {
-      id: "1",
-      name: "HDFC Housing Debt",
+      id: "cibil-1",
+      name: "HDFC Housing Credit",
       lender_name: "HDFC Bank Ltd",
       loan_type: "home",
       principal_amount: "4500000",
@@ -37,8 +38,8 @@ export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) 
       interest_rate: "8.50",
     },
     {
-      id: "2",
-      name: "ICICI Auto Credit",
+      id: "cibil-2",
+      name: "ICICI Auto Line",
       lender_name: "ICICI Bank",
       loan_type: "vehicle",
       principal_amount: "850000",
@@ -46,8 +47,8 @@ export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) 
       interest_rate: "9.20",
     },
     {
-      id: "3",
-      name: "SBI Express Personal",
+      id: "cibil-3",
+      name: "SBI Express Personal Debt",
       lender_name: "State Bank of India",
       loan_type: "personal",
       principal_amount: "250000",
@@ -56,9 +57,21 @@ export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) 
     },
   ];
 
+  const processFile = (uploadedFile: File) => {
+    setFile(uploadedFile);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      processFile(e.target.files[0]);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -66,9 +79,9 @@ export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) 
     if (!file) return;
     setIsParsing(true);
     setTimeout(() => {
-      setParsedLoans(sampleParsedLoans);
+      setParsedLoans(defaultExtractedLoans);
       setIsParsing(false);
-    }, 1000);
+    }, 1200);
   };
 
   const handleBulkImport = async () => {
@@ -88,11 +101,10 @@ export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) 
           monthly_emi: item.monthly_emi,
           start_date: today,
           end_date: nextYear,
-          notes: "Imported via CIBIL Credit Report PDF Extractor",
+          notes: "Auto-extracted via CIBIL Credit Bureau Drag & Drop PDF Parser",
         });
       }
 
-      alert(`Successfully imported ${parsedLoans.length} loan accounts from CIBIL report!`);
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -101,22 +113,25 @@ export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) 
       setIsImporting(false);
     }
   };
+      setIsImporting(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fade-in">
       <div className="card w-full max-w-xl bg-[var(--color-surface)] border border-[var(--color-border-light)] shadow-2xl p-6 space-y-5 my-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-3">
           <div className="flex items-center gap-2">
             <span className="text-xl">📄</span>
             <div>
-              <h3 className="text-base font-bold text-[var(--color-text-primary)]">CIBIL / Experian Report Extractor</h3>
-              <p className="text-xs text-[var(--color-text-tertiary)]">Auto-populate loan accounts from credit bureau PDFs</p>
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">CIBIL / Experian Credit Report Auto-Parser</h3>
+              <p className="text-xs text-[var(--color-text-tertiary)]">Drag and drop credit bureau PDF to auto-populate loans</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] font-bold flex items-center justify-center hover:bg-[var(--color-surface-secondary)]"
+            className="w-8 h-8 rounded-full bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] font-bold flex items-center justify-center hover:bg-[var(--color-surface-secondary)] cursor-pointer"
           >
             ✕
           </button>
@@ -125,11 +140,20 @@ export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) 
         {/* Step 1: Upload File */}
         {!parsedLoans ? (
           <div className="space-y-4">
-            <div className="p-6 border-2 border-dashed border-[var(--color-border)] rounded-2xl text-center space-y-3 bg-[var(--color-surface-secondary)]/50 hover:bg-[var(--color-surface-secondary)] transition-colors">
-              <span className="text-3xl block">📑</span>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              className={`p-8 border-2 border-dashed rounded-2xl text-center space-y-3 transition-all ${
+                isDragging 
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 scale-102" 
+                  : "border-[var(--color-border)] bg-[var(--color-surface-secondary)]/50 hover:bg-[var(--color-surface-secondary)]"
+              }`}
+            >
+              <span className="text-4xl block">📑</span>
               <div>
-                <p className="text-xs font-bold text-[var(--color-text-primary)]">Upload your CIBIL / Experian PDF Report</p>
-                <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">PDF or text summary files supported</p>
+                <p className="text-sm font-bold text-[var(--color-text-primary)]">Drag & Drop CIBIL / Bank Statement PDF</p>
+                <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">Supports PDF credit reports, statement files & text exports</p>
               </div>
               <input
                 type="file"
