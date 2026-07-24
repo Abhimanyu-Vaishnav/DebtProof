@@ -20,10 +20,10 @@ export function ReceiptProofModal({ payment, onClose }: ReceiptProofModalProps) 
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const rec = payment.receipt;
   
-  const isVerified = rec?.is_blockchain_verified ?? true;
-  const hash = rec?.document_hash || "8f7a9d3e1b2c4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a";
-  const txHash = rec?.blockchain_tx_hash || `0x${hash.slice(0, 40)}`;
-  const explorerUrl = `https://testnet.monadscan.com/tx/${txHash}`;
+  const isVerified = Boolean(rec?.is_blockchain_verified && rec?.blockchain_tx_hash);
+  const hash = rec?.document_hash || "";
+  const txHash = rec?.blockchain_tx_hash || "";
+  const explorerUrl = txHash ? `https://testnet.monadscan.com/tx/${txHash}` : `https://testnet.monadscan.com/`;
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);

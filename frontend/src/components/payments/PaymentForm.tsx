@@ -93,8 +93,9 @@ export function PaymentForm({ loan }: PaymentFormProps) {
         try {
           await paymentsService.uploadReceipt(payment.id, receiptFile);
           showToast("Payment recorded with receipt!", "success");
-        } catch {
-          showToast("Payment recorded. Receipt upload failed — try again.", "warning");
+        } catch (err: any) {
+          const errMsg = err?.response?.data?.error?.message || "Payment recorded, but receipt upload failed.";
+          showToast(errMsg, "warning");
         }
       } else {
         showToast("Payment recorded successfully.", "success");

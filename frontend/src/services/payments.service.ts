@@ -280,7 +280,11 @@ export const paymentsService = {
         headers: { "Content-Type": "multipart/form-data" },
       });
       rcpt = data.receipt;
-    } catch {
+    } catch (err: any) {
+      if (err?.response?.status === 400 || err?.response?.status === 409) {
+        throw err; // Propagate exact backend error (e.g. Duplicate receipt or already exists)
+      }
+      // Demo / offline fallback
       rcpt = {
         id: `rcpt-${Date.now()}`,
         payment: paymentId,
@@ -291,8 +295,8 @@ export const paymentsService = {
         document_hash: "8f7a9d02e5b4c3a2f109876543210fedcba9876543210fedcba9876543210fed",
         hash_algorithm: "SHA-256",
         file_url: null,
-        is_blockchain_verified: true,
-        blockchain_tx_hash: `0x${Date.now().toString(16)}8f7a9d02e5b4c3a2f109876543210`,
+        is_blockchain_verified: false,
+        blockchain_tx_hash: "",
         created_at: new Date().toISOString(),
       };
     }
