@@ -66,46 +66,70 @@ export default function ActivityPage() {
 
   const fetchActivity = useCallback(async () => {
     setLoading(true);
+    const getLocalActivities = (): TimelineEntry[] => {
+      try {
+        const raw = localStorage.getItem("debtproof_local_activities");
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    const initialDefaults: TimelineEntry[] = [
+      {
+        id: "act-init-1",
+        event_type: "ai_insight",
+        title: "AI Strategy Coach Activated",
+        description: "Financial engine ready to analyze loan balances and payoff strategies.",
+        icon: "🤖",
+        color: "purple",
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: "act-init-2",
+        event_type: "login",
+        title: "User Session Initialized",
+        description: "Logged into DebtProof Financial Workspace.",
+        icon: "🔐",
+        color: "blue",
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+      },
+    ];
+
     try {
       const res = await apiClient.get("/ai/activity/");
-      const data = Array.isArray(res.data) ? res.data : res.data.results || [];
-      if (data.length === 0) {
-        // Default initial system timeline entries
-        setEntries([
-          {
-            id: "act-init-1",
-            event_type: "ai_insight",
-            title: "AI Strategy Coach Activated",
-            description: "Financial engine ready to analyze loan balances and payoff strategies.",
-            icon: "🤖",
-            color: "purple",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "act-init-2",
-            event_type: "login",
-            title: "User Session Initialized",
-            description: "Logged into DebtProof Financial Workspace.",
-            icon: "🔐",
-            color: "blue",
-            created_at: new Date(Date.now() - 3600000).toISOString(),
-          },
-        ]);
+      const data: TimelineEntry[] = Array.isArray(res.data) ? res.data : res.data.results || [];
+      const localData = getLocalActivities();
+      
+      const mergedMap = new Map<string, TimelineEntry>();
+      [...data, ...localData].forEach(item => {
+        if (item.id && !mergedMap.has(item.id)) {
+          mergedMap.set(item.id, item);
+        }
+      });
+      const combined = Array.from(mergedMap.values());
+      
+      if (combined.length === 0) {
+        setEntries(initialDefaults);
       } else {
-        setEntries(data);
+        combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setEntries(combined);
       }
     } catch {
-      setEntries([
-        {
-          id: "act-init-1",
-          event_type: "ai_insight",
-          title: "AI Strategy Coach Activated",
-          description: "Financial engine ready to analyze loan balances and payoff strategies.",
-          icon: "🤖",
-          color: "purple",
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      const localData = getLocalActivities();
+      if (localData.length > 0) {
+        const mergedMap = new Map<string, TimelineEntry>();
+        [...localData, ...initialDefaults].forEach(item => {
+          if (item.id && !mergedMap.has(item.id)) {
+            mergedMap.set(item.id, item);
+          }
+        });
+        const combined = Array.from(mergedMap.values());
+        combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setEntries(combined);
+      } else {
+        setEntries(initialDefaults);
+      }
     } finally {
       setLoading(false);
     }
@@ -113,9 +137,43 @@ export default function ActivityPage() {
 
   useEffect(() => { fetchActivity(); }, [fetchActivity]);
 
-  const filtered = filter
-    ? entries.filter((e) => e.event_type === filter)
-    : entries;
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const exportActivityCSV = () => {
+    if (entries.length === 0) return;
+    const headers = ["ID", "Event Type", "Title", "Description", "Date"];
+    const rows = filtered.map(e => [
+      `"${e.id}"`,
+      `"${EVENT_LABELS[e.event_type] || e.event_type}"`,
+      `"${e.title.replace(/"/g, '""')}"`,
+      `"${(e.description || "").replace(/"/g, '""')}"`,
+      `"${formatDate(e.created_at)}"`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `DebtProof_Activity_Log_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const clearActivityFeed = () => {
+    if (confirm("Are you sure you want to clear local activity history?")) {
+      localStorage.removeItem("debtproof_local_activities");
+      fetchActivity();
+    }
+  };
+
+  const filtered = entries.filter((e) => {
+    const matchesFilter = filter ? e.event_type === filter : true;
+    const matchesSearch = searchQuery
+      ? e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.description.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+    return matchesFilter && matchesSearch;
+  });
 
   const grouped = groupByDate(filtered);
   const uniqueTypes = [...new Set(entries.map((e) => e.event_type))];
@@ -125,6 +183,36 @@ export default function ActivityPage() {
       <Topbar title="Activity Timeline" subtitle="Complete chronological record of your financial activity" />
       <main className="page-content">
         <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+          {/* Header Controls: Search & Export */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] p-4 rounded-2xl shadow-sm">
+            <div className="relative flex-1">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-text-tertiary)]">🔍</span>
+              <input
+                type="text"
+                placeholder="Search activity records..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-[var(--color-surface-secondary)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-primary)]"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={exportActivityCSV}
+                disabled={filtered.length === 0}
+                className="px-3.5 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+              >
+                📥 Export CSV
+              </button>
+              <button
+                onClick={clearActivityFeed}
+                title="Clear local activity history"
+                className="px-3 py-2 bg-[var(--color-surface-secondary)] hover:bg-red-500/10 text-[var(--color-text-secondary)] hover:text-red-500 font-bold rounded-xl text-xs transition cursor-pointer border border-[var(--color-border)]"
+              >
+                🗑️ Clear
+              </button>
+            </div>
+          </div>
+
           {/* Filter Bar */}
           <div className="flex items-center gap-2 flex-wrap">
             <button

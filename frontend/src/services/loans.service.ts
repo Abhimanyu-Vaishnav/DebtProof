@@ -432,6 +432,18 @@ export const loansService = {
       const current = getStoredLoans();
       current.unshift(newLoan);
       setStoredLoans(current);
+
+      try {
+        const { saveLocalActivity } = require("./activity.service");
+        saveLocalActivity({
+          event_type: "loan_created",
+          title: `Loan Added: ${newLoan.lender_name || newLoan.name}`,
+          description: `Principal ₹${parseFloat(newLoan.principal_amount).toLocaleString('en-IN')} at ${newLoan.interest_rate}% p.a.`,
+          icon: "🏦",
+          color: "blue",
+        });
+      } catch {}
+
       return newLoan;
     }
   },

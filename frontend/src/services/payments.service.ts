@@ -211,6 +211,18 @@ export const paymentsService = {
       const current = getStoredPayments();
       current.unshift(newPay);
       setStoredPayments(current);
+
+      try {
+        const { saveLocalActivity } = require("./activity.service");
+        saveLocalActivity({
+          event_type: "payment_added",
+          title: `Payment Recorded: ₹${parseFloat(paymentData.amount).toLocaleString('en-IN')}`,
+          description: `Paid towards ${foundLoan?.name || "Loan"} on ${paymentData.payment_date || "today"}`,
+          icon: "💸",
+          color: "green",
+        });
+      } catch {}
+
       return newPay;
     }
   },

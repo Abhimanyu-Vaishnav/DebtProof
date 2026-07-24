@@ -118,6 +118,18 @@ class LoanPaymentListCreateView(generics.ListCreateAPIView):
         payment = serializer.save()
         sync_loan_after_payment(payment)
         logger.info("Payment created: INR %s for loan %s", payment.amount, loan.name)
+        try:
+            from apps.ai_engine.models import ActivityTimelineEntry
+            ActivityTimelineEntry.objects.create(
+                user=request.user,
+                event_type="payment_added",
+                title=f"Payment Recorded: ₹{payment.amount:,.0f}",
+                description=f"Paid towards {loan.lender_name or loan.name} on {payment.payment_date or 'today'}",
+                icon="💸",
+                color="green",
+            )
+        except Exception as err:
+            logger.error("Failed to record activity entry for payment: %s", err)
         return Response(
             {
                 "success": True,
@@ -286,6 +298,19 @@ class ReceiptUploadView(APIView):
         )
 
         logger.info("Receipt uploaded for payment %s. Hash: %s...", payment_id, document_hash[:16])
+
+        try:
+            from apps.ai_engine.models import ActivityTimelineEntry
+            ActivityTimelineEntry.objects.create(
+                user=request.user,
+                event_type="receipt_uploaded",
+                title=f"Receipt Uploaded: {uploaded_file.name}",
+                description=f"SHA-256 Hash computed: {document_hash[:16]}...",
+                icon="📄",
+                color="orange",
+            )
+        except Exception:
+            pass
 
         return Response(
             {

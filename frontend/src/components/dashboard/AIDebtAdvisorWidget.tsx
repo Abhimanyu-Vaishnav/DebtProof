@@ -45,8 +45,20 @@ export function AIDebtAdvisorWidget({ data }: AIDebtAdvisorWidgetProps) {
     setAiResponse(null);
 
     setTimeout(() => {
-      setAiResponse(prompt.answer());
+      const resp = prompt.answer();
+      setAiResponse(resp);
       setIsThinking(false);
+
+      try {
+        const { saveLocalActivity } = require("@/services/activity.service");
+        saveLocalActivity({
+          event_type: "ai_insight",
+          title: `AI Query: ${prompt.label.replace(/^[^\s]+\s*/, '')}`,
+          description: resp.replace(/\*\*/g, '').slice(0, 150) + "...",
+          icon: "🤖",
+          color: "purple",
+        });
+      } catch {}
     }, 600);
   };
 
