@@ -104,6 +104,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const showToast = useCallback((message: string, type: ToastType = "info") => {
     const id = Math.random().toString(36).slice(2);
     setToasts((prev) => [...prev, { id, message, type }]);
+
+    // Play synthesized Web Audio UI sound effects
+    try {
+      const { sounds } = require("@/utils/sound");
+      if (type === "success") {
+        if (message.includes("Loan")) sounds.playLoanCreated();
+        else if (message.includes("Monad") || message.includes("Proof")) sounds.playBlockchainAnchored();
+        else sounds.playPaymentSuccess();
+      } else if (type === "error" || type === "warning") {
+        sounds.playWarningAlert();
+      }
+    } catch {}
   }, []);
 
   useEffect(() => {

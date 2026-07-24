@@ -39,6 +39,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [theme, setTheme] = useState("dark");
+  const [soundMuted, setSoundMuted] = useState(false);
 
   const handleApplyTheme = (themeName: string) => {
     setTheme(themeName);
@@ -183,6 +184,25 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Sound FX Mute/Unmute Toggle */}
+        <button
+          onClick={() => {
+            const { sounds } = require("@/utils/sound");
+            const newMuteState = !soundMuted;
+            sounds.toggleSound(!newMuteState);
+            setSoundMuted(newMuteState);
+            if (!newMuteState) sounds.playPaymentSuccess();
+          }}
+          className={`w-8 h-8 rounded-xl border flex items-center justify-center text-xs transition cursor-pointer ${
+            !soundMuted 
+              ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-400" 
+              : "bg-[var(--color-surface-secondary)] border-[var(--color-border)] text-[var(--color-text-tertiary)]"
+          }`}
+          title={!soundMuted ? "Sound Effects Enabled (Click to Mute)" : "Sound Effects Muted (Click to Enable)"}
+        >
+          {!soundMuted ? "🔊" : "🔇"}
+        </button>
+
         {/* Theme Preset Switcher */}
         <div className="relative hidden sm:block">
           <select
