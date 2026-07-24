@@ -3,6 +3,7 @@
  * Utility for recording user timeline activity both online and in localStorage fallback.
  */
 import apiClient from "./api";
+import { triggerToast } from "@/components/ui/Toast";
 
 export interface ActivityItem {
   id?: string;
@@ -24,8 +25,6 @@ export function getLocalActivities(): ActivityItem[] {
   } catch {
     return [];
   }
-}
-
 export function saveLocalActivity(activity: ActivityItem): void {
   if (typeof window === "undefined") return;
   try {
@@ -41,6 +40,10 @@ export function saveLocalActivity(activity: ActivityItem): void {
     };
     current.unshift(newEntry);
     localStorage.setItem(LOCAL_ACTIVITIES_KEY, JSON.stringify(current));
+
+    // Dispatch visual toast popup for the action
+    const toastType = activity.color === "red" ? "error" : activity.color === "amber" || activity.color === "orange" ? "warning" : "success";
+    triggerToast(`${activity.icon} ${activity.title}`, toastType);
   } catch {}
 }
 

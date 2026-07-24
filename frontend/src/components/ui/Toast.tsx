@@ -91,6 +91,13 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   );
 }
 
+// Global helper function to trigger toast notifications anywhere (services, handlers, etc.)
+export function triggerToast(message: string, type: ToastType = "info") {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("debtproof-toast", { detail: { message, type } }));
+  }
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -98,6 +105,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const id = Math.random().toString(36).slice(2);
     setToasts((prev) => [...prev, { id, message, type }]);
   }, []);
+
+  useEffect(() => {
+    const handleCustomToast = (event: Event) => {
+      const customEvent = event as CustomEvent<{ message: string; type: ToastType }>;
+      if (customEvent.detail && customEvent.detail.message) {
+        showToast(customEvent.detail.message, customEvent.detail.type || "info");
+      }
+    };
+    window.addEventListener("debtproof-toast", handleCustomToast);
+    return () => window.removeEventListener("debtproof-toast", handleCustomToast);
+  }, [showToast]);
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
