@@ -21,6 +21,7 @@ import { formatCurrency, formatDate } from "@/utils/formatters";
 import { LOAN_TYPE_LABELS } from "@/types";
 import type { Loan, Payment } from "@/types";
 import { ForeclosureCalculatorModal } from "@/components/loans/ForeclosureCalculatorModal";
+import { DebtFreedomCertificateModal } from "@/components/loans/DebtFreedomCertificateModal";
 
 // ── EMI Repayment Progress Card & Live Calculations ─────────────────────────────────
 function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[] }) {
@@ -460,6 +461,7 @@ export default function LoanDetailPage() {
   const [deleteLoanModal, setDeleteLoanModal] = useState(false);
   const [deletingLoan, setDeletingLoan] = useState(false);
   const [showForeclosureModal, setShowForeclosureModal] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
   
   const [escrowActionLoading, setEscrowActionLoading] = useState(false);
   const { walletAddress, connectWallet, withdrawEscrowPrincipal, repayEscrowLoan } = useWallet();
@@ -595,6 +597,14 @@ export default function LoanDetailPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {(loan.status === "closed" || parseFloat(loan.outstanding_amount) <= 0) && (
+              <button
+                onClick={() => setShowCertificateModal(true)}
+                className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
+              >
+                <span>🏆</span> Debt-Free Certificate
+              </button>
+            )}
             <button
               onClick={() => setShowForeclosureModal(true)}
               className="btn btn-secondary btn-sm font-bold flex items-center gap-1 text-xs"
@@ -763,6 +773,14 @@ export default function LoanDetailPage() {
         <ForeclosureCalculatorModal
           loan={loan}
           onClose={() => setShowForeclosureModal(false)}
+        />
+      )}
+
+      {/* Official 100% Debt Freedom Certificate Modal */}
+      {showCertificateModal && (
+        <DebtFreedomCertificateModal
+          loan={loan}
+          onClose={() => setShowCertificateModal(false)}
         />
       )}
     </>
