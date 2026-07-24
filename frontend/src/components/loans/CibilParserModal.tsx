@@ -113,9 +113,6 @@ export function CibilParserModal({ onClose, onSuccess }: CibilParserModalProps) 
       setIsImporting(false);
     }
   };
-      setIsImporting(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fade-in">
