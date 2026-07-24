@@ -83,23 +83,28 @@ export default function RepaymentSimulatorPage() {
     1000
   );
 
-  // Generate SVG Points — chart area: x: 95→710, y: 15→215
-  const CHART_LEFT = 95;
-  const CHART_WIDTH = 615;
+  // SVG chart area boundaries inside 740x260 viewBox
+  const CHART_LEFT = 55;
+  const CHART_RIGHT = 720;
+  const CHART_WIDTH = CHART_RIGHT - CHART_LEFT; // 665px
   const CHART_TOP = 15;
-  const CHART_HEIGHT = 200;
+  const CHART_BOTTOM = 215;
+  const CHART_HEIGHT = CHART_BOTTOM - CHART_TOP; // 200px
 
   const getSvgPoints = (historyList: any[]) => {
-    if (!historyList || historyList.length === 0 || maxOutstanding === 0)
-      return `${CHART_LEFT},${CHART_TOP + CHART_HEIGHT}`;
-    const pts = historyList
+    if (!historyList || historyList.length === 0 || !maxOutstanding || maxOutstanding <= 0) {
+      return `${CHART_LEFT},${CHART_BOTTOM} ${CHART_RIGHT},${CHART_BOTTOM}`;
+    }
+
+    return historyList
       .map((pt) => {
-        const x = CHART_LEFT + Math.min(CHART_WIDTH, Math.max(0, ((pt.month - 1) / maxMonths) * CHART_WIDTH));
-        const y = CHART_TOP + Math.min(CHART_HEIGHT, Math.max(0, CHART_HEIGHT - (pt.outstanding / maxOutstanding) * CHART_HEIGHT));
+        const m = typeof pt.month === "number" ? pt.month : 1;
+        const out = typeof pt.outstanding === "number" ? pt.outstanding : 0;
+        const x = CHART_LEFT + Math.min(CHART_WIDTH, Math.max(0, ((m - 1) / Math.max(1, maxMonths)) * CHART_WIDTH));
+        const y = CHART_TOP + Math.min(CHART_HEIGHT, Math.max(0, CHART_HEIGHT - (out / maxOutstanding) * CHART_HEIGHT));
         return `${x.toFixed(1)},${y.toFixed(1)}`;
       })
       .join(" ");
-    return pts;
   };
 
   return (
