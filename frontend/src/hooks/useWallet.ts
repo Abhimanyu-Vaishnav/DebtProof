@@ -160,16 +160,15 @@ export function useWallet() {
       const signer = await provider.getSigner();
       const contract = new Contract(DEBT_PROOF_REGISTRY_ADDRESS, DEBT_PROOF_REGISTRY_ABI, signer);
 
-      // Ensure receipt hash is properly formatted as bytes32
-      let hashBytes32 = receiptHashHex;
-      if (!hashBytes32.startsWith("0x")) {
-        hashBytes32 = "0x" + hashBytes32;
+      // Ensure receipt hash is properly formatted as 32-byte hex (64 hex chars + 0x)
+      let rawHash = receiptHashHex.replace(/^0x/i, "");
+      // Pad or truncate to 64 hex characters (32 bytes)
+      if (rawHash.length < 64) {
+        rawHash = rawHash.padStart(64, "0");
+      } else if (rawHash.length > 64) {
+        rawHash = rawHash.slice(0, 64);
       }
-      
-      // If it's less than 66 characters (0x + 64 hex characters), pad it
-      if (hashBytes32.length < 66) {
-        hashBytes32 = ethers.zeroPadValue(hashBytes32, 32);
-      }
+      const hashBytes32 = "0x" + rawHash;
 
       const tx = await contract.storeProof(proofId, hashBytes32);
       const receipt = await tx.wait();

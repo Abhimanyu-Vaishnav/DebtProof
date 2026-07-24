@@ -343,7 +343,7 @@ export const paymentsService = {
       return {
         success: true,
         proof_id: `PROOF-${Date.now()}`,
-        receipt_hash: "0x8f7a9d02e5b4c3a2f109876543210fedcba9876543210fedcba9876543210fed",
+        receipt_hash: "8f7a9d02e5b4c3a2f109876543210fed8f7a9d02e5b4c3a2f109876543210fed",
       };
     }
   },
