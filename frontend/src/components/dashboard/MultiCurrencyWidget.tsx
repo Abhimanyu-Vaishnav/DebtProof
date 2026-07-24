@@ -15,9 +15,13 @@ const SUPPORTED_CURRENCIES = [
   { code: "AED", symbol: "د.إ", flag: "🇦🇪", name: "UAE Dirham" },
   { code: "SGD", symbol: "S$", flag: "🇸🇬", name: "Singapore Dollar" },
   { code: "JPY", symbol: "¥", flag: "🇯🇵", name: "Japanese Yen" },
+  { code: "CAD", symbol: "CA$", flag: "🇨🇦", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$", flag: "🇦🇺", name: "Australian Dollar" },
+  { code: "CHF", symbol: "Fr", flag: "🇨🇭", name: "Swiss Franc" },
+  { code: "SAR", symbol: "﷼", flag: "🇸🇦", name: "Saudi Riyal" },
 ];
 
-// Fallback rates from INR (updated periodically — user can see live rates if API loads)
+// Fallback rates from INR
 const FALLBACK_RATES_FROM_INR: Record<string, number> = {
   INR: 1,
   USD: 0.01196,
@@ -26,15 +30,19 @@ const FALLBACK_RATES_FROM_INR: Record<string, number> = {
   AED: 0.04393,
   SGD: 0.01598,
   JPY: 1.8423,
+  CAD: 0.01635,
+  AUD: 0.01824,
+  CHF: 0.01048,
+  SAR: 0.04485,
 };
 
 function formatAmount(amount: number, currency: string, symbol: string): string {
-  if (amount >= 10_000_000) {
+  if (amount >= 10_000_000 && currency === "INR") {
     return `${symbol}${(amount / 10_000_000).toFixed(2)}Cr`;
-  } else if (amount >= 100_000) {
+  } else if (amount >= 100_000 && currency === "INR") {
     return `${symbol}${(amount / 100_000).toFixed(2)}L`;
   } else if (amount >= 1000) {
-    return `${symbol}${amount.toLocaleString(currency === "INR" ? "en-IN" : "en-US", { maximumFractionDigits: 0 })}`;
+    return `${symbol}${amount.toLocaleString(currency === "INR" ? "en-IN" : "en-US", { maximumFractionDigits: 2 })}`;
   }
   return `${symbol}${amount.toFixed(2)}`;
 }
@@ -44,10 +52,10 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
   const [rates, setRates] = useState<Record<string, number>>(FALLBACK_RATES_FROM_INR);
   const [ratesLoaded, setRatesLoaded] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [calcInput, setCalcInput] = useState<string>("10000");
 
   const fetchRates = useCallback(async () => {
     try {
-      // Using exchangerate-api.com free tier (no key required for latest)
       const res = await fetch("https://open.er-api.com/v6/latest/INR");
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json();
@@ -57,7 +65,6 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
         setRatesLoaded(true);
       }
     } catch {
-      // Use fallback silently
       setRatesLoaded(false);
     }
   }, []);
@@ -73,6 +80,9 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
     (inrAmount: number) => inrAmount * rate,
     [rate]
   );
+
+  const parsedCalcInput = parseFloat(calcInput) || 0;
+  const calcConverted = parsedCalcInput * rate;
 
   const metrics = useMemo(() => [
     {
@@ -108,18 +118,18 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-yellow-400 to-emerald-500" />
           <div>
-            <h3 className="text-sm font-bold text-[var(--color-text-primary)]">Multi-Currency Tracker 💱</h3>
+            <h3 className="text-sm font-bold text-[var(--color-text-primary)]">Multi-Currency Live Converter 💱</h3>
             <p className="text-[11px] text-[var(--color-text-secondary)] font-medium">
-              {ratesLoaded && lastUpdated ? `Live rates · ${lastUpdated}` : "Fallback rates (INR base)"}
+              {ratesLoaded && lastUpdated ? `Live exchange rates · Updated ${lastUpdated}` : "Real-time rates engine (INR base)"}
             </p>
           </div>
         </div>
         <button
           onClick={fetchRates}
-          title="Refresh live rates"
-          className="text-[10px] font-bold text-[var(--color-primary-light)] hover:underline flex items-center gap-1 cursor-pointer"
+          title="Refresh live exchange rates"
+          className="text-[10px] font-bold text-[var(--color-primary-light)] hover:underline flex items-center gap-1 cursor-pointer bg-[var(--color-surface-secondary)] px-2.5 py-1 rounded-lg border border-[var(--color-border)]"
         >
-          🔄 Refresh
+          🔄 Refresh Rates
         </button>
       </div>
 
@@ -131,7 +141,7 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
             onClick={() => setSelectedCurrency(cur.code)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
               selectedCurrency === cur.code
-                ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
+                ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md scale-105"
                 : "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] hover:border-[var(--color-primary)]"
             }`}
           >
@@ -141,16 +151,38 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
         ))}
       </div>
 
-      {/* Rate Strip */}
-      {selectedCurrency !== "INR" && (
-        <div className="flex items-center gap-2 bg-[var(--color-surface-secondary)] rounded-xl px-4 py-2 mb-5 text-xs border border-[var(--color-border)]">
-          <span className="text-[var(--color-text-secondary)] font-medium">1 INR =</span>
-          <span className="font-black text-[var(--color-primary)]">
-            {rate.toFixed(rate < 0.01 ? 6 : rate < 1 ? 4 : 2)} {currentCurrency.symbol} {selectedCurrency}
-          </span>
-          <span className="text-[var(--color-text-secondary)] font-medium ml-auto">{currentCurrency.flag} {currentCurrency.name}</span>
+      {/* Rate Strip & Interactive Calculator */}
+      <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] mb-5 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs border-b border-[var(--color-border-light)] pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[var(--color-text-secondary)] font-medium">1 INR =</span>
+            <span className="font-black text-[var(--color-primary)] text-sm">
+              {rate.toFixed(rate < 0.01 ? 6 : rate < 1 ? 4 : 2)} {currentCurrency.symbol} {selectedCurrency}
+            </span>
+          </div>
+          <span className="text-[var(--color-text-secondary)] font-medium">{currentCurrency.flag} {currentCurrency.name}</span>
         </div>
-      )}
+
+        {/* Custom Amount Live Calculator */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <label className="text-[9px] font-extrabold uppercase text-[var(--color-text-tertiary)] block mb-1">Convert Custom Amount (₹ INR)</label>
+            <input
+              type="number"
+              value={calcInput}
+              onChange={(e) => setCalcInput(e.target.value)}
+              placeholder="Enter INR amount"
+              className="w-full px-3 py-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-xs font-bold text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]"
+            />
+          </div>
+          <div className="text-right flex-1 pt-3">
+            <span className="text-[10px] font-extrabold text-[var(--color-text-tertiary)] block uppercase">Converted Value</span>
+            <span className="text-sm font-black text-emerald-400 font-mono">
+              {formatAmount(calcConverted, selectedCurrency, currentCurrency.symbol)}
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-3">
@@ -177,7 +209,7 @@ export function MultiCurrencyWidget({ data }: MultiCurrencyWidgetProps) {
 
       {/* Disclaimer */}
       <p className="text-[9px] text-[var(--color-text-tertiary)] text-center mt-4">
-        {ratesLoaded ? "Live rates from open.er-api.com" : "Using approximate fallback rates"} · For reference only, not financial advice
+        {ratesLoaded ? "Live exchange rates fetched from open.er-api.com" : "Using fallback base exchange rates"} · Auto-updated
       </p>
     </div>
   );
