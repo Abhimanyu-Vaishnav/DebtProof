@@ -178,11 +178,15 @@ export function useWallet() {
         blockNumber: receipt.blockNumber,
       };
     } catch (err: any) {
-      let msg = "Transaction failed.";
-      if (err.code === 4001 || (err.message && err.message.includes("rejected"))) {
-        msg = "Transaction rejected by user.";
-      } else if (err.message && err.message.includes("ProofAlreadyExists")) {
-        msg = "This proof hash is already registered on the blockchain.";
+      let msg = "Transaction failed on Monad Testnet.";
+      const errStr = String(err?.data || err?.message || "");
+
+      if (err.code === 4001 || errStr.includes("rejected")) {
+        msg = "Transaction rejected in MetaMask.";
+      } else if (errStr.includes("ProofAlreadyExists") || errStr.includes("0xd18b7fa9")) {
+        msg = "⚠️ This receipt hash is already anchored on Monad Blockchain!";
+      } else if (errStr.includes("ProofIdAlreadyExists")) {
+        msg = "⚠️ This proof ID is already registered on Monad.";
       } else if (err.message) {
         msg = err.message;
       }
