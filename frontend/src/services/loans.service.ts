@@ -592,10 +592,115 @@ export const loansService = {
       }>("/loans/simulate/", { params: { extra_monthly: extraMonthly } });
       return data;
     } catch {
+      const loans = getStoredLoans().filter((l) => l.status === "active");
+      const activeList = loans.length > 0 ? loans : MOCK_LOANS;
+
+      const runSim = (extraAmt: number, strategy: "baseline" | "snowball" | "avalanche") => {
+        let state = activeList.map((l) => ({
+          id: l.id,
+          name: l.name,
+          balance: parseFloat(l.outstanding_amount) || 100000,
+          rate: (parseFloat(l.interest_rate) || 10) / 12 / 100,
+          emi: parseFloat(l.monthly_emi) || 5000,
+        }));
+
+        let months = 0;
+        let totalInterest = 0;
+        const maxM = 360;
+        const history: { month: number; outstanding: number }[] = [];
+        const schedule: any[] = [];
+
+        while (state.some((l) => l.balance > 0.01) && months < maxM) {
+          months++;
+          const balBefore = state.reduce((s, l) => s + Math.max(0, l.balance), 0);
+          history.append ? history.push({ month: months, outstanding: Math.round(balBefore) }) : history.push({ month: months, outstanding: Math.round(balBefore) });
+
+          // Accrue interest
+          let interestThisMonth = 0;
+          state.forEach((l) => {
+            if (l.balance > 0) {
+              const i = l.balance * l.rate;
+              l.balance += i;
+              totalInterest += i;
+              interestThisMonth += i;
+            }
+          });
+
+          // Minimum EMI
+          let regPaid = 0;
+          state.forEach((l) => {
+            if (l.balance > 0) {
+              const p = Math.min(l.emi, l.balance);
+              l.balance -= p;
+              regPaid += p;
+            }
+          });
+
+          // Extra payment
+          let extraPaid = 0;
+          if (extraAmt > 0 && strategy !== "baseline") {
+            let budget = extraAmt;
+            let targets = [...state].filter((l) => l.balance > 0);
+            if (strategy === "snowball") targets.sort((a, b) => a.balance - b.balance);
+            if (strategy === "avalanche") targets.sort((a, b) => b.rate - a.rate);
+
+            for (const t of targets) {
+              if (t.balance <= 0) continue;
+              const p = Math.min(budget, t.balance);
+              t.balance -= p;
+              budget -= p;
+              extraPaid += p;
+              if (budget <= 0) break;
+            }
+          }
+
+          const balAfter = state.reduce((s, l) => s + Math.max(0, l.balance), 0);
+          schedule.push({
+            month: months,
+            outstanding_before: Math.round(balBefore),
+            interest_charged: Math.round(interestThisMonth),
+            regular_payment: Math.round(regPaid),
+            extra_payment: Math.round(extraPaid),
+            total_payment: Math.round(regPaid + extraPaid),
+            outstanding_after: Math.round(balAfter),
+          });
+        }
+
+        history.push({ month: months + 1, outstanding: 0 });
+
+        const today = new Date();
+        const futureDate = new Date(today.getFullYear(), today.getMonth() + months, 1);
+        const debtFreeDateStr = futureDate.toISOString().slice(0, 7);
+
+        return {
+          months,
+          total_interest: Math.round(totalInterest),
+          debt_free_date: debtFreeDateStr,
+          history,
+          schedule,
+        };
+      };
+
+      const base = runSim(0, "baseline");
+      const snow = runSim(extraMonthly, "snowball");
+      const aval = runSim(extraMonthly, "avalanche");
+
       return {
         success: true,
         extra_monthly: extraMonthly,
-        simulations: MOCK_DASHBOARD.simulations
+        simulations: {
+          baseline: base,
+          snowball: {
+            ...snow,
+            interest_saved: Math.max(0, base.total_interest - snow.total_interest),
+            months_saved: Math.max(0, base.months - snow.months),
+          },
+          avalanche: {
+            ...aval,
+            interest_saved: Math.max(0, base.total_interest - aval.total_interest),
+            months_saved: Math.max(0, base.months - aval.months),
+          },
+        },
       };
     }
   },
