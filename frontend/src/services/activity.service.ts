@@ -25,6 +25,8 @@ export function getLocalActivities(): ActivityItem[] {
   } catch {
     return [];
   }
+}
+
 export function saveLocalActivity(activity: ActivityItem): void {
   if (typeof window === "undefined") return;
   try {
