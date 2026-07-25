@@ -613,7 +613,7 @@ export const loansService = {
         while (state.some((l) => l.balance > 0.01) && months < maxM) {
           months++;
           const balBefore = state.reduce((s, l) => s + Math.max(0, l.balance), 0);
-          history.append ? history.push({ month: months, outstanding: Math.round(balBefore) }) : history.push({ month: months, outstanding: Math.round(balBefore) });
+          history.push({ month: months, outstanding: Math.round(balBefore) });
 
           // Accrue interest
           let interestThisMonth = 0;

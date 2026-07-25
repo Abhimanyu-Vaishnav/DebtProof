@@ -171,3 +171,12 @@ class SoundEffectsEngine {
 }
 
 export const sounds = new SoundEffectsEngine();
+
+export function playSuccessSound() {
+  sounds.playPaymentSuccess();
+}
+
+export function playClickSound() {
+  sounds.playBlockchainAnchored();
+}
+
