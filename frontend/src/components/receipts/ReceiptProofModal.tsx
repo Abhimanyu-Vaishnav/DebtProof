@@ -131,18 +131,26 @@ export function ReceiptProofModal({ payment, onClose }: ReceiptProofModalProps) 
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
           <a
             href={explorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition cursor-pointer"
+            className="w-full sm:flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition cursor-pointer"
           >
-            <span>🔗</span> Open Monad Testnet Explorer
+            <span>🔗</span> Open Monad Explorer
+          </a>
+          <a
+            href={`/verify/${rec?.blockchain_proof_id || "PRF-2026-8841"}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition cursor-pointer"
+          >
+            <span>📄</span> Share Certificate
           </a>
           <button
             onClick={onClose}
-            className="px-4 py-2.5 bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-primary)] font-bold rounded-xl text-xs border border-[var(--color-border)] cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-primary)] font-bold rounded-xl text-xs border border-[var(--color-border)] cursor-pointer"
           >
             Close
           </button>
