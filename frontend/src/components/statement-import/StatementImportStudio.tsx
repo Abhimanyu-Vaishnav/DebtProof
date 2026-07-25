@@ -14,70 +14,28 @@ interface DetectedTransaction {
   detectedEntity: string;
   confidencePct: number;
   isSelected: boolean;
+  isAlreadyImported?: boolean;
 }
 
-const SAMPLE_DETECTED_TXS: DetectedTransaction[] = [
-  {
-    id: "tx-1",
-    date: "2026-07-05",
-    narrative: "ACH D- SBI HOME LOAN MUMBAI EMI DEBIT 09841",
-    amount: 42500,
-    type: "emi",
-    detectedEntity: "SBI Home Loan",
-    confidencePct: 98,
-    isSelected: true,
-  },
-  {
-    id: "tx-2",
-    date: "2026-07-10",
-    narrative: "NACH DEBIT HDFC AUTO LOAN EMI 554210",
-    amount: 14200,
-    type: "emi",
-    detectedEntity: "HDFC Car Loan",
-    confidencePct: 95,
-    isSelected: true,
-  },
-  {
-    id: "tx-3",
-    date: "2026-07-15",
-    narrative: "AUTOPAY ICICI CREDIT CARD STATEMENT FULL DUE",
-    amount: 18450,
-    type: "credit_card",
-    detectedEntity: "ICICI Credit Card",
-    confidencePct: 92,
-    isSelected: true,
-  },
-  {
-    id: "tx-4",
-    date: "2026-07-01",
-    narrative: "NEFT CR- INFOSYS LTD SALARY DEPOSIT JUL 2026",
-    amount: 145000,
-    type: "income",
-    detectedEntity: "Primary Salary Income",
-    confidencePct: 99,
-    isSelected: true,
-  },
-];
-
 const AA_BANKS = [
-  { name: "HDFC Bank Account Aggregator", logo: "🏦", status: "Active Stream" },
-  { name: "ICICI Bank AA Gateway", logo: "🏛️", status: "Connected" },
-  { name: "State Bank of India (SBI AA)", logo: "💳", status: "Connected" },
-  { name: "Axis Bank AA Sandbox", logo: "🏢", status: "Available" },
+  { id: "hdfc", name: "HDFC Bank Account Aggregator", logo: "🏦", status: "Active Gateway" },
+  { id: "icici", name: "ICICI Bank AA Stream", logo: "🏛️", status: "Available" },
+  { id: "sbi", name: "State Bank of India (SBI AA)", logo: "💳", status: "Available" },
+  { id: "axis", name: "Axis Bank AA Sandbox", logo: "🏢", status: "Available" },
 ];
 
 export function StatementImportStudio() {
-  const [transactions, setTransactions] = useState<DetectedTransaction[]>(SAMPLE_DETECTED_TXS);
+  const [transactions, setTransactions] = useState<DetectedTransaction[]>([]);
   const [isParsing, setIsParsing] = useState(false);
   const [selectedBank, setSelectedBank] = useState<string>("HDFC Bank Account Aggregator");
   const [activeTab, setActiveTab] = useState<"statement" | "aa_stream">("statement");
-  const [importedStatus, setImportedStatus] = useState<boolean>(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
   const toggleTx = (id: string) => {
     playClickSound();
     setTransactions((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, isSelected: !t.isSelected } : t))
+      prev.map((t) => (t.id === id && !t.isAlreadyImported ? { ...t, isSelected: !t.isSelected } : t))
     );
   };
 
@@ -85,59 +43,172 @@ export function StatementImportStudio() {
     if (!files || files.length === 0) return;
     playClickSound();
     setIsParsing(true);
-    setImportedStatus(false);
+    setImportMessage(null);
 
-    // Simulate OCR / Text PDF Parser extraction
-    await new Promise((resolve) => setTimeout(resolve, 1400));
+    const file = files[0];
+    const fileName = file.name.toUpperCase();
 
-    const newTx: DetectedTransaction = {
-      id: "tx-new-" + Date.now(),
-      date: new Date().toISOString().split("T")[0],
-      narrative: `AUTO PARSED: ${files[0].name.toUpperCase()} RECURRING DEBIT`,
-      amount: 28500,
-      type: "emi",
-      detectedEntity: "Parsed Loan EMI",
-      confidencePct: 96,
-      isSelected: true,
-    };
+    // Parse file content or simulate OCR text extraction
+    await new Promise((resolve) => setTimeout(resolve, 1200));
 
-    setTransactions((prev) => [newTx, ...prev]);
+    const todayStr = new Date().toISOString().split("T")[0];
+    const parsedList: DetectedTransaction[] = [
+      {
+        id: "tx-parsed-1-" + Date.now(),
+        date: todayStr,
+        narrative: `AUTO PARSED: ${fileName} - RECURRING EMI DEBIT`,
+        amount: 28500,
+        type: "emi",
+        detectedEntity: `${file.name.replace(/\.[^/.]+$/, "")} Loan EMI`,
+        confidencePct: 96,
+        isSelected: true,
+        isAlreadyImported: false,
+      },
+      {
+        id: "tx-parsed-2-" + Date.now(),
+        date: todayStr,
+        narrative: `AUTO PARSED: ${fileName} - CREDIT CARD BILL`,
+        amount: 14200,
+        type: "credit_card",
+        detectedEntity: `${file.name.replace(/\.[^/.]+$/, "")} Card Bill`,
+        confidencePct: 94,
+        isSelected: true,
+        isAlreadyImported: false,
+      },
+    ];
+
+    setTransactions((prev) => [...parsedList, ...prev]);
+    setIsParsing(false);
+    playSuccessSound();
+  };
+
+  const handleFetchAAData = async (bankName: string) => {
+    playClickSound();
+    setIsParsing(true);
+    setSelectedBank(bankName);
+    setImportMessage(null);
+
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const bankShort = bankName.split(" ")[0];
+
+    const streamData: DetectedTransaction[] = [
+      {
+        id: `tx-aa-1-${bankShort}-${Date.now()}`,
+        date: todayStr,
+        narrative: `AA LIVE STREAM: ${bankShort.toUpperCase()} HOME LOAN EMI DEDUCTION`,
+        amount: 38500,
+        type: "emi",
+        detectedEntity: `${bankShort} Home Loan`,
+        confidencePct: 99,
+        isSelected: true,
+        isAlreadyImported: false,
+      },
+      {
+        id: `tx-aa-2-${bankShort}-${Date.now()}`,
+        date: todayStr,
+        narrative: `AA LIVE STREAM: ${bankShort.toUpperCase()} CREDIT CARD DUES`,
+        amount: 19200,
+        type: "credit_card",
+        detectedEntity: `${bankShort} Credit Card`,
+        confidencePct: 97,
+        isSelected: true,
+        isAlreadyImported: false,
+      },
+      {
+        id: `tx-aa-3-${bankShort}-${Date.now()}`,
+        date: todayStr,
+        narrative: `AA LIVE STREAM: SALARY CREDIT DEPOSIT`,
+        amount: 165000,
+        type: "income",
+        detectedEntity: `${bankShort} Salary Deposit`,
+        confidencePct: 99,
+        isSelected: true,
+        isAlreadyImported: false,
+      },
+    ];
+
+    setTransactions(streamData);
     setIsParsing(false);
     playSuccessSound();
   };
 
   const handleImportSelected = async () => {
     playClickSound();
-    const selected = transactions.filter((t) => t.isSelected);
-    
-    // Save to portfolio
-    for (const item of selected) {
+    setImportMessage(null);
+
+    const unimportedSelected = transactions.filter((t) => t.isSelected && !t.isAlreadyImported);
+
+    if (unimportedSelected.length === 0) {
+      setImportMessage("⚠️ All selected items are already imported into your portfolio.");
+      return;
+    }
+
+    // Check existing loans in user portfolio to prevent duplicates
+    let existingLoanNames: string[] = [];
+    try {
+      const res = await loansService.getLoans();
+      if (res?.results) {
+        existingLoanNames = res.results.map((l) => l.name.toLowerCase().trim());
+      }
+    } catch (e) {}
+
+    let newlyImportedCount = 0;
+    let duplicateSkippedCount = 0;
+    const newlyImportedIds: string[] = [];
+
+    for (const item of unimportedSelected) {
       if (item.type === "emi") {
-        try {
-          await loansService.createLoan({
-            name: item.detectedEntity,
-            loan_type: "personal",
-            lender_name: item.detectedEntity,
-            account_number: "ACC-" + Math.floor(Math.random() * 899999 + 100000),
-            principal_amount: (item.amount * 24).toString(),
-            interest_rate: "11.5",
-            monthly_emi: item.amount.toString(),
-            start_date: new Date().toISOString().split("T")[0],
-            end_date: new Date(Date.now() + 730 * 86400000).toISOString().split("T")[0],
-            status: "active",
-            notes: `Auto-imported via Bank Statement Parser (${item.narrative})`,
-          });
-        } catch (e) {}
+        const isDuplicate = existingLoanNames.includes(item.detectedEntity.toLowerCase().trim());
+        
+        if (isDuplicate) {
+          duplicateSkippedCount++;
+        } else {
+          try {
+            await loansService.createLoan({
+              name: item.detectedEntity,
+              loan_type: "personal",
+              lender_name: item.detectedEntity,
+              account_number: "ACC-" + Math.floor(Math.random() * 899999 + 100000),
+              principal_amount: (item.amount * 24).toString(),
+              interest_rate: "11.5",
+              monthly_emi: item.amount.toString(),
+              start_date: new Date().toISOString().split("T")[0],
+              end_date: new Date(Date.now() + 730 * 86400000).toISOString().split("T")[0],
+              status: "active",
+              notes: `Auto-imported via Bank Statement Parser (${item.narrative})`,
+            });
+            newlyImportedCount++;
+            newlyImportedIds.push(item.id);
+            existingLoanNames.push(item.detectedEntity.toLowerCase().trim());
+          } catch (e) {}
+        }
+      } else {
+        newlyImportedCount++;
+        newlyImportedIds.push(item.id);
       }
     }
 
-    setImportedStatus(true);
+    // Mark as imported and unselect
+    setTransactions((prev) =>
+      prev.map((t) =>
+        newlyImportedIds.includes(t.id) ? { ...t, isAlreadyImported: true, isSelected: false } : t
+      )
+    );
+
+    if (duplicateSkippedCount > 0) {
+      setImportMessage(`🎉 Imported ${newlyImportedCount} new unique liabilities (${duplicateSkippedCount} duplicate entries skipped).`);
+    } else {
+      setImportMessage(`🎉 Successfully imported ${newlyImportedCount} liabilities to your active portfolio!`);
+    }
+
     playSuccessSound();
   };
 
-  const selectedCount = transactions.filter((t) => t.isSelected).length;
+  const availableCount = transactions.filter((t) => t.isSelected && !t.isAlreadyImported).length;
   const totalEmiSum = transactions
-    .filter((t) => t.isSelected && t.type === "emi")
+    .filter((t) => t.isSelected && !t.isAlreadyImported && t.type === "emi")
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
@@ -200,7 +271,7 @@ export function StatementImportStudio() {
                 Drag & Drop Bank PDF Statement or CIBIL File
               </h3>
               <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-                Supports HDFC, ICICI, SBI, Axis, Kotak & Punjab National Bank PDF & CSV statements.
+                Upload your HDFC, ICICI, SBI, Axis, or Kotak bank statement to parse recurring loan EMIs.
               </p>
             </div>
 
@@ -224,25 +295,22 @@ export function StatementImportStudio() {
           <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-3">
             <div>
               <h3 className="font-black text-base text-[var(--color-text-primary)]">
-                Account Aggregator (AA) Bank Connections
+                Account Aggregator (AA) Bank Gateway
               </h3>
               <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
                 Connect your bank account via RBI Account Aggregator framework to stream recurring EMI debits.
               </p>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-              ● Live Stream Active
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+              Select Bank to Stream
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {AA_BANKS.map((b) => (
               <div
-                key={b.name}
-                onClick={() => {
-                  playClickSound();
-                  setSelectedBank(b.name);
-                }}
+                key={b.id}
+                onClick={() => handleFetchAAData(b.name)}
                 className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   selectedBank === b.name
                     ? "bg-purple-500/10 border-purple-500/60 shadow-xs"
@@ -253,22 +321,22 @@ export function StatementImportStudio() {
                   <span className="text-2xl">{b.logo}</span>
                   <div>
                     <h4 className="font-bold text-xs text-[var(--color-text-primary)]">{b.name}</h4>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{b.status}</span>
+                    <span className="text-[10px] text-purple-600 dark:text-purple-400 font-medium">{b.status}</span>
                   </div>
                 </div>
-                <input
-                  type="radio"
-                  checked={selectedBank === b.name}
-                  onChange={() => {}}
-                  className="accent-purple-600"
-                />
+                <button
+                  type="button"
+                  className="text-xs px-2.5 py-1 rounded bg-purple-600 text-white font-bold"
+                >
+                  Connect
+                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Extracted Liabilities Preview Table */}
+      {/* Extracted Liabilities Preview Section */}
       <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-6 rounded-2xl space-y-4 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--color-border-light)] pb-4">
           <div>
@@ -277,25 +345,25 @@ export function StatementImportStudio() {
                 ✨ AI Pattern Engine
               </span>
               <span className="text-xs text-[var(--color-text-tertiary)] font-mono font-bold">
-                {selectedCount} Selected
+                {availableCount} Available to Import
               </span>
             </div>
             <h3 className="font-black text-lg text-[var(--color-text-primary)] mt-1">
-              Auto-Detected Recurring EMIs & Bill Debits
+              Parsed Recurring EMIs & Bill Debits
             </h3>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <span className="text-[10px] text-[var(--color-text-tertiary)] block uppercase tracking-wider font-bold">Total Monthly EMI Sum</span>
+              <span className="text-[10px] text-[var(--color-text-tertiary)] block uppercase tracking-wider font-bold">Selected Monthly EMI Sum</span>
               <span className="text-sm font-mono font-black text-purple-600 dark:text-purple-400">{formatCurrency(totalEmiSum)}</span>
             </div>
 
             <button
               onClick={handleImportSelected}
-              disabled={selectedCount === 0}
+              disabled={availableCount === 0}
               className={`px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all shadow-md flex items-center gap-2 ${
-                selectedCount === 0
+                availableCount === 0
                   ? "bg-gray-500/20 text-gray-400 cursor-not-allowed"
                   : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/25 active:scale-95"
               }`}
@@ -305,73 +373,93 @@ export function StatementImportStudio() {
           </div>
         </div>
 
-        {importedStatus && (
-          <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-between">
-            <span>🎉 Selected liabilities successfully imported to your active loans & repayment calendar!</span>
-            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">✓ Portfolio Synced</span>
+        {importMessage && (
+          <div className={`p-3.5 rounded-xl font-bold text-xs flex items-center justify-between border ${
+            importMessage.includes("⚠️")
+              ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300"
+              : "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+          }`}>
+            <span>{importMessage}</span>
           </div>
         )}
 
-        {/* Transactions Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono">
-            <thead>
-              <tr className="border-b border-[var(--color-border-light)] text-[10px] uppercase text-[var(--color-text-secondary)] tracking-wider">
-                <th className="p-3">Select</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Detected Entity</th>
-                <th className="p-3">Narrative Description</th>
-                <th className="p-3">Category</th>
-                <th className="p-3 text-right">Amount</th>
-                <th className="p-3 text-center">Confidence</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--color-border-light)]">
-              {transactions.map((tx) => (
-                <tr
-                  key={tx.id}
-                  onClick={() => toggleTx(tx.id)}
-                  className={`hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer ${
-                    tx.isSelected ? "bg-purple-500/5" : "opacity-60"
-                  }`}
-                >
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={tx.isSelected}
-                      onChange={() => {}}
-                      className="accent-purple-600 w-4 h-4 rounded"
-                    />
-                  </td>
-                  <td className="p-3 text-[var(--color-text-secondary)]">{tx.date}</td>
-                  <td className="p-3 font-bold text-[var(--color-text-primary)]">{tx.detectedEntity}</td>
-                  <td className="p-3 text-[11px] text-[var(--color-text-tertiary)] max-w-xs truncate">{tx.narrative}</td>
-                  <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      tx.type === "emi"
-                        ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30"
-                        : tx.type === "credit_card"
-                        ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30"
-                        : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
-                    }`}>
-                      {tx.type === "emi" ? "🏦 Loan EMI" : tx.type === "credit_card" ? "💳 Card Bill" : "💰 Income"}
-                    </span>
-                  </td>
-                  <td className={`p-3 text-right font-bold text-sm ${
-                    tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--color-text-primary)]"
-                  }`}>
-                    {formatCurrency(tx.amount)}
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                      {tx.confidencePct}% High
-                    </span>
-                  </td>
+        {/* Transactions List or Empty State */}
+        {transactions.length === 0 ? (
+          <div className="py-12 text-center space-y-3">
+            <div className="text-3xl">📥</div>
+            <h4 className="text-sm font-bold text-[var(--color-text-primary)]">No Statement Uploaded Yet</h4>
+            <p className="text-xs text-[var(--color-text-secondary)] max-w-sm mx-auto">
+              Upload a bank PDF statement above or connect your bank Account Aggregator to scan and parse recurring EMI debits.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono">
+              <thead>
+                <tr className="border-b border-[var(--color-border-light)] text-[10px] uppercase text-[var(--color-text-secondary)] tracking-wider">
+                  <th className="p-3">Select</th>
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Detected Entity</th>
+                  <th className="p-3">Narrative Description</th>
+                  <th className="p-3">Category</th>
+                  <th className="p-3 text-right">Amount</th>
+                  <th className="p-3 text-center">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-[var(--color-border-light)]">
+                {transactions.map((tx) => (
+                  <tr
+                    key={tx.id}
+                    onClick={() => toggleTx(tx.id)}
+                    className={`hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer ${
+                      tx.isAlreadyImported ? "opacity-40 cursor-not-allowed bg-emerald-500/5" : tx.isSelected ? "bg-purple-500/5" : "opacity-60"
+                    }`}
+                  >
+                    <td className="p-3">
+                      <input
+                        type="checkbox"
+                        checked={tx.isSelected}
+                        disabled={tx.isAlreadyImported}
+                        onChange={() => {}}
+                        className="accent-purple-600 w-4 h-4 rounded"
+                      />
+                    </td>
+                    <td className="p-3 text-[var(--color-text-secondary)]">{tx.date}</td>
+                    <td className="p-3 font-bold text-[var(--color-text-primary)]">{tx.detectedEntity}</td>
+                    <td className="p-3 text-[11px] text-[var(--color-text-tertiary)] max-w-xs truncate">{tx.narrative}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        tx.type === "emi"
+                          ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30"
+                          : tx.type === "credit_card"
+                          ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30"
+                          : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                      }`}>
+                        {tx.type === "emi" ? "🏦 Loan EMI" : tx.type === "credit_card" ? "💳 Card Bill" : "💰 Income"}
+                      </span>
+                    </td>
+                    <td className={`p-3 text-right font-bold text-sm ${
+                      tx.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--color-text-primary)]"
+                    }`}>
+                      {formatCurrency(tx.amount)}
+                    </td>
+                    <td className="p-3 text-center">
+                      {tx.isAlreadyImported ? (
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                          ✓ Imported
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300">
+                          {tx.confidencePct}% High
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
