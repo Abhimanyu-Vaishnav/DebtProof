@@ -49,6 +49,7 @@ export const metadata: Metadata = {
 import { ToastProvider } from "@/components/ui/Toast";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { ServiceWorkerRegistrar } from "@/components/ui/ServiceWorkerRegistrar";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function RootLayout({
   children,
@@ -78,6 +79,7 @@ export default function RootLayout({
           </ToastProvider>
         </CurrencyProvider>
         <ServiceWorkerRegistrar />
+        <Analytics />
       </body>
     </html>
   );
