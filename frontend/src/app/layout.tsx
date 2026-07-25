@@ -50,6 +50,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { ServiceWorkerRegistrar } from "@/components/ui/ServiceWorkerRegistrar";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function RootLayout({
   children,
@@ -79,7 +80,8 @@ export default function RootLayout({
           </ToastProvider>
         </CurrencyProvider>
         <ServiceWorkerRegistrar />
-        <Analytics />
+        <Analytics mode="auto" />
+        <SpeedInsights />
       </body>
     </html>
   );
