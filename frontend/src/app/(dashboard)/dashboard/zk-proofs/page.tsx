@@ -4,6 +4,7 @@ import React from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { ZkCreditProofStudio } from "@/components/zk-proofs/ZkCreditProofStudio";
 import { OnChainBadgeGallery } from "@/components/zk-proofs/OnChainBadgeGallery";
+import { MonadSmartContractDeploymentStudio } from "@/components/zk-proofs/MonadSmartContractDeploymentStudio";
 
 export default function ZkProofsPage() {
   return (
@@ -50,6 +51,9 @@ export default function ZkProofsPage() {
             </div>
           </div>
         </div>
+
+        {/* Monad On-Chain Smart Contract Deployment Studio */}
+        <MonadSmartContractDeploymentStudio />
 
         {/* Main Studio Component */}
         <ZkCreditProofStudio />
