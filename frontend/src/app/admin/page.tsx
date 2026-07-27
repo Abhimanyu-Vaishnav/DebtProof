@@ -70,6 +70,17 @@ const SAMPLE_QUERIES: SupportQuery[] = [
 ];
 
 export default function DedicatedDebtProofAdminPortal() {
+  const SUPERADMIN_ID = "SUPERADMIN-DEBTPROOF-9901";
+  const SUPERADMIN_KEY = "debtproof_superadmin_auth_token";
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(SUPERADMIN_KEY) === "granted";
+  });
+  const [adminUserIdInput, setAdminUserIdInput] = useState("");
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const [authError, setAuthError] = useState("");
+
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "pricing" | "push_notifications">("overview");
   const [staffList, setStaffList] = useState<StaffMember[]>(SAMPLE_STAFF);
   const [userList, setUserList] = useState<UserData[]>(SAMPLE_USERS);
@@ -85,6 +96,83 @@ export default function DedicatedDebtProofAdminPortal() {
   const [pushTitle, setPushTitle] = useState("");
   const [pushBody, setPushBody] = useState("");
   const [targetAudience, setTargetAudience] = useState<"All" | "Enterprise" | "Pro" | "Free">("All");
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminUserIdInput.trim() === "SUPERADMIN-DEBTPROOF-9901" && adminPasswordInput === "admin12345") {
+      localStorage.setItem(SUPERADMIN_KEY, "granted");
+      setIsAuthenticated(true);
+      setAuthError("");
+    } else {
+      setAuthError("Invalid SuperAdmin Credentials! Access Denied.");
+    }
+  };
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem(SUPERADMIN_KEY);
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+        <div className="card max-w-md w-full p-8 bg-slate-900 border-2 border-rose-500/40 rounded-3xl shadow-2xl space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center text-3xl mx-auto shadow-inner">
+              👑
+            </div>
+            <h2 className="text-xl font-black text-white">DebtProof Corporate Admin Authentication</h2>
+            <p className="text-xs text-slate-400">Strictly restricted to SuperAdmin Root Authority</p>
+          </div>
+
+          <form onSubmit={handleAdminLogin} className="space-y-4 font-mono text-xs">
+            {authError && (
+              <div className="p-3 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold text-center">
+                {authError}
+              </div>
+            )}
+
+            <div>
+              <label className="text-slate-300 font-bold">SuperAdmin User ID</label>
+              <input
+                type="text"
+                placeholder="e.g. SUPERADMIN-DEBTPROOF-9901"
+                value={adminUserIdInput}
+                onChange={(e) => setAdminUserIdInput(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-950 text-white border border-slate-700 font-bold text-xs mt-1 focus:border-rose-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-300 font-bold">Security Passcode</label>
+              <input
+                type="password"
+                placeholder="••••••••••••"
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-950 text-white border border-slate-700 font-bold text-xs mt-1 focus:border-rose-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-black text-xs shadow-lg shadow-rose-500/25 cursor-pointer transition-all"
+            >
+              Verify SuperAdmin Credentials & Unlock Portal →
+            </button>
+          </form>
+
+          <div className="text-center pt-2 border-t border-slate-800">
+            <Link href="/dashboard" className="text-[11px] font-mono text-slate-400 hover:text-white transition">
+              ← Return to User Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleCreateStaff = (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,10 +230,16 @@ export default function DedicatedDebtProofAdminPortal() {
 
         <div className="flex items-center gap-4">
           <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">
-            SuperAdmin Access Level
+            SuperAdmin: SUPERADMIN-DEBTPROOF-9901
           </span>
+          <button
+            onClick={handleAdminLogout}
+            className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition cursor-pointer"
+          >
+            🔒 Lock & Logout
+          </button>
           <Link href="/dashboard" className="text-xs font-bold text-[var(--color-text-tertiary)] hover:text-white transition">
-            Exit to User App →
+            Exit to App →
           </Link>
         </div>
       </header>
