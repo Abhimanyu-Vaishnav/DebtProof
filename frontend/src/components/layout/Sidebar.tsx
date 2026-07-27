@@ -385,32 +385,55 @@ export function Sidebar() {
               {section.title}
             </p>
             <ul className="space-y-0.5" role="list">
-              {section.items.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "nav-item flex items-center justify-between",
-                        isActive && "active"
-                      )}
-                      aria-current={isActive ? "page" : undefined}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="nav-icon shrink-0">{item.icon}</span>
-                        <span>{item.label}</span>
-                      </div>
+      {section.items.map((item) => {
+        const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+        
+        // Track visited NEW features in localStorage so badge disappears after first click
+        const storageKey = `visited_feature_${item.href.replace(/\//g, "_")}`;
+        const [isVisited, setIsVisited] = React.useState<boolean>(() => {
+          if (typeof window === "undefined") return false;
+          return !!localStorage.getItem(storageKey);
+        });
 
-                      {item.badge && (
-                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
+        React.useEffect(() => {
+          if (isActive && item.badge) {
+            localStorage.setItem(storageKey, "true");
+            setIsVisited(true);
+          }
+        }, [isActive, item.href, item.badge, storageKey]);
+
+        const showBadge = item.badge && !isVisited;
+
+        return (
+          <li key={item.href}>
+            <Link
+              href={item.href}
+              onClick={() => {
+                if (item.badge) {
+                  localStorage.setItem(storageKey, "true");
+                  setIsVisited(true);
+                }
+              }}
+              className={cn(
+                "nav-item flex items-center justify-between",
+                isActive && "active"
+              )}
+              aria-current={isActive ? "page" : undefined}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="nav-icon shrink-0">{item.icon}</span>
+                <span>{item.label}</span>
+              </div>
+
+              {showBadge && (
+                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 animate-pulse">
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          </li>
+        );
+      })}
             </ul>
           </div>
         ))}
