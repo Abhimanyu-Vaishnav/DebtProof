@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { triggerToast } from "./Toast";
 
-const SYSTEM_VERSION = "v2.1.0"; // Current system build revision
+const SYSTEM_VERSION = "v2.2.0"; // Current system build revision
 const VERSION_KEY = "debtproof_system_version";
 
 export function VersionNotifier() {
