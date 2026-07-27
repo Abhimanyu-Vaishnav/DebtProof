@@ -11,6 +11,8 @@ import { TenantSwitcher } from "@/components/tenant/TenantSwitcher";
 
 import { THEME_PRESETS, applyGlobalTheme } from "@/utils/theme";
 
+import { Web3WalletConnect } from "@/components/layout/Web3WalletConnect";
+
 interface TopbarProps {
   title?: string;
   subtitle?: string;
@@ -202,6 +204,9 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
         >
           {!soundMuted ? "🔊" : "🔇"}
         </button>
+
+        {/* Web3 Wallet Connector */}
+        <Web3WalletConnect />
 
         {/* Theme Preset Switcher */}
         <div className="relative hidden sm:block">

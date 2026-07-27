@@ -9,6 +9,8 @@ import { formatCurrency, formatDate } from "@/utils/formatters";
 import { P2PContractModal } from "@/components/loans/P2PContractModal";
 import type { Loan } from "@/types";
 
+import { Web3EscrowStudio } from "@/components/p2p/Web3EscrowStudio";
+
 export default function P2PMarketplacePage() {
   const [activeTab, setActiveTab] = useState<"my_agreements" | "marketplace">("my_agreements");
   const [myP2pLoans, setMyP2pLoans] = useState<Loan[]>([]);
@@ -148,6 +150,9 @@ export default function P2PMarketplacePage() {
             )}
           </div>
         </div>
+
+        {/* Monad Web3 Smart Contract Escrow Hub */}
+        <Web3EscrowStudio />
 
         {/* Tab Toggle Navigation */}
         <div className="flex border-b border-[var(--color-border-light)] space-x-6">

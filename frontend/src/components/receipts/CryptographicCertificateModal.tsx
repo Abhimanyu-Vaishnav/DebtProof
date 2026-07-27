@@ -1,110 +1,148 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
+import React, { useState } from "react";
+import { formatCurrency } from "@/utils/formatters";
 
 interface CryptographicCertificateModalProps {
-  payment: any;
+  isOpen: boolean;
   onClose: () => void;
+  certData: {
+    title: string;
+    description: string;
+    amount?: number | string;
+    sha256Hash: string;
+    proofId: string;
+    merkleRoot?: string;
+    blockNumber?: number;
+    txHash?: string;
+    timestamp?: string;
+  };
 }
 
-export function CryptographicCertificateModal({
-  payment,
-  onClose,
-}: CryptographicCertificateModalProps) {
-  const rec = payment?.receipt;
-  const proofId = rec?.proof_id || "PRF-2026-8841";
-  const docHash = rec?.document_hash || "0x8f7a9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c";
-  const txHash = rec?.blockchain_tx_hash || "0x3a91bf2840902c2e0b57fa94017de824058d991ab8f731295b93198031ab001c";
-  const amount = payment?.amount ? `₹${Number(payment.amount).toLocaleString()}` : "₹45,000";
-  const paymentDate = payment?.payment_date || "2026-07-15";
+export function CryptographicCertificateModal({ isOpen, onClose, certData }: CryptographicCertificateModalProps) {
+  const [downloading, setDownloading] = useState(false);
 
-  const handlePrint = () => {
-    if (typeof window !== "undefined") {
-      window.print();
-    }
+  if (!isOpen) return null;
+
+  const handlePrintDownload = () => {
+    setDownloading(true);
+    setTimeout(() => {
+      if (typeof window !== "undefined") {
+        window.print();
+      }
+      setDownloading(false);
+    }, 500);
   };
 
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+    `https://testnet.monadscan.com/tx/${certData.txHash || certData.sha256Hash}`
+  )}`;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="card w-full max-w-2xl bg-[var(--color-surface)] border border-purple-500/40 shadow-2xl p-6 sm:p-8 space-y-6 my-auto relative">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-[110] animate-fade-in">
+      <div className="card w-full max-w-2xl bg-[var(--color-surface)] border-2 border-purple-500/40 p-6 md:p-8 rounded-3xl shadow-2xl space-y-6 relative overflow-hidden">
+        
+        {/* Certificate Header Banner */}
+        <div className="flex items-center justify-between border-b-2 border-purple-500/20 pb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center text-xl font-bold">
-              📄
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 flex items-center justify-center text-2xl font-bold shadow-inner">
+              📜
             </div>
             <div>
-              <h3 className="text-base font-bold text-[var(--color-text-primary)]">
-                Cryptographic Certificate Preview
-              </h3>
-              <p className="text-xs text-[var(--color-text-tertiary)] font-mono">
-                Proof ID: {proofId}
-              </p>
+              <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-black bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 uppercase tracking-widest">
+                Official Web3 Cryptographic Certificate
+              </span>
+              <h2 className="text-xl font-black text-[var(--color-text-primary)] mt-0.5">
+                {certData.title}
+              </h2>
             </div>
           </div>
+
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] font-bold flex items-center justify-center hover:bg-[var(--color-surface-secondary)] cursor-pointer"
+            className="p-2 rounded-xl hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] transition cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        {/* Certificate Preview Content */}
-        <div className="p-6 bg-slate-950 text-slate-100 rounded-2xl border border-purple-500/30 space-y-6 text-center font-mono">
-          <div className="space-y-1">
-            <span className="text-[10px] text-purple-400 font-bold uppercase tracking-widest block">
-              Monad Blockchain Validated
-            </span>
-            <h4 className="text-xl font-black text-white uppercase tracking-wider font-sans">
-              Certificate of Repayment
-            </h4>
+        {/* Certificate Body */}
+        <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-500/5 via-[var(--color-surface-secondary)] to-indigo-500/5 border border-purple-500/30 space-y-6 relative">
+          
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1 max-w-md">
+              <span className="text-xs font-mono text-[var(--color-text-tertiary)] uppercase font-bold">Assertion Statement</span>
+              <p className="text-sm font-bold text-[var(--color-text-primary)] leading-relaxed">
+                {certData.description}
+              </p>
+              {certData.amount && (
+                <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono pt-1">
+                  Valuation / Amount: {formatCurrency(Number(certData.amount))}
+                </div>
+              )}
+            </div>
+
+            {/* QR Code */}
+            <div className="p-2 bg-white rounded-xl shadow-md border shrink-0 text-center space-y-1">
+              <img src={qrUrl} alt="Monad Verification QR Code" className="w-24 h-24 object-contain mx-auto" />
+              <span className="text-[9px] font-mono font-bold text-gray-700 block">Monad Scan Verified</span>
+            </div>
           </div>
 
-          <div className="space-y-2 text-xs font-sans text-slate-300">
-            <p>Certified Repayment of <strong className="text-emerald-400 text-sm">{amount}</strong></p>
-            <p className="text-slate-400 text-xs">Date: <strong>{paymentDate}</strong></p>
+          {/* Hashes & Roots Grid */}
+          <div className="space-y-3 font-mono text-xs border-t border-purple-500/20 pt-4">
+            <div>
+              <span className="text-[10px] text-[var(--color-text-tertiary)] font-black uppercase block tracking-wider mb-1">
+                SHA-256 Checksum Hash
+              </span>
+              <div className="p-2.5 rounded-xl bg-slate-950 text-purple-300 border border-purple-500/30 font-bold break-all select-all">
+                {certData.sha256Hash}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <span className="text-[10px] text-[var(--color-text-tertiary)] font-black uppercase block tracking-wider mb-1">
+                  Proof Certificate ID
+                </span>
+                <div className="p-2.5 rounded-xl bg-slate-950 text-indigo-300 border border-purple-500/30 font-bold truncate">
+                  {certData.proofId}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] text-[var(--color-text-tertiary)] font-black uppercase block tracking-wider mb-1">
+                  Blockchain Anchor Target
+                </span>
+                <div className="p-2.5 rounded-xl bg-slate-950 text-emerald-300 border border-purple-500/30 font-bold truncate">
+                  Monad Testnet (Chain 10143)
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="p-3 bg-black/50 rounded-xl border border-slate-800 text-[11px] space-y-2 text-left">
-            <div>
-              <span className="text-[10px] text-purple-400 font-bold block uppercase">Document Checksum</span>
-              <span className="break-all text-slate-300">{docHash}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-indigo-400 font-bold block uppercase">Monad Tx Hash</span>
-              <span className="break-all text-slate-300">{txHash}</span>
-            </div>
+        </div>
+
+        {/* Action Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <span className="text-xs font-mono text-[var(--color-text-tertiary)]">
+            🔒 Tamper-proof cryptographic record • Non-repudiable on-chain receipt
+          </span>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={handlePrintDownload}
+              disabled={downloading}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs shadow-lg shadow-purple-600/25 transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>{downloading ? "Preparing Certificate..." : "📥 Download Certificate PDF / Print"}</span>
+            </button>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <Link
-            href={`/verify/${proofId}`}
-            target="_blank"
-            className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-500/25 transition-all"
-          >
-            Open Full Public URL ↗
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2.5 rounded-xl bg-[var(--color-surface-tertiary)] hover:bg-[var(--color-surface-secondary)] text-xs font-bold transition-colors"
-            >
-              Print 🖨️
-            </button>
-            <button
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-[var(--color-surface-tertiary)] hover:bg-[var(--color-surface-secondary)] text-xs font-bold transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
 }
+
+export default CryptographicCertificateModal;
