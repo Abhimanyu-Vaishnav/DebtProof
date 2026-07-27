@@ -65,20 +65,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // For static assets: try cache first, then network
+  // For static assets: try network first, then cache to prevent stale webpack chunk errors
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           if (response.ok) {
             const cloned = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
           }
           return response;
-        });
-      })
+        })
+        .catch(() => caches.match(request))
     );
+    return;
   }
 });
 
