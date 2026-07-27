@@ -125,9 +125,12 @@ export function CryptographicCertificateModal({ isOpen, onClose, certData }: Cry
 
         {/* Action Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-          <span className="text-xs font-mono text-[var(--color-text-tertiary)]">
-            🔒 Tamper-proof cryptographic record • Non-repudiable on-chain receipt
-          </span>
+          <div className="flex items-center gap-2 text-xs font-mono text-[var(--color-text-tertiary)]">
+            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+              ⚖️ Court-Admissible Affidavit Pack
+            </span>
+            <span>Tamper-proof cryptographic record</span>
+          </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <button
@@ -135,7 +138,7 @@ export function CryptographicCertificateModal({ isOpen, onClose, certData }: Cry
               disabled={downloading}
               className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs shadow-lg shadow-purple-600/25 transition cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>{downloading ? "Preparing Certificate..." : "📥 Download Certificate PDF / Print"}</span>
+              <span>{downloading ? "Preparing Affidavit..." : "📥 Export Court Affidavit Pack PDF"}</span>
             </button>
           </div>
         </div>
