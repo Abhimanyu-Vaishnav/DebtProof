@@ -322,3 +322,6 @@ export function OnChainBadgeGallery() {
     </div>
   );
 }
+
+export default OnChainBadgeGallery;
+

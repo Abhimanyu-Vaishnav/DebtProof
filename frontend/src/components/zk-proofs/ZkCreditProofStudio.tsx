@@ -145,152 +145,120 @@ export function ZkCreditProofStudio() {
 
     setIsGenerating(false);
     playSuccessSound();
+
+    try {
+      const { recordPaymentActivityAndNotification } = require("@/services/activity.service");
+      recordPaymentActivityAndNotification({
+        title: `ZK Credit Proof Generated (${proofId})`,
+        description: `Mathematical zero-knowledge commitment created (Commitment Hash: ${commitmentHash.slice(0, 16)}...).`,
+        icon: "⚡",
+        color: "purple",
+        event_type: "zk_proof_generated",
+      });
+    } catch {}
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
-    playClickSound();
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-6 space-y-6 shadow-xl relative overflow-hidden rounded-2xl">
-      {/* Background Accent */}
-      <div className="absolute -top-24 -right-24 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--color-border-light)] pb-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
-              🛡️ Monad ZK-SNARK Engine
-            </span>
-            <span className="text-xs text-[var(--color-text-tertiary)] font-medium">Zero-Knowledge Verifier</span>
+    <div className="space-y-6">
+      {/* Configuration Card */}
+      <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-6 rounded-2xl shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[var(--color-border-light)] pb-4">
+          <div>
+            <h3 className="text-base font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+              <span>1. Select Zero-Knowledge Assertions</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/15 text-purple-700 dark:text-purple-300">
+                zk-SNARK Ready
+              </span>
+            </h3>
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              Choose the financial metrics you want to prove mathematically without revealing raw balances or account numbers.
+            </p>
           </div>
-          <h2 className="text-2xl font-black text-[var(--color-text-primary)] mt-1.5 tracking-tight">
-            Zero-Knowledge Credit Proof Generator
-          </h2>
-          <p className="text-xs text-[var(--color-text-secondary)] mt-1 max-w-2xl leading-relaxed">
-            Prove your creditworthiness and repayment record without revealing private salary numbers or confidential bank statements.
-          </p>
+
+          <button
+            onClick={generateZkProof}
+            disabled={isGenerating || selectedCriteria.length === 0}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs transition-all shadow-lg shadow-purple-600/25 flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer"
+          >
+            {isGenerating ? "Computing SHA-256 Proof..." : "⚡ Generate ZK Proof"}
+          </button>
         </div>
 
-        <button
-          onClick={() => setSecretSalt("zk_salt_" + Math.random().toString(36).substring(2, 10))}
-          className="text-xs px-3.5 py-2 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all font-semibold flex items-center gap-1.5 self-start md:self-auto shadow-xs"
-        >
-          <span>🎲 Regenerate Salt</span>
-        </button>
-      </div>
-
-      {/* Criteria Selection Grid */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="block text-xs font-extrabold uppercase tracking-wider text-[var(--color-text-secondary)]">
-            Select Assertions Calculated from Live Portfolio
-          </label>
-          {loadingMetrics && (
-            <span className="text-xs text-purple-600 dark:text-purple-400 font-mono animate-pulse">
-              ⏳ Fetching Live Portfolio Data...
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {criteria.map((criterion) => {
-            const isSelected = selectedCriteria.includes(criterion.id);
-            return (
-              <div
-                key={criterion.id}
-                onClick={() => toggleCriterion(criterion.id)}
-                className={`p-4.5 rounded-xl border transition-all cursor-pointer relative ${
-                  isSelected
-                    ? "bg-purple-500/10 border-purple-500/60 shadow-md shadow-purple-500/10"
-                    : "bg-[var(--color-surface-secondary)] border-[var(--color-border-light)] opacity-75 hover:opacity-100"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <span className="font-extrabold text-sm text-[var(--color-text-primary)]">
-                      {criterion.title}
-                    </span>
-                    <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                      {criterion.description}
-                    </p>
-                  </div>
+        {/* Criteria List */}
+        {loadingMetrics ? (
+          <div className="p-8 text-center text-xs font-mono text-[var(--color-text-tertiary)]">
+            Loading live portfolio metrics...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {criteria.map((item) => {
+              const isSelected = selectedCriteria.includes(item.id);
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => toggleCriterion(item.id)}
+                  className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                    isSelected
+                      ? "bg-purple-500/10 border-purple-500/50 shadow-md"
+                      : "bg-[var(--color-surface-secondary)] border-[var(--color-border-light)] opacity-70 hover:opacity-100"
+                  }`}
+                >
                   <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => {}}
-                    className="accent-purple-600 w-4 h-4 rounded mt-0.5"
+                    className="mt-1 accent-purple-600 w-4 h-4 rounded"
                   />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-bold text-[var(--color-text-primary)]">
+                        {item.title}
+                      </h4>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
+                        item.isVerified
+                          ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+                          : "bg-rose-500/20 text-rose-700 dark:text-rose-300"
+                      }`}>
+                        {item.isVerified ? "✓ Verified" : "⚠️ Unverified"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[var(--color-text-secondary)]">
+                      {item.description}
+                    </p>
+                    <span className="text-[10px] font-mono text-purple-600 dark:text-purple-400 block font-bold">
+                      {item.metric}
+                    </span>
+                  </div>
                 </div>
-
-                <div className="mt-3.5 pt-2.5 border-t border-[var(--color-border-light)] flex items-center justify-between text-[11px]">
-                  <span className="font-mono text-purple-600 dark:text-purple-400 font-bold">{criterion.metric}</span>
-                  <span className="text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                    ✓ Verified Live
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Secret Salt Input */}
-      <div className="p-4 rounded-xl bg-[var(--color-surface-tertiary)] border border-[var(--color-border-light)] space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-[var(--color-text-primary)]">🔒 Secret Salt (Private Blinding Factor)</span>
-          <span className="text-[10px] text-[var(--color-text-tertiary)] font-medium">Never leaves your device</span>
-        </div>
-        <input
-          type="text"
-          value={secretSalt}
-          onChange={(e) => setSecretSalt(e.target.value)}
-          className="w-full font-mono text-xs p-2.5 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-light)] text-[var(--color-text-primary)] focus:outline-none focus:border-purple-500 font-semibold"
-        />
-      </div>
-
-      {/* Action Button */}
-      <button
-        onClick={generateZkProof}
-        disabled={isGenerating || selectedCriteria.length === 0}
-        className={`w-full py-4 px-6 rounded-xl font-extrabold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${
-          isGenerating || selectedCriteria.length === 0
-            ? "bg-purple-900/40 text-purple-300/50 cursor-not-allowed"
-            : "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-600/30 active:scale-[0.99]"
-        }`}
-      >
-        {isGenerating ? (
-          <>
-            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <span>Computing SHA-256 ZK-SNARK Commitment...</span>
-          </>
-        ) : (
-          <>
-            <span>⚡ Generate Verifiable ZK-Proof Certificate</span>
-          </>
+              );
+            })}
+          </div>
         )}
-      </button>
+      </div>
 
-      {/* Proof Output Card */}
+      {/* Proof Output Box */}
       {proofResult && (
-        <div className="p-5 rounded-2xl bg-[var(--color-surface-secondary)] border-2 border-purple-500/50 space-y-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="card bg-[var(--color-surface)] border border-purple-500/40 p-6 rounded-2xl shadow-xl space-y-4 animate-fade-in">
           <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-3">
-            <div className="flex items-center gap-2.5">
-              <span className="text-2xl">📜</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📜</span>
               <div>
-                <h4 className="text-base font-black text-[var(--color-text-primary)]">Cryptographic ZK Proof Certificate</h4>
-                <p className="text-xs font-mono text-purple-600 dark:text-purple-400 font-bold">Proof ID: {proofResult.proofId}</p>
+                <h3 className="text-sm font-bold text-[var(--color-text-primary)]">
+                  Zero-Knowledge Proof Generated ({proofResult.proofId})
+                </h3>
+                <span className="text-[11px] font-mono text-[var(--color-text-tertiary)]">
+                  Timestamp: {proofResult.timestamp}
+                </span>
               </div>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40">
-              ✓ VALID SNARK PROOF
+            <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+              ✓ MATHEMETICALLY VALID
             </span>
           </div>
 
@@ -318,13 +286,13 @@ export function ZkCreditProofStudio() {
           <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
             <button
               onClick={() => copyToClipboard(proofResult.verifierUrl)}
-              className="w-full sm:w-1/2 py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2"
+              className="w-full sm:w-1/2 py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>{copied ? "✓ Copied Verifier Link!" : "🔗 Copy Shareable Verifier Link"}</span>
             </button>
             <button
               onClick={() => copyToClipboard(proofResult.commitmentHash)}
-              className="w-full sm:w-1/2 py-3 px-4 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border-light)] text-[var(--color-text-primary)] font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs"
+              className="w-full sm:w-1/2 py-3 px-4 rounded-xl bg-[var(--color-surface)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border-light)] text-[var(--color-text-primary)] font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
             >
               <span>📋 Copy Commitment Hash</span>
             </button>
@@ -334,3 +302,5 @@ export function ZkCreditProofStudio() {
     </div>
   );
 }
+
+export default ZkCreditProofStudio;
