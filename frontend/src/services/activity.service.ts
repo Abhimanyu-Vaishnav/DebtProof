@@ -43,11 +43,16 @@ export function saveLocalActivity(activity: ActivityItem): void {
     current.unshift(newEntry);
     localStorage.setItem(LOCAL_ACTIVITIES_KEY, JSON.stringify(current));
 
+    // Dispatch custom window event so Activity Page updates in real-time
+    window.dispatchEvent(new CustomEvent("debtproof_activity_added", { detail: newEntry }));
+
     // Dispatch visual toast popup for the action
     const toastType = activity.color === "red" ? "error" : activity.color === "amber" || activity.color === "orange" ? "warning" : "success";
     triggerToast(`${activity.icon} ${activity.title}`, toastType);
   } catch {}
 }
+
+import { notificationsService } from "./notifications.service";
 
 export async function recordActivity(activity: ActivityItem): Promise<void> {
   // Always save locally first for instant updates & offline support
@@ -60,3 +65,38 @@ export async function recordActivity(activity: ActivityItem): Promise<void> {
     // Silent catch if backend endpoint is read-only or offline
   }
 }
+
+/**
+ * Helper to record payment / action activity AND trigger notification simultaneously
+ */
+export async function recordPaymentActivityAndNotification(params: {
+  title: string;
+  description: string;
+  amount?: number | string;
+  icon?: string;
+  color?: string;
+  event_type?: string;
+  loan_id?: string;
+}): Promise<void> {
+  const icon = params.icon || "💳";
+  const color = params.color || "green";
+  const event_type = params.event_type || "payment_submitted";
+
+  // 1. Record in Activity timeline log
+  await recordActivity({
+    event_type,
+    title: params.title,
+    description: params.description,
+    icon,
+    color,
+  });
+
+  // 2. Dispatch Notification to Topbar bell & push alerts
+  await notificationsService.createNotification({
+    title: params.title,
+    body: params.description,
+    notif_type: "payment_received",
+    loan_id: params.loan_id,
+  });
+}
+

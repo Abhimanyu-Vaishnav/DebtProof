@@ -135,11 +135,12 @@ export const creditCardsService = {
   },
 
   createPayment: async (paymentData: CreditCardPaymentFormData): Promise<CreditCardPayment> => {
+    let resultPay: CreditCardPayment;
     try {
       const { data } = await apiClient.post<CreditCardPayment>("/credit-cards/payments/", paymentData);
-      return data;
+      resultPay = data;
     } catch {
-      return {
+      resultPay = {
         id: `card-pay-${Date.now()}`,
         card: paymentData.card,
         card_name: "Credit Card",
@@ -152,6 +153,20 @@ export const creditCardsService = {
         updated_at: new Date().toISOString(),
       };
     }
+
+    try {
+      const { recordPaymentActivityAndNotification } = require("./activity.service");
+      recordPaymentActivityAndNotification({
+        title: `Credit Card Bill Paid: ₹${parseFloat(paymentData.amount).toLocaleString('en-IN')}`,
+        description: `Payment recorded for credit card on ${paymentData.payment_date}.`,
+        amount: paymentData.amount,
+        icon: "💳",
+        color: "green",
+        event_type: "credit_card_payment",
+      });
+    } catch {}
+
+    return resultPay;
   },
 
   deletePayment: async (paymentId: string): Promise<void> => {

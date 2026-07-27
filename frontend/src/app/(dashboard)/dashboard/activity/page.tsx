@@ -32,6 +32,11 @@ const EVENT_LABELS: Record<string, string> = {
   loan_updated: "Loan",
   loan_closed: "Loan",
   payment_added: "Payment",
+  payment_recorded: "Payment",
+  payment_submitted: "Payment",
+  credit_card_payment: "Card Payment",
+  settlement_proposal: "Settlement",
+  p2p_payment: "P2P Payment",
   receipt_uploaded: "Receipt",
   invitation_sent: "Team",
   invitation_accepted: "Team",
@@ -69,7 +74,27 @@ export default function ActivityPage() {
     const getLocalActivities = (): TimelineEntry[] => {
       try {
         const raw = localStorage.getItem("debtproof_local_activities");
-        return raw ? JSON.parse(raw) : [];
+        const list: TimelineEntry[] = raw ? JSON.parse(raw) : [];
+
+        // Auto-seed from stored payments if activities are empty
+        if (list.length === 0 && typeof window !== "undefined") {
+          const rawPayments = localStorage.getItem("debtproof_local_payments");
+          if (rawPayments) {
+            const parsedPay = JSON.parse(rawPayments);
+            parsedPay.forEach((p: any) => {
+              list.push({
+                id: `act-pay-${p.id}`,
+                event_type: "payment_recorded",
+                title: `Payment Recorded: ₹${parseFloat(p.amount || 0).toLocaleString('en-IN')}`,
+                description: `Payment towards ${p.loan_name || "Loan"} via ${(p.payment_method || "bank transfer").replace("_", " ")}.`,
+                icon: "💸",
+                color: "green",
+                created_at: p.created_at || p.payment_date || new Date().toISOString(),
+              });
+            });
+          }
+        }
+        return list;
       } catch {
         return [];
       }
@@ -102,7 +127,7 @@ export default function ActivityPage() {
       const localData = getLocalActivities();
       
       const mergedMap = new Map<string, TimelineEntry>();
-      [...data, ...localData].forEach(item => {
+      [...localData, ...data].forEach(item => {
         if (item.id && !mergedMap.has(item.id)) {
           mergedMap.set(item.id, item);
         }
@@ -117,25 +142,35 @@ export default function ActivityPage() {
       }
     } catch {
       const localData = getLocalActivities();
-      if (localData.length > 0) {
-        const mergedMap = new Map<string, TimelineEntry>();
-        [...localData, ...initialDefaults].forEach(item => {
-          if (item.id && !mergedMap.has(item.id)) {
-            mergedMap.set(item.id, item);
-          }
-        });
-        const combined = Array.from(mergedMap.values());
-        combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        setEntries(combined);
-      } else {
-        setEntries(initialDefaults);
-      }
+      const mergedMap = new Map<string, TimelineEntry>();
+      [...localData, ...initialDefaults].forEach(item => {
+        if (item.id && !mergedMap.has(item.id)) {
+          mergedMap.set(item.id, item);
+        }
+      });
+      const combined = Array.from(mergedMap.values());
+      combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setEntries(combined);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchActivity(); }, [fetchActivity]);
+  useEffect(() => {
+    fetchActivity();
+
+    const handleActivityAdded = (e: Event) => {
+      const custom = e as CustomEvent<TimelineEntry>;
+      if (custom.detail) {
+        setEntries((prev) => [custom.detail, ...prev.filter((i) => i.id !== custom.detail.id)]);
+      } else {
+        fetchActivity();
+      }
+    };
+
+    window.addEventListener("debtproof_activity_added", handleActivityAdded);
+    return () => window.removeEventListener("debtproof_activity_added", handleActivityAdded);
+  }, [fetchActivity]);
 
   const [searchQuery, setSearchQuery] = useState("");
 

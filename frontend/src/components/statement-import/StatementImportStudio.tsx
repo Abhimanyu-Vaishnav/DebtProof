@@ -464,3 +464,6 @@ export function StatementImportStudio() {
     </div>
   );
 }
+
+export default StatementImportStudio;
+

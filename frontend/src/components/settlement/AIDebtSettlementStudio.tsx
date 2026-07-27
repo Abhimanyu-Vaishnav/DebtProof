@@ -244,6 +244,18 @@ Abhimanyu Vaishnav`;
     navigator.clipboard.writeText(currentProposal);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+
+    try {
+      const { recordPaymentActivityAndNotification } = require("@/services/activity.service");
+      recordPaymentActivityAndNotification({
+        title: `Settlement Proposal Generated: ${activeLoan?.name || "Loan"}`,
+        description: `Settlement offer letter created (Discount Offer: ₹${settlementOfferAmount.toLocaleString()}).`,
+        amount: settlementOfferAmount,
+        icon: "📄",
+        color: "purple",
+        event_type: "settlement_proposal",
+      });
+    } catch {}
   };
 
   return (

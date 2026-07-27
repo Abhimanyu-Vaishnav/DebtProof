@@ -50,6 +50,7 @@ const navSections: NavSection[] = [
       {
         label: "Payoff Quest",
         href: "/dashboard/payoff-quest",
+        badge: "NEW",
         icon: (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
@@ -76,6 +77,7 @@ const navSections: NavSection[] = [
       {
         label: "Refinance Studio",
         href: "/dashboard/refinance",
+        badge: "NEW",
         icon: (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="23 4 23 10 17 10" />
@@ -87,6 +89,7 @@ const navSections: NavSection[] = [
       {
         label: "Micro Auto-Saver",
         href: "/dashboard/auto-saver",
+        badge: "NEW",
         icon: (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -131,6 +134,17 @@ const navSections: NavSection[] = [
   {
     title: "Analytics & Web3",
     items: [
+      {
+        label: "Activity Log",
+        href: "/dashboard/activity",
+        badge: "NEW",
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        ),
+      },
       {
         label: "ZK & Badges",
         href: "/dashboard/zk-proofs",

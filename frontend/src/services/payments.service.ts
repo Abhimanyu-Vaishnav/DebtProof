@@ -185,6 +185,19 @@ export const paymentsService = {
           current.unshift(data.payment);
           setStoredPayments(current);
         }
+
+        try {
+          const { recordPaymentActivityAndNotification } = require("./activity.service");
+          recordPaymentActivityAndNotification({
+            title: `Payment Recorded: ₹${parseFloat(paymentData.amount).toLocaleString('en-IN')}`,
+            description: `Payment recorded successfully via ${paymentData.payment_method || "bank transfer"}.`,
+            amount: paymentData.amount,
+            icon: "💸",
+            color: "green",
+            event_type: "payment_recorded",
+            loan_id: loanId,
+          });
+        } catch {}
       }
       return data.payment;
     } catch {
@@ -232,13 +245,15 @@ export const paymentsService = {
       setStoredPayments(current);
 
       try {
-        const { saveLocalActivity } = require("./activity.service");
-        saveLocalActivity({
-          event_type: "payment_added",
+        const { recordPaymentActivityAndNotification } = require("./activity.service");
+        recordPaymentActivityAndNotification({
           title: `Payment Recorded: ₹${parseFloat(paymentData.amount).toLocaleString('en-IN')}`,
-          description: `Paid towards ${foundLoan?.name || "Loan"} on ${paymentData.payment_date || "today"}`,
+          description: `Paid towards ${foundLoan?.name || "Loan"} on ${paymentData.payment_date || "today"}.`,
+          amount: paymentData.amount,
           icon: "💸",
           color: "green",
+          event_type: "payment_added",
+          loan_id: loanId,
         });
       } catch {}
 

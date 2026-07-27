@@ -61,4 +61,48 @@ export const notificationsService = {
     const { data } = await apiClient.post<{ success: boolean; unread_count: number }>("/notifications/evaluate/");
     return data;
   },
+
+  /**
+   * Create & dispatch a notification (for payments, settlements, etc.)
+   */
+  createNotification: async (notif: {
+    title: string;
+    body: string;
+    notif_type: string;
+    loan_id?: string;
+  }): Promise<void> => {
+    const newNotif: Notification = {
+      id: `notif-${Date.now()}`,
+      title: notif.title,
+      body: notif.body,
+      notif_type: notif.notif_type as any,
+      loan: notif.loan_id || null,
+      loan_name: null,
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+
+    // Try posting to backend
+    try {
+      await apiClient.post("/notifications/", notif);
+    } catch {
+      // Offline / fallback catch
+    }
+
+    // Dispatch window event so Topbar badge updates dynamically
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("debtproof_add_notification", { detail: newNotif }));
+
+      // Trigger OS/Browser push notification if allowed
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification(notif.title, {
+            body: notif.body,
+            icon: "/icons/icon-192.png",
+          });
+        } catch {}
+      }
+    }
+  },
 };
+

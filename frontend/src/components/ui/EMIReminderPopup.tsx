@@ -80,10 +80,10 @@ export function EMIReminderPopup() {
 
   return (
     <div
-      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100vw-2rem)] max-w-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-2xl border backdrop-blur-xl transition-all duration-500 transform ${
+      className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100vw-2rem)] max-w-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-2xl border backdrop-blur-xl transition-all duration-500 transform ${
         visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-10 scale-95 pointer-events-none"
       } ${hasOverdue
-        ? "bg-rose-950/95 border-rose-500/50 text-white"
+        ? "bg-rose-500/10 dark:bg-rose-950/85 border-rose-500/40 text-[var(--color-text-primary)]"
         : "bg-[var(--color-surface)]/95 border-amber-500/40 text-[var(--color-text-primary)]"
       }`}
     >
@@ -91,15 +91,15 @@ export function EMIReminderPopup() {
         {/* Left Info Section */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className={`w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center text-lg shadow-inner ${
-            hasOverdue ? "bg-rose-500/20 text-rose-300 border border-rose-500/40" : "bg-amber-500/20 text-amber-500 border border-amber-500/40"
+            hasOverdue ? "bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/40" : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40"
           }`}>
             {hasOverdue ? "⚠️" : "🔔"}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className={`inline-block w-2 h-2 rounded-full animate-ping ${hasOverdue ? "bg-rose-400" : "bg-amber-400"}`} />
-              <p className={`text-[10px] font-black uppercase tracking-wider ${hasOverdue ? "text-rose-300" : "text-amber-600 dark:text-amber-400"}`}>
+              <span className={`inline-block w-2 h-2 rounded-full animate-ping ${hasOverdue ? "bg-rose-500" : "bg-amber-500"}`} />
+              <p className={`text-[10px] font-black uppercase tracking-wider ${hasOverdue ? "text-rose-600 dark:text-rose-300" : "text-amber-600 dark:text-amber-400"}`}>
                 {hasOverdue ? "Overdue EMI Alert" : `EMI Due ${topItem.daysLeft === 0 ? "Today" : `in ${topItem.daysLeft} Day${topItem.daysLeft > 1 ? "s" : ""}`}`}
               </p>
             </div>

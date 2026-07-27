@@ -454,3 +454,6 @@ export function JointWorkspaceStudio() {
     </div>
   );
 }
+
+export default JointWorkspaceStudio;
+

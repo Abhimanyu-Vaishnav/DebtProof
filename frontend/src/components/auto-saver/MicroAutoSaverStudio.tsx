@@ -418,3 +418,6 @@ export function MicroAutoSaverStudio() {
     </div>
   );
 }
+
+export default MicroAutoSaverStudio;
+

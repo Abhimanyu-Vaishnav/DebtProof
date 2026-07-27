@@ -526,3 +526,6 @@ export function RefinanceSavingsStudio() {
     </div>
   );
 }
+
+export default RefinanceSavingsStudio;
+
