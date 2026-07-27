@@ -9,6 +9,8 @@ import { Topbar } from "@/components/layout/Topbar";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { useToast } from "@/components/ui/Toast";
 
+import { MobilePWAOfflineBiometricStudio } from "@/components/settings/MobilePWAOfflineBiometricStudio";
+
 type SettingsTab = "currency" | "appearance" | "dashboard" | "notifications" | "web3" | "audio" | "privacy" | "about";
 
 const TABS: { id: SettingsTab; label: string; icon: string }[] = [
@@ -128,7 +130,9 @@ export default function SettingsPage() {
   return (
     <>
       <Topbar title="Settings" subtitle="Personalise DebtProof for your region" />
-      <main className="page-content">
+      <main className="page-content space-y-6">
+        {/* Mobile PWA Offline & Biometric Lock Studio */}
+        <MobilePWAOfflineBiometricStudio />
 
         {/* Header Banner */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-primary)]/20 via-[var(--color-surface-secondary)] to-[var(--color-surface-secondary)] border border-[var(--color-primary)]/20 p-6 mb-6">

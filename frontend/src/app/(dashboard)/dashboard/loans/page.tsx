@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { loansService } from "@/services/loans.service";
 import { CibilParserModal } from "@/components/loans/CibilParserModal";
+import { AutomatedAIRepaymentAgentStudio } from "@/components/loans/AutomatedAIRepaymentAgentStudio";
 import type { Loan } from "@/types";
 
 const STATUS_FILTERS = [
@@ -121,7 +122,10 @@ export default function LoansPage() {
   return (
     <>
       <Topbar title="My Loans" subtitle={`${totalCount} total loan${totalCount !== 1 ? "s" : ""}`} />
-      <main className="page-content">
+      <main className="page-content space-y-6">
+        {/* Automated AI Repayment Agent Studio */}
+        <AutomatedAIRepaymentAgentStudio />
+
         {/* Modern Filter Toolbar */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border-light)] p-4 rounded-2xl shadow-sm mb-6 flex flex-col gap-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
