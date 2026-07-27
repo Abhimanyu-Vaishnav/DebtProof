@@ -34,17 +34,31 @@ const FEATURE_GUIDES: FeatureGuide[] = [
   {
     id: "loans",
     icon: "🏦",
-    name: "My Loans",
+    name: "My Loans & Repayment Manager",
     category: "core",
     role: "Manage all traditional bank loans (Home, Vehicle, Personal, Business, Credit Cards).",
     howToUse: [
       "Click '+ Add Loan' to record a new loan account with lender name, interest rate, EMI, and start/end dates.",
+      "Use '📄 Parse CIBIL / Statement' to auto-extract loan data directly from uploaded PDF statements.",
       "Click any loan card to open its detailed page featuring radial repayment ring and monthly breakdown.",
-      "Use '⚡ Foreclose / Part-Pay' calculator to see how prepayments reduce total interest.",
       "Record EMI payments directly to maintain complete payment history."
     ],
-    keyBenefits: ["Detailed progress visualization", "Foreclosure interest savings calculator", "Payment history logs"],
+    keyBenefits: ["CIBIL PDF auto-parser", "Foreclosure interest savings calculator", "Payment history logs"],
     path: "/dashboard/loans"
+  },
+  {
+    id: "credit-cards",
+    icon: "💳",
+    name: "Credit Cards Command Center",
+    category: "core",
+    role: "Manage credit card accounts, statement balances, minimum due, and utilization ratios.",
+    howToUse: [
+      "Add your credit card details including credit limit and current balance.",
+      "Monitor credit card utilization gauge (keep below 30% for optimal credit score).",
+      "Record card bill payments to automatically update active balances."
+    ],
+    keyBenefits: ["Credit utilization monitoring", "Due date alerts", "Balance tracking"],
+    path: "/dashboard/credit-cards"
   },
   {
     id: "budget",
@@ -64,7 +78,7 @@ const FEATURE_GUIDES: FeatureGuide[] = [
   {
     id: "investments",
     icon: "📈",
-    name: "Investments & SIPs",
+    name: "Investments & Wealth Tracker",
     category: "analytics",
     role: "Track your wealth-building assets (Mutual Funds, Stocks, FDs, Crypto, Real Estate, Gold).",
     howToUse: [
@@ -84,22 +98,77 @@ const FEATURE_GUIDES: FeatureGuide[] = [
     howToUse: [
       "Use 'Interactive Chart Studio' to toggle/overlay Payments, Net Worth, Investments, and Debt curves.",
       "Analyze Monthly Interest Burn (money lost to interest vs principal).",
-      "Run Debt Battle Simulator to compare Snowball vs Avalanche payoff strategies.",
-      "Use Tax Savings Calculator for home loan deduction optimization."
+      "Run Tax Savings Calculator to optimize Section 80C and Section 24(b) deductions."
     ],
-    keyBenefits: ["Multi-metric chart overlays", "Snowball vs Avalanche strategy simulator", "Interest cost analysis"],
+    keyBenefits: ["Multi-metric chart overlays", "Tax savings calculator", "Interest cost analysis"],
     path: "/dashboard/analytics"
+  },
+  {
+    id: "payments",
+    icon: "💸",
+    name: "Payments Log & History",
+    category: "core",
+    role: "Comprehensive log of all EMI payments with principal vs interest split.",
+    howToUse: [
+      "Click 'Record Payment' to log an EMI transaction.",
+      "Attach receipt files or notes for every payment.",
+      "Inspect monthly payment breakdowns and download individual vouchers."
+    ],
+    keyBenefits: ["Principal vs interest tracking", "Receipt attachment", "Filter by loan account"],
+    path: "/dashboard/payments"
+  },
+  {
+    id: "receipts",
+    icon: "📁",
+    name: "Receipt Vault & Monad Anchoring",
+    category: "web3",
+    role: "Store receipt documents and anchor SHA-256 document checksums to Monad Testnet.",
+    howToUse: [
+      "Upload receipt PDF/PNG images to the vault.",
+      "Click 'Anchor to Monad Blockchain' to request Web3 wallet signature.",
+      "Generate immutable proof link for bank or legal audits."
+    ],
+    keyBenefits: ["SHA-256 hashing", "On-chain Monad anchoring", "Tamper-proof storage"],
+    path: "/dashboard/receipts"
+  },
+  {
+    id: "calendar",
+    icon: "📅",
+    name: "Interactive EMI Calendar",
+    category: "tools",
+    role: "Monthly grid calendar highlighting EMI due dates and payment status.",
+    howToUse: [
+      "View green (Paid), yellow (Upcoming), and red (Overdue) dates.",
+      "Click any date to record payment directly.",
+      "Sync with Google/Apple calendar via iCal export."
+    ],
+    keyBenefits: ["Visual due date grid", "Direct payment recording", "Calendar sync"],
+    path: "/dashboard/calendar"
+  },
+  {
+    id: "repayment-simulator",
+    icon: "🚀",
+    name: "Repayment Simulator",
+    category: "analytics",
+    role: "Compare Avalanche vs Snowball payoff strategies with extra payment sliders.",
+    howToUse: [
+      "Adjust the extra monthly payment slider (₹1,000 – ₹50,000).",
+      "Compare Debt Avalanche (highest rate first) vs Debt Snowball (smallest balance first).",
+      "See exact months and interest saved."
+    ],
+    keyBenefits: ["Strategy comparison", "Extra payment calculator", "Debt freedom date prediction"],
+    path: "/dashboard/repayment-simulator"
   },
   {
     id: "reports",
     icon: "📄",
-    name: "Reports & PDF Export",
+    name: "Bank-Grade PDF Reports",
     category: "tools",
     role: "Generate official PDF statements and CSV/JSON data dumps for bank, tax, or legal use.",
     howToUse: [
-      "Select desired report type: Loan Portfolio Statement, Payment History, Net Worth, or Credit Cards.",
+      "Select report type: Loan Portfolio Statement, Payment History, or Net Worth Audit.",
       "Apply custom filters (specific loan, start date, end date).",
-      "Click '📄 Export PDF' to trigger a print-ready formatted statement, or '📊 CSV / JSON' for data export."
+      "Click '📄 Export PDF' to trigger a print-ready formatted statement."
     ],
     keyBenefits: ["One-click PDF print statements", "Filtered CSV export", "Audit-ready financial logs"],
     path: "/dashboard/reports"
@@ -111,9 +180,9 @@ const FEATURE_GUIDES: FeatureGuide[] = [
     category: "web3",
     role: "Decentralized peer-to-peer lending powered by Monad Blockchain smart contracts.",
     howToUse: [
-      "Borrowers create Web3 loan requests with principal amount, interest rate, and duration.",
-      "Lenders fund loans using MON tokens directly via Web3 wallet (MetaMask).",
-      "Escrow smart contract manages automated disbursement and on-chain repayment verification."
+      "Connect MetaMask wallet on Monad Testnet.",
+      "Borrowers post Web3 loan requests with principal, rate, and duration.",
+      "Lenders fund requests directly with MON tokens via smart contract escrow."
     ],
     keyBenefits: ["Zero middleman fees", "Transparent smart contract escrow", "On-chain reputation tracking"],
     path: "/dashboard/p2p-market"
@@ -133,18 +202,172 @@ const FEATURE_GUIDES: FeatureGuide[] = [
     path: "/verify-proof"
   },
   {
+    id: "assistant",
+    icon: "🤖",
+    name: "AI Strategy Assistant & Coach",
+    category: "analytics",
+    role: "Real-data AI assistant that answers financial queries using your actual database records.",
+    howToUse: [
+      "Open AI Assistant (`/dashboard/assistant`).",
+      "Pick strategy prompts or type natural queries like 'Which loan should I close first?'.",
+      "View exact calculations computed from your DB records."
+    ],
+    keyBenefits: ["Real-data DB engine", "Zero mock responses", "Instant FAQ resolution"],
+    path: "/dashboard/assistant"
+  },
+  {
     id: "notifications",
     icon: "🔔",
     name: "Smart Notifications & Push",
     category: "tools",
     role: "Real-time alert system for upcoming EMIs, overdue warnings, and browser push alerts.",
     howToUse: [
-      "Click 'Enable' on Browser Push banner to get alerts directly on your device.",
-      "Filter notifications by All, Unread, EMI Alerts, and Payments.",
-      "Swipe right to mark read, swipe left to delete."
+      "Enable browser notifications for desktop alerts.",
+      "Filter notifications by All, Unread, and EMI Alerts.",
+      "Experience floating 3-day EMI due reminders."
     ],
     keyBenefits: ["Browser push notifications", "3-day EMI due floating popup", "Swipe gesture mobile controls"],
     path: "/dashboard/notifications"
+  },
+  {
+    id: "net-worth",
+    icon: "💎",
+    name: "Net Worth & Liabilities Studio",
+    category: "analytics",
+    role: "Consolidated net worth audit (Total Assets minus Total Liabilities).",
+    howToUse: [
+      "View live Net Worth calculation.",
+      "Inspect asset-to-debt ratio.",
+      "Track net worth growth trends over time."
+    ],
+    keyBenefits: ["Consolidated asset/debt view", "Net worth trend chart", "Debt ratio indicator"],
+    path: "/dashboard/net-worth"
+  },
+  {
+    id: "zk-proofs",
+    icon: "🛡️",
+    name: "ZK-Credit Proof Studio",
+    category: "web3",
+    role: "Generate Zero-Knowledge credit proofs without exposing private income or bank statement details.",
+    howToUse: [
+      "Select credit threshold (e.g. Credit Score > 750).",
+      "Generate cryptographic ZK proof string.",
+      "Share proof link with lenders for private credit verification."
+    ],
+    keyBenefits: ["Complete financial privacy", "Verifiable credit proof", "No document leak risk"],
+    path: "/dashboard/zk-proofs"
+  },
+  {
+    id: "payoff-quest",
+    icon: "🎯",
+    name: "Debt Destroyer Payoff Quest",
+    category: "tools",
+    role: "Gamified debt reduction engine with XP points, streak counters, badges, and level unlocks.",
+    howToUse: [
+      "Complete debt payoff quests (e.g. Early EMI payment).",
+      "Earn XP and build repayment streaks.",
+      "Unlock custom dashboard badges and level titles."
+    ],
+    keyBenefits: ["Gamified motivation", "Repayment streaks", "Level achievements"],
+    path: "/dashboard/payoff-quest"
+  },
+  {
+    id: "refinance",
+    icon: "🏦",
+    name: "Refinance Savings Studio",
+    category: "analytics",
+    role: "Balance transfer calculator comparing your current loan rate with lower market offers.",
+    howToUse: [
+      "Select active loan to evaluate.",
+      "Enter lower interest rate offered by rival banks.",
+      "Calculate net interest savings after processing fees."
+    ],
+    keyBenefits: ["Balance transfer evaluator", "Net interest savings calculator", "Processing fee deduction"],
+    path: "/dashboard/refinance"
+  },
+  {
+    id: "auto-saver",
+    icon: "⚡",
+    name: "Auto-Saver Micro-Deposit Engine",
+    category: "tools",
+    role: "Round up daily transactions or set daily micro-deposits to auto-prepay high-interest debt.",
+    howToUse: [
+      "Enable spare change transaction roundups.",
+      "Accumulate daily micro-deposits.",
+      "Auto-apply monthly savings to loan principal."
+    ],
+    keyBenefits: ["Micro-saving automation", "Accelerated debt reduction", "Effortless savings"],
+    path: "/dashboard/auto-saver"
+  },
+  {
+    id: "organization",
+    icon: "🏢",
+    name: "Multi-Tenant Organization",
+    category: "tools",
+    role: "Multi-user tenancy management for households, joint families, small businesses, or team roles.",
+    howToUse: [
+      "Create or join an organization workspace.",
+      "Assign member roles (Owner, Admin, Auditor).",
+      "Share workspace financial records securely."
+    ],
+    keyBenefits: ["Household debt management", "Role-based security", "Shared workspaces"],
+    path: "/dashboard/organization"
+  },
+  {
+    id: "joint-workspace",
+    icon: "👥",
+    name: "Joint Workspace & Co-borrowers",
+    category: "tools",
+    role: "Shared financial space for co-borrowers to co-manage home loans or business credit.",
+    howToUse: [
+      "Invite co-borrowers via email.",
+      "Co-manage active loan accounts.",
+      "Track individual payment contributions."
+    ],
+    keyBenefits: ["Co-borrower tracking", "Shared payment logs", "Split contribution stats"],
+    path: "/dashboard/joint-workspace"
+  },
+  {
+    id: "activity",
+    icon: "📊",
+    name: "Activity Timeline & Audit",
+    category: "tools",
+    role: "Unified security login and operation event timeline.",
+    howToUse: [
+      "Review chronological user activity.",
+      "Filter security and system audit events.",
+      "Track AI assistant queries and loan modifications."
+    ],
+    keyBenefits: ["Complete audit trail", "IP logging", "Security tracking"],
+    path: "/dashboard/activity"
+  },
+  {
+    id: "statement-import",
+    icon: "📄",
+    name: "Statement Import Studio",
+    category: "tools",
+    role: "Batch upload CSV/Excel/PDF bank statements for automated transaction matching.",
+    howToUse: [
+      "Upload bank statement files.",
+      "Map transaction column fields.",
+      "Reconcile payments with active loans."
+    ],
+    keyBenefits: ["Batch file import", "Bank PDF support", "Automated reconciliation"],
+    path: "/dashboard/statement-import"
+  },
+  {
+    id: "settings",
+    icon: "⚙️",
+    name: "User Settings & Currency Switcher",
+    category: "tools",
+    role: "Preferences, base currency selector (INR ₹, USD $, EUR €, GBP £), and session controls.",
+    howToUse: [
+      "Switch preferred base currency.",
+      "Toggle dark/light theme.",
+      "Manage active security sessions."
+    ],
+    keyBenefits: ["Multi-currency support", "Theme preferences", "Session security"],
+    path: "/dashboard/settings"
   }
 ];
 

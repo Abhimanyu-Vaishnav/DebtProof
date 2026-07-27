@@ -1,6 +1,6 @@
 # 📑 DebtProof — Modern Decentralized Financial & Debt Management Platform 🚀
 
-> **Never lose proof of your loan repayments again.** Manage traditional bank debts, track investments, optimize monthly household budgets, participate in P2P Web3 lending, and generate immutable cryptographic proof of every transaction on the **Monad Blockchain**.
+> **Never lose proof of your loan repayments again.** Manage traditional bank debts, track investments, optimize monthly household budgets, participate in P2P Web3 lending, utilize ZK-credit proofs, gamify debt payoff quests, automate auto-saves, and generate immutable cryptographic proof of every transaction on the **Monad Blockchain**.
 
 🌐 **Live Application URL**: [https://debt-proof-front-tau.vercel.app/](https://debt-proof-front-tau.vercel.app/)
 
@@ -17,12 +17,14 @@
 graph TD
   Client["💻 Next.js 16 Client App Router / React 19 / PWA"]
   API["⚙️ Django 5.0 REST API Framework (Port 8000)"]
+  AIEngine["🤖 AI Financial Engine (AIFinancialEngine)"]
   DB[("💾 SQLite / PostgreSQL Database")]
   Blockchain["⛓️ Monad Testnet Blockchain (Chain ID: 10143)"]
   Wallet["🦊 MetaMask Web3 Provider"]
 
   Client -->|JWT Auth & REST API| API
   API --> DB
+  API -->|Query Engine| AIEngine
   Client -->|Ethers.js v6 Tx| Wallet
   Wallet -->|Store & Verify SHA-256 Proofs| Blockchain
   Client -->|Query On-Chain Proofs| Blockchain
@@ -32,291 +34,384 @@ graph TD
 
 ## 🌟 What is DebtProof?
 
-**DebtProof** is an end-to-end, human-first personal financial management ecosystem. Whether you are managing multiple bank loans (Home, Vehicle, Personal, Credit Cards), tracking your investment SIPs, planning monthly household budgets, or participating in peer-to-peer (P2P) lending — DebtProof brings clarity, automation, and cryptographic trust to your financial life.
+**DebtProof** is an end-to-end, human-first personal financial management ecosystem. Whether you are managing multiple bank loans (Home, Vehicle, Personal, Credit Cards), tracking your investment SIPs, planning monthly household budgets, participating in peer-to-peer (P2P) lending, creating Zero-Knowledge (ZK) credit proofs, or playing debt-destroyer payoff games — DebtProof brings clarity, automation, and cryptographic trust to your financial life.
 
 Every payment receipt uploaded is hashed using **SHA-256** and anchored onto the **Monad Blockchain**, guaranteeing that your repayment records can **never be deleted, backdated, or disputed by lenders**.
 
 ---
 
-## 🛡️ Cryptographic Proof & Monad Anchoring Workflow
+## 🚀 Complete 27 Features & Options Breakdown (With Step-by-Step Usage & FAQs)
 
-```mermaid
-sequenceDiagram
-  autonumber
-  actor User
-  participant Frontend as Next.js Web App
-  participant Service as SHA-256 Hasher
-  participant Wallet as MetaMask (EVM)
-  participant Monad as Monad Smart Contract
-
-  User->>Frontend: Upload Payment Receipt (PDF / PNG)
-  Frontend->>Service: Compute SHA-256 Checksum Hash
-  Service-->>Frontend: Return 64-char Hash (e.g. 0x8f7a9d...)
-  Frontend->>Wallet: Prompt Store Proof Tx
-  User->>Wallet: Confirm Monad Gas Fee (MON)
-  Wallet->>Monad: Execute storeProof(proofId, documentHash)
-  Monad-->>Wallet: Tx Receipt & Block Number
-  Wallet-->>Frontend: Confirm On-Chain Verification
-  Frontend-->>User: Display Green Verified Badge & Monad Explorer Link
-```
-
----
-
-## 🚀 Complete Feature List & User Guide
-
-Here is a comprehensive breakdown of all **17 Core Modules** built into DebtProof, how each module works, and step-by-step instructions on how to use them:
+Below is the complete guide for all **27 features/options** available in DebtProof, along with step-by-step usage instructions and Frequently Asked Questions (FAQs). *All FAQs are fully supported and answered by our built-in AI Assistant (`/dashboard/assistant`).*
 
 ---
 
 ### 1. 📊 Interactive Dashboard & Financial Command Center (`/dashboard`)
-* **What it does**: Provides a bird's-eye view of your entire financial standing — total borrowed principal, total repaid principal, active outstanding debt, and monthly interest burn.
-* **Key Capabilities**:
-  * **4 KPI Cards**: Total Loans, Outstanding Balance, Upcoming EMI / Overdue Warning, and Active/Closed Status.
-  * **Income & Outflow Safety Meter (`IncomeTrackerWidget`)**: Multi-source income tracker (Salary, Rental, Freelance, Business) that alerts you if your monthly EMI exceeds safe limits (Debt-to-Income > 35%).
-  * **Debt Reduction Velocity & Milestones (`PayoffMilestonesWidget`)**: Visual progress bar tracking your path towards 100% debt freedom.
-  * **AI Debt Coach (`AIDebtAdvisorWidget`)**: Dynamic AI coach providing custom advice based on your highest interest rate debts.
-  * **Emergency Reserve Buffer (`EmergencyBufferWidget`)**: Calculates how many months of EMI payments your emergency fund covers.
-  * **EMI Bounce Protection (`EMIBounceProtectionWidget`)**: Monitors linked bank accounts to prevent auto-debit bounce penalties.
-  * **Multi-Currency Debt Tracker (`MultiCurrencyWidget`)**: Manage global debts across USD, EUR, GBP, and INR.
-  * **Interactive Monthly Payment History Chart**: Bar and Line chart switcher with hover tooltips displaying monthly payment totals.
-  * **Loan Portfolio Repayment Progress**: Visual green (paid %) vs red (remaining %) progress bars for each loan with click-to-inspect modals.
+* **What it does**: Central command center providing a bird's-eye view of your entire financial standing — total borrowed principal, total repaid principal, active outstanding debt, and monthly interest burn.
 * **How to Use**:
   1. Navigate to `/dashboard`.
-  2. View your financial health score and active warnings.
-  3. Click on any loan progress bar to inspect loan details and schedule.
-  4. Toggle between **Bar** 📊 and **Line** 📈 view on the Monthly Payment History chart.
+  2. View top KPI cards (Total Borrowed, Total Repaid, Outstanding, Monthly EMI).
+  3. Monitor Income & Outflow Safety Meter to check if total EMI stays below 35% of income.
+  4. Toggle between Bar 📊 and Line 📈 views on the Monthly Payment History chart.
+* **❓ FAQs**:
+  * **Q: What is a safe Debt-to-Income (DTI) ratio?**
+    * **AI Answer**: A healthy DTI ratio is below **35%**. If your monthly EMI burden exceeds 40–50%, our AI alerts you to pause new debt and focus on high-interest repayment.
+  * **Q: How is my total outstanding debt calculated?**
+    * **AI Answer**: Total outstanding is calculated by subtracting all recorded principal repayments from your original loan amounts across active loans.
 
 ---
 
-### 2. 🏦 My Loans & Repayment Management (`/dashboard/loans`)
+### 2. 🏦 My Loans & Repayment Manager (`/dashboard/loans`)
 * **What it does**: Track home loans, car loans, education loans, personal loans, and business liabilities in one place.
-* **Key Capabilities**:
-  * **Filter & Search**: Filter loans by status (Active, Closed, Defaulted, On Hold) or category (Home, Personal, Vehicle, Education, Business, Credit Card).
-  * **Add Loan (`/dashboard/loans/new`)**: Record new liabilities with principal, interest rate, EMI, start/end dates, lender name, and account number.
-  * **📄 CIBIL / Bank Statement Parser (`CibilParserModal`)**: Auto-extract loan details directly from uploaded CIBIL credit reports or bank PDF statements.
 * **How to Use**:
   1. Click **"+ Add Loan"** or go to `/dashboard/loans/new`.
-  2. Fill in the loan details or click **"Parse CIBIL / Statement"** to auto-fill.
-  3. Save the loan to start tracking monthly EMIs.
+  2. Enter lender name, loan category, interest rate (p.a.), EMI, and tenure.
+  3. Click **"📄 Parse CIBIL / Statement"** modal to auto-extract loan data from PDF reports.
+* **❓ FAQs**:
+  * **Q: How does the CIBIL / Bank Statement Parser work?**
+    * **AI Answer**: It scans uploaded CIBIL or bank PDF statements, extracts loan account numbers, principal amounts, interest rates, and auto-populates your loan form.
+  * **Q: Can I edit or close a loan once paid off?**
+    * **AI Answer**: Yes! Click any loan card, click **"Edit Loan"** or update status to **"Closed"** when remaining balance reaches zero.
 
 ---
 
-### 3. ⚡ Foreclosure & Lump-Sum Prepayment Calculator (`/dashboard/loans/[id]`)
-* **What it does**: Calculate exact interest saved and tenure reduced by making part-payments or full foreclosure prepayments.
-* **Key Capabilities**:
-  * Interactive slider/input for lump-sum prepayment.
-  * Real-time calculation of new interest cost vs baseline.
-  * Displays exact number of months trimmed off your loan tenure.
-* **How to Use**:
-  1. Click on any loan to view its detail page (`/dashboard/loans/[id]`).
-  2. Open the **"Part-Payment & Foreclosure Calculator"** section.
-  3. Enter an extra prepayment amount (e.g. ₹50,000) to see instant tenure reduction.
-
----
-
-### 4. 📜 Digital Promissory Agreement Generator (`/dashboard/loans/[id]`)
-* **What it does**: Generates a formal, legally binding digital promissory note for peer-to-peer loans with family, friends, or business partners.
-* **Key Capabilities**:
-  * Formal legal promissory text generator.
-  * Includes borrower & lender details, principal, interest, due date, and digital timestamp.
-  * Generates a SHA-256 cryptographic agreement hash.
-  * One-click PDF export for printing or signing.
-* **How to Use**:
-  1. Open a P2P loan detail page.
-  2. Click **"Generate Promissory Agreement"**.
-  3. Download or print the official digital contract.
-
----
-
-### 5. 💵 Intelligent Budget & Cash Flow Planner (`/dashboard/budget`)
-* **What it does**: A unified cash flow engine balancing monthly income streams, living expenses, EMI commitments, and savings targets.
-* **Key Capabilities**:
-  * **🔄 2-Way Real-time Income Sync**: Changes made in Budget Planner immediately reflect on the main Dashboard and vice versa.
-  * **Budget Health Score (0–100)**: Animated health gauge rating cash flow (Excellent, Good, Fair, Tight, Critical).
-  * **Visual Cash Flow Allocation Bar**: Color-coded breakdown showing percentages for EMIs, Living Expenses, Savings Target, and Free Surplus.
-  * **8 Expense Categories**: Track Rent, Food, Utilities, Transport, Health, Entertainment, Education, and Miscellaneous expenses.
-* **How to Use**:
-  1. Go to `/dashboard/budget`.
-  2. Enter monthly income sources and living expenses.
-  3. Review your Budget Health Score and follow automated smart tips.
-
----
-
-### 6. 📈 Wealth & Investments Tracker (`/dashboard/investments`)
-* **What it does**: Track wealth-building assets including Mutual Fund SIPs, Stocks, Fixed Deposits, Real Estate, Gold, and Crypto.
-* **Key Capabilities**:
-  * **Investment Growth Chart**: Interactive SVG curve displaying **Invested Capital vs Current Valuation**.
-  * **🚀 Future Compound Wealth Predictor**: Calculates projected wealth over 1, 3, 5, and 10 years at your expected CAGR %.
-  * **Portfolio Mix Donut**: Visual percentage breakdown of asset categories.
-* **How to Use**:
-  1. Go to `/dashboard/investments`.
-  2. Add your investment assets and expected returns.
-  3. Use the **Compound Predictor** slider to estimate your wealth in 5 or 10 years.
-
----
-
-### 7. 📊 Multi-Metric Analytics & Studio (`/dashboard/analytics`)
-* **What it does**: Advanced financial intelligence deck featuring custom metric charting and comparative studio.
-* **Key Capabilities**:
-  * **Interactive Multi-Metric Chart Studio (`ModernMultiMetricChartStudio`)**: Select primary dataset (Payments, Investments, Net Worth, Debt Balance, Income), overlay two metrics, switch Area/Bar chart styles, toggle 6M/1Y/3Y horizon.
-  * **Tax Savings Calculator (`TaxSavingsCalculator`)**: Calculates tax deductions under Section 80C (principal) and Section 24(b) (home loan interest).
-  * **Refinancing Calculator (`RefinancingCalculatorModal`)**: Compares balance transfer options to lower interest lenders.
-  * **Debt Battle Simulator (`DebtBattleSimulator`)**: Interactive scenario simulator.
-* **How to Use**:
-  1. Go to `/dashboard/analytics`.
-  2. Use the **Chart Studio** to overlay Payments vs Net Worth.
-  3. Open **Tax Savings Calculator** to see tax money saved this financial year.
-
----
-
-### 8. 🚀 Payoff Accelerator Simulator (`/dashboard/repayment-simulator`)
-```mermaid
-flowchart LR
-  A["📊 Active Loan Portfolio"] --> B{"Select Strategy"}
-  B -->|Debt Avalanche| C["🏔️ Highest Interest First\n(Max Interest Saved)"]
-  B -->|Debt Snowball| D["❄️ Lowest Balance First\n(Fast Mental Victories)"]
-  C --> E["⚡ Accelerated Debt Freedom Date"]
-  D --> E
-```
-* **What it does**: Compare payoff strategies to eliminate debt years ahead of schedule.
-* **Key Capabilities**:
-  * Compares **Debt Avalanche** (paying highest interest rate first) vs **Debt Snowball** (paying smallest balance first).
-  * Slider for extra monthly payment (₹1,000 – ₹50,000/mo).
-  * Real-time calculation of exact months saved and total interest saved.
-* **How to Use**:
-  1. Go to `/dashboard/repayment-simulator`.
-  2. Move the extra payment slider to see how an extra ₹5,000/mo reduces your debt tenure by years.
-
----
-
-### 9. 📄 Official Bank-Grade Reports & PDF Export Engine (`/dashboard/reports`)
-* **What it does**: Generate bank-grade PDF statements, CSV, and JSON data exports.
-* **Key Capabilities**:
-  * **3 Official Reports**: Loan Portfolio Audit Statement, Payment History Log, and Net Worth Audit.
-  * **Live On-Screen Voucher Preview**: Filter by loan account or date range and inspect statements live before exporting.
-  * **One-Click PDF Print**: Generates clean, formatted PDF statements ready for printing.
-* **How to Use**:
-  1. Go to `/dashboard/reports`.
-  2. Select report type and date range.
-  3. Click **"Print / Download PDF"** or **"Export CSV"**.
-
----
-
-### 10. 🤝 P2P Web3 Marketplace & Monad Escrow (`/dashboard/p2p-market`)
-* **What it does**: Trustless peer-to-peer borrowing and lending powered by Monad Blockchain smart contracts.
-* **Key Capabilities**:
-  * **Zero-Middleman Escrow**: Borrowers post loan requests; lenders fund directly using **MON tokens** via MetaMask.
-  * **On-chain Repayments**: Smart contracts verify and record every installment transparently.
-* **How to Use**:
-  1. Connect your MetaMask wallet.
-  2. Go to `/dashboard/p2p-market`.
-  3. Browse open loan listings or post a new borrow request.
-
----
-
-### 11. 🛡️ Cryptographic Receipt Verification (`/verify-proof`)
-* **What it does**: Verify payment receipt authenticity using SHA-256 cryptographic hashes on the Monad Blockchain.
-* **Key Capabilities**:
-  * **Tamper-Proof Verification**: Upload any receipt file to compute its hash and query the Monad Testnet.
-  * **Public Admissibility**: Share your hash or transaction link with banks, courts, or auditors for independent verification.
-* **How to Use**:
-  1. Go to `/verify-proof`.
-  2. Drag and drop any payment receipt file (PDF/PNG).
-  3. View instant verification status against the Monad Testnet block explorer.
-
----
-
-### 12. 📁 Receipt Vault & Voucher Storage (`/dashboard/receipts`)
-* **What it does**: Centralized repository of all uploaded payment receipts and transaction vouchers.
-* **Key Capabilities**:
-  * Upload, view, and organize receipts for all loan payments.
-  * Anchoring status indicator (Local Hash Computed vs On-Chain Anchored).
-* **How to Use**:
-  1. Go to `/dashboard/receipts`.
-  2. Upload receipts for any recorded payment or click **"Anchor to Monad"** to store proof on-chain.
-
----
-
-### 13. 💳 Credit Cards Command Center (`/dashboard/credit-cards`)
-* **What it does**: Manage credit card accounts, statement balances, minimum due, and utilization ratios.
-* **Key Capabilities**:
-  * Track credit limit utilization meter.
-  * Record card payments with instant balance updates.
+### 3. 💳 Credit Cards Command Center (`/dashboard/credit-cards`)
+* **What it does**: Track credit card balances, credit limits, minimum due amounts, and billing dates.
 * **How to Use**:
   1. Go to `/dashboard/credit-cards`.
-  2. Add credit cards and record monthly card bill payments.
+  2. Add your credit cards with total credit limit and current balance.
+  3. Monitor credit card utilization gauge (keep below 30% for optimal credit score).
+* **❓ FAQs**:
+  * **Q: Why is keeping credit utilization below 30% recommended?**
+    * **AI Answer**: Credit bureau algorithms penalize high credit utilization (>30%), lowering your credit score even if you pay on time.
 
 ---
 
-### 14. 📅 Interactive EMI Calendar (`/dashboard/calendar`)
-* **What it does**: Full monthly grid calendar displaying EMI due dates and payment status.
-* **Key Capabilities**:
-  * Color-coded due dates: Green (Paid), Yellow (Upcoming), Red (Overdue).
-  * Quick-click to record EMI directly from calendar dates.
+### 4. 💵 Intelligent Budget & Cash Flow Planner (`/dashboard/budget`)
+* **What it does**: Unified budgeting engine synchronizing income sources, living expenses, and EMI commitments.
+* **How to Use**:
+  1. Go to `/dashboard/budget`.
+  2. Add income sources in the Income tab (synchronizes live with main Dashboard).
+  3. Set 8 category living expenses (Rent, Food, Utilities, Transport, etc.).
+  4. Save plan and inspect your Budget Health Score (0-100).
+* **❓ FAQs**:
+  * **Q: Does budget income sync automatically with the main Dashboard?**
+    * **AI Answer**: Yes! Budget income streams feature 2-way real-time synchronization with the Dashboard Income Safety Meter.
+
+---
+
+### 5. 📈 Investments & Wealth Tracker (`/dashboard/investments`)
+* **What it does**: Track wealth-building assets (Mutual Funds, Stocks, FDs, Real Estate, Gold, Crypto).
+* **How to Use**:
+  1. Go to `/dashboard/investments`.
+  2. Add investment items with current value and expected CAGR %.
+  3. Use the **Future Compound Wealth Predictor** to project growth over 1, 3, 5, and 10 years.
+* **❓ FAQs**:
+  * **Q: How does the Future Compound Wealth Predictor work?**
+    * **AI Answer**: It uses the standard compound interest formula \(A = P(1 + r/n)^{nt}\) with your asset growth rate to estimate future net worth.
+
+---
+
+### 6. 📊 Multi-Metric Analytics & Studio (`/dashboard/analytics`)
+* **What it does**: Advanced financial intelligence suite with metric overlays, tax calculators, and refinancing comparison.
+* **How to Use**:
+  1. Go to `/dashboard/analytics`.
+  2. Overlay two metrics (e.g. Payments vs Net Worth) on the interactive chart.
+  3. Open **Tax Savings Calculator** to estimate tax deductions under Section 80C and Section 24(b).
+* **❓ FAQs**:
+  * **Q: How much tax can I save on my home loan under Indian Tax Laws?**
+    * **AI Answer**: You can claim up to ₹1.5 Lakh under Section 80C for principal repayment and up to ₹2 Lakh under Section 24(b) for home loan interest.
+
+---
+
+### 7. 💸 Payments Log & History (`/dashboard/payments`)
+* **What it does**: Comprehensive record of every EMI paid, with principal vs interest breakdown.
+* **How to Use**:
+  1. Go to `/dashboard/payments`.
+  2. Click **"Record Payment"** to log an EMI, specifying payment mode and receipt attachment.
+* **❓ FAQs**:
+  * **Q: Why is splitting payment into principal and interest important?**
+    * **AI Answer**: It lets you see how much money is reducing your actual debt vs money paid to the lender as interest.
+
+---
+
+### 8. 📁 Receipt Vault & Monad Anchoring (`/dashboard/receipts`)
+* **What it does**: Store payment receipt files and anchor SHA-256 document hashes to Monad Testnet.
+* **How to Use**:
+  1. Go to `/dashboard/receipts`.
+  2. Upload receipt PDF/PNG.
+  3. Click **"Anchor to Monad Blockchain"** to generate immutable proof.
+* **❓ FAQs**:
+  * **Q: Can a bank or lender challenge an anchored receipt?**
+    * **AI Answer**: No! Monad Blockchain records are immutable. The SHA-256 hash proves the exact file existed without modification at the block timestamp.
+
+---
+
+### 9. 📅 Interactive EMI Due Calendar (`/dashboard/calendar`)
+* **What it does**: Monthly calendar grid highlighting EMI due dates and payment status.
 * **How to Use**:
   1. Go to `/dashboard/calendar`.
-  2. Click on any due date to record payment or view loan details.
+  2. Inspect green (Paid), yellow (Upcoming), and red (Overdue) dates.
+  3. Click any date to record payment immediately.
+* **❓ FAQs**:
+  * **Q: Can I sync this calendar with Google Calendar?**
+    * **AI Answer**: Yes, click **"Export iCal"** to import your EMI schedule into Google Calendar or Apple Calendar.
 
 ---
 
-### 15. 🔔 Smart Notifications & 3-Day EMI Popup (`/dashboard/notifications`)
-* **What it does**: Multi-channel notification center with desktop push alerts and floating due date popups.
-* **Key Capabilities**:
-  * Floating 3-day EMI reminder popup (`EMIReminderPopup`).
-  * Browser push notifications.
+### 10. 🚀 Repayment Simulator & Payoff Strategies (`/dashboard/repayment-simulator`)
+* **What it does**: Compare Debt Avalanche vs Debt Snowball strategies with extra payment sliders.
 * **How to Use**:
-  1. Enable notifications in browser when prompted.
-  2. View alerts in `/dashboard/notifications`.
+  1. Go to `/dashboard/repayment-simulator`.
+  2. Move extra payment slider (e.g. ₹5,000 extra/mo).
+  3. Compare total interest saved and payoff date between Avalanche and Snowball.
+* **❓ FAQs**:
+  * **Q: What is the difference between Avalanche and Snowball?**
+    * **AI Answer**: **Avalanche** pays highest interest rate debt first (saves maximum money). **Snowball** pays smallest balance debt first (provides quick psychological wins).
+
+---
+
+### 11. 📄 Official PDF Reports & Statement Engine (`/dashboard/reports`)
+* **What it does**: Generate official bank-grade PDF statements, CSV, and JSON data exports.
+* **How to Use**:
+  1. Go to `/dashboard/reports`.
+  2. Select report type (Portfolio Statement, Payment History, Net Worth).
+  3. Click **"Print / Download PDF"** or **"Export CSV"**.
+* **❓ FAQs**:
+  * **Q: Are generated PDF statements accepted for loan applications?**
+    * **AI Answer**: Yes, DebtProof PDF reports include cryptographic transaction hashes and formal account summaries standard for audit use.
+
+---
+
+### 12. 🤝 P2P Web3 Marketplace & Escrow (`/dashboard/p2p-market`)
+* **What it does**: Peer-to-peer borrowing and lending using Monad Testnet MON tokens and smart contract escrow.
+* **How to Use**:
+  1. Connect MetaMask wallet.
+  2. Go to `/dashboard/p2p-market`.
+  3. Create loan request or fund open listings with MON tokens.
+* **❓ FAQs**:
+  * **Q: How does Monad Smart Contract Escrow protect lenders?**
+    * **AI Answer**: Funds are locked in smart contract escrow and disbursed automatically. Repayments are enforced on-chain with zero middleman fees.
+
+---
+
+### 13. 🛡️ Cryptographic Proof Verifier (`/verify-proof`)
+* **What it does**: Verify payment receipt document hash against Monad Testnet blockchain.
+* **How to Use**:
+  1. Go to `/verify-proof`.
+  2. Drop receipt file or enter 64-character SHA-256 hash.
+  3. View green verification badge, block number, and Monad scan link.
+* **❓ FAQs**:
+  * **Q: Do I need a Web3 wallet to verify a proof?**
+    * **AI Answer**: No! Verification queries public Monad RPC directly and requires no wallet connection or gas fees.
+
+---
+
+### 14. 🤖 AI Financial Coach & Strategy Assistant (`/dashboard/assistant`)
+* **What it does**: Conversational AI assistant analyzing actual DB records to answer financial queries.
+* **How to Use**:
+  1. Go to `/dashboard/assistant`.
+  2. Choose a quick prompt or type natural questions like *"Which loan should I close first?"*.
+  3. View real-data answer and strategy insights.
+* **❓ FAQs**:
+  * **Q: Does the AI assistant use mock data or real numbers?**
+    * **AI Answer**: It uses `AIFinancialEngine` to compute exact numbers from your live database loans and payment logs.
+
+---
+
+### 15. 🔔 Notifications & 3-Day EMI Reminders (`/dashboard/notifications`)
+* **What it does**: Alert center with desktop push alerts and floating EMI reminders.
+* **How to Use**:
+  1. Allow browser notifications when prompted.
+  2. Review notifications list or swipe mobile cards to mark read.
+* **❓ FAQs**:
+  * **Q: When does the floating EMI reminder trigger?**
+    * **AI Answer**: It pops up 3 days before any loan EMI due date so you never miss a payment or suffer bounce fees.
 
 ---
 
 ### 16. 💎 Net Worth & Liabilities Studio (`/dashboard/net-worth`)
-* **What it does**: Consolidated net worth audit (Total Assets minus Total Liabilities).
+* **What it does**: Consolidated view of Total Assets minus Total Outstanding Debt.
 * **How to Use**:
-  1. Go to `/dashboard/net-worth` to see your current net worth calculation.
+  1. Go to `/dashboard/net-worth`.
+  2. View live Net Worth gauge, asset allocation, and debt ratio.
+* **❓ FAQs**:
+  * **Q: How can I increase my Net Worth faster?**
+    * **AI Answer**: Increase monthly investment SIPs while prepaying debts with interest rates > 10% p.a.
 
 ---
 
-### 17. 📱 Progressive Web App (PWA) & Offline Sync
-* **What it does**: Install DebtProof directly onto mobile or desktop home screen with offline capability.
-* **Key Capabilities**:
-  * Service worker (`sw.js`) caching.
-  * LocalStorage offline fallback engine (`loans.service.ts` & `payments.service.ts`).
+### 17. 🛡️ ZK-Credit Proof Studio (`/dashboard/zk-proofs`)
+* **What it does**: Generate Zero-Knowledge (ZK) credit score and repayment reliability proofs without exposing private income or bank statement details.
 * **How to Use**:
-  1. Click **"Install DebtProof"** prompt in your browser address bar.
+  1. Go to `/dashboard/zk-proofs`.
+  2. Select threshold (e.g. Credit Score > 750 or 0 Defaults in 12 Months).
+  3. Click **"Generate ZK Proof"** to copy cryptographic proof string.
+* **❓ FAQs**:
+  * **Q: What is a ZK-Credit Proof?**
+    * **AI Answer**: Zero-Knowledge proofs mathematically prove to a lender that you meet financial criteria without sharing your actual bank balance or private identity.
 
 ---
 
-## 📋 Comprehensive Module Checklist
+### 18. 🎯 Debt Destroyer Payoff Quest Game (`/dashboard/payoff-quest`)
+* **What it does**: Gamified debt reduction engine with XP points, streak counters, badges, and level unlocks.
+* **How to Use**:
+  1. Go to `/dashboard/payoff-quest`.
+  2. Complete quests like *"Pay EMI 3 days early"* or *"Make ₹2,000 part-payment"*.
+  3. Earn XP to level up from Debt Novice to Debt Free Master.
+* **❓ FAQs**:
+  * **Q: Do XP points expire?**
+    * **AI Answer**: No! XP points build lifetime debt destruction streaks and unlock custom dashboard themes.
 
-| # | Module / Feature Name | Route Path | Primary Purpose | Status |
+---
+
+### 19. 🏦 Refinance Savings Studio (`/dashboard/refinance`)
+* **What it does**: Balance transfer and refinancing calculator comparing your current loan rate with lower market offers.
+* **How to Use**:
+  1. Go to `/dashboard/refinance`.
+  2. Select active loan and enter new lower interest rate offered by rival banks.
+  3. View net interest savings after processing fee deduction.
+* **❓ FAQs**:
+  * **Q: When is refinancing worth the processing fees?**
+    * **AI Answer**: Refinancing is beneficial if interest rate drops by at least 0.50% to 1.00% and remaining loan tenure is > 3 years.
+
+---
+
+### 20. ⚡ Auto-Saver Micro-Deposit Engine (`/dashboard/auto-saver`)
+* **What it does**: Round up daily transactions or set daily micro-deposits to auto-prepay high-interest debt.
+* **How to Use**:
+  1. Go to `/dashboard/auto-saver`.
+  2. Enable spare change round-ups (e.g. ₹42 coffee rounds to ₹50; ₹8 saved).
+  3. Accumulated savings automatically apply as part-payments at month end.
+* **❓ FAQs**:
+  * **Q: How much can spare change round-ups save?**
+    * **AI Answer**: Users save an average of ₹1,200 – ₹3,000 per month, cutting up to 1.5 years off long-term loan tenure.
+
+---
+
+### 21. 🏢 Multi-Tenant Organization & Teams (`/dashboard/organization`)
+* **What it does**: Multi-user tenancy management for households, joint families, small businesses, or team roles.
+* **How to Use**:
+  1. Go to `/dashboard/organization`.
+  2. Create or join organization workspace.
+  3. Assign roles (Owner, Admin, Member, Auditor).
+* **❓ FAQs**:
+  * **Q: Can household members view shared family loans?**
+    * **AI Answer**: Yes! Organization members share workspace loans while maintaining role-based access security.
+
+---
+
+### 22. 👥 Joint Workspace (`/dashboard/joint-workspace`)
+* **What it does**: Shared financial space for co-borrowers (spouses, business partners) to co-manage home loans or business credit.
+* **How to Use**:
+  1. Go to `/dashboard/joint-workspace`.
+  2. Invite co-borrower via email.
+  3. Approve co-signed payments and view split contribution stats.
+* **❓ FAQs**:
+  * **Q: How do co-signed payments work?**
+    * **AI Answer**: Both parties receive payment notifications and payment logs record which co-borrower paid each EMI share.
+
+---
+
+### 23. 📊 Automated Activity Timeline & Audit (`/dashboard/activity`)
+* **What it does**: Unified chronological log of all user activities, security logins, loan updates, and AI interactions.
+* **How to Use**:
+  1. Go to `/dashboard/activity`.
+  2. Filter activity entries by event type (Loans, Payments, Security, AI Queries).
+* **❓ FAQs**:
+  * **Q: Is activity logging secure?**
+    * **AI Answer**: Yes, activity logs are stored in system audit tables with IP address and timestamp records for compliance.
+
+---
+
+### 24. 📄 Statement Import Studio (`/dashboard/statement-import`)
+* **What it does**: Batch upload CSV/Excel/PDF bank statements for automated transaction matching.
+* **How to Use**:
+  1. Go to `/dashboard/statement-import`.
+  2. Drag and drop bank statement file.
+  3. Map column fields and click **"Import & Reconcile"**.
+* **❓ FAQs**:
+  * **Q: What bank formats are supported?**
+    * **AI Answer**: Supports standard CSV, Excel (.xlsx), and PDF statements from major banks (HDFC, SBI, ICICI, Axis, Chase, BoA).
+
+---
+
+### 25. 📜 Debt Freedom Certificate Modal (`/dashboard/loans`)
+* **What it does**: Generates a celebratory digital Debt Freedom Certificate when a loan balance reaches ₹0.
+* **How to Use**:
+  1. Complete 100% repayments on any loan.
+  2. Click **"Claim Debt Freedom Certificate"** modal.
+  3. Download framed PDF certificate or share verified badge.
+* **❓ FAQs**:
+  * **Q: Can I verify my Debt Freedom Certificate on-chain?**
+    * **AI Answer**: Yes! Debt Freedom Certificates include Monad Blockchain cryptographic hashes for permanent proof of payoff.
+
+---
+
+### 26. ❓ Help Center & Complete Feature Guide (`/dashboard/help`)
+* **What it does**: Comprehensive interactive documentation portal detailing all modules, step-by-step usage, and key benefits.
+* **How to Use**:
+  1. Go to `/dashboard/help`.
+  2. Filter guides by Core, Analytics, Web3, or Tools categories.
+  3. Search any feature term to view instant usage instructions.
+* **❓ FAQs**:
+  * **Q: Where can I get instant answers if I have a question about any feature?**
+    * **AI Answer**: Use the Help Center search or open the AI Strategy Assistant (`/dashboard/assistant`), which answers all feature FAQs instantly.
+
+---
+
+### 27. ⚙️ SaaS Admin & Settings Command Center (`/dashboard/settings` & `/dashboard/admin`)
+* **What it does**: User profile preferences, currency selection (INR ₹, USD $, EUR €, GBP £), security sessions, and administrative flag controls.
+* **How to Use**:
+  1. Go to `/dashboard/settings`.
+  2. Switch preferred base currency or toggle dark/light theme.
+  3. Manage active sessions or system admin flags.
+* **❓ FAQs**:
+  * **Q: Does changing base currency convert all loan amounts?**
+    * **AI Answer**: Yes! Changing currency in Settings updates formatting across Dashboard, Loans, Budget, and Analytics live.
+
+---
+
+## 📋 Complete 27-Module Quick Reference Table
+
+| # | Feature / Option Name | Route Path | Primary Purpose | AI Assistant FAQ Support |
 |---|---|---|---|---|
-| 1 | **Dashboard Command Center** | `/dashboard` | Overall financial overview & safety meters | ✅ Active |
-| 2 | **My Loans & Loan Manager** | `/dashboard/loans` | CRUD loans, filter, search, CIBIL parser | ✅ Active |
-| 3 | **Foreclosure Prepayment Calculator** | `/dashboard/loans/[id]` | Prepayment tenure & interest savings calculator | ✅ Active |
-| 4 | **Digital Promissory Agreement** | `/dashboard/loans/[id]` | Formal P2P digital contract & legal PDF | ✅ Active |
-| 5 | **Budget & Cash Flow Planner** | `/dashboard/budget` | 2-way income sync & 8 expense categories | ✅ Active |
-| 6 | **Investments & Wealth Tracker** | `/dashboard/investments` | Wealth growth curve & CAGR compound predictor | ✅ Active |
-| 7 | **Multi-Metric Chart Studio** | `/dashboard/analytics` | Comparative charting, tax & refinance tools | ✅ Active |
-| 8 | **Repayment Simulator** | `/dashboard/repayment-simulator` | Avalanche vs Snowball payoff strategy coach | ✅ Active |
-| 9 | **Bank-Grade PDF Reports** | `/dashboard/reports` | Export portfolio statements to PDF/CSV/JSON | ✅ Active |
-| 10 | **P2P Monad Web3 Market** | `/dashboard/p2p-market` | Trustless borrowing/lending with MON tokens | ✅ Active |
-| 11 | **Cryptographic Proof Verifier** | `/verify-proof` | SHA-256 hash & Monad block explorer lookup | ✅ Active |
-| 12 | **Receipt Vault** | `/dashboard/receipts` | Receipt upload & on-chain anchoring | ✅ Active |
-| 13 | **Credit Cards Center** | `/dashboard/credit-cards` | Credit limits, utilization & card payments | ✅ Active |
-| 14 | **Interactive EMI Calendar** | `/dashboard/calendar` | Monthly due date grid calendar | ✅ Active |
-| 15 | **Notifications & 3-Day Popup** | `/dashboard/notifications` | Push alerts & floating due date reminder | ✅ Active |
-| 16 | **Net Worth & Liabilities Studio**| `/dashboard/net-worth` | Total assets minus total debt breakdown | ✅ Active |
-| 17 | **PWA & Offline Sync** | Global (`sw.js`) | Offline cache & installable home screen app | ✅ Active |
+| 1 | **Dashboard Command Center** | `/dashboard` | Overall financial overview & safety meters | ✅ Full Support |
+| 2 | **My Loans & Repayment Manager** | `/dashboard/loans` | CRUD loans, filter, search, CIBIL parser | ✅ Full Support |
+| 3 | **Credit Cards Command Center** | `/dashboard/credit-cards` | Credit limits, utilization & card payments | ✅ Full Support |
+| 4 | **Budget & Cash Flow Planner** | `/dashboard/budget` | 2-way income sync & 8 expense categories | ✅ Full Support |
+| 5 | **Investments & Wealth Tracker** | `/dashboard/investments` | Wealth growth curve & CAGR compound predictor | ✅ Full Support |
+| 6 | **Multi-Metric Analytics Studio** | `/dashboard/analytics` | Comparative charting, tax & refinance tools | ✅ Full Support |
+| 7 | **Payments Log & History** | `/dashboard/payments` | Record EMIs, principal vs interest split | ✅ Full Support |
+| 8 | **Receipt Vault & Monad Anchoring**| `/dashboard/receipts` | Receipt upload & on-chain SHA-256 anchoring | ✅ Full Support |
+| 9 | **Interactive EMI Due Calendar** | `/dashboard/calendar` | Monthly due date grid calendar & iCal sync | ✅ Full Support |
+| 10 | **Repayment Simulator** | `/dashboard/repayment-simulator` | Avalanche vs Snowball payoff strategy coach | ✅ Full Support |
+| 11 | **Official Bank-Grade PDF Reports** | `/dashboard/reports` | Export portfolio statements to PDF/CSV/JSON | ✅ Full Support |
+| 12 | **P2P Web3 Monad Marketplace** | `/dashboard/p2p-market` | Trustless borrowing/lending with MON tokens | ✅ Full Support |
+| 13 | **Cryptographic Proof Verifier** | `/verify-proof` | SHA-256 hash & Monad block explorer lookup | ✅ Full Support |
+| 14 | **AI Financial Assistant & Coach** | `/dashboard/assistant` | Real DB financial intelligence & FAQ chat | ✅ Full Support |
+| 15 | **Smart Notifications & Reminders**| `/dashboard/notifications` | Push alerts & 3-day floating due date popup | ✅ Full Support |
+| 16 | **Net Worth & Liabilities Studio**| `/dashboard/net-worth` | Total assets minus total debt breakdown | ✅ Full Support |
+| 17 | **ZK-Credit Proof Studio** | `/dashboard/zk-proofs` | Zero-Knowledge privacy credit proofs | ✅ Full Support |
+| 18 | **Debt Destroyer Payoff Quest** | `/dashboard/payoff-quest` | Gamified payoff quests, XP & streak levels | ✅ Full Support |
+| 19 | **Refinance Savings Studio** | `/dashboard/refinance` | Balance transfer & interest savings calculator | ✅ Full Support |
+| 20 | **Auto-Saver Micro-Deposit Engine**| `/dashboard/auto-saver` | Daily spare-change roundups for debt payoff | ✅ Full Support |
+| 21 | **Multi-Tenant Organization** | `/dashboard/organization` | Multi-user household & team workspace | ✅ Full Support |
+| 22 | **Joint Workspace & Co-borrowers** | `/dashboard/joint-workspace` | Co-borrower shared loan contribution tracking | ✅ Full Support |
+| 23 | **Activity Timeline & Audit** | `/dashboard/activity` | Unified security & operation event timeline | ✅ Full Support |
+| 24 | **Statement Import Studio** | `/dashboard/statement-import` | Batch CSV/Excel/PDF bank statement import | ✅ Full Support |
+| 25 | **Debt Freedom Certificate** | `/dashboard/loans` | Celebratory digital certificate for zero balance | ✅ Full Support |
+| 26 | **Help Center & Feature Guide** | `/dashboard/help` | Interactive user guide & feature reference | ✅ Full Support |
+| 27 | **SaaS Admin & User Settings** | `/dashboard/settings` | Currency selector, themes & admin controls | ✅ Full Support |
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
 
-- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Vanilla CSS variable system, Ethers.js v6.
-- **Backend**: Django 5.0, Django REST Framework, SQLite / PostgreSQL.
-- **Blockchain**: Monad Testnet (Chain ID: `10143`), Solidity Smart Contracts (EVM), SHA-256 Hashing.
-- **Hosting**: Deployed on Vercel ([Live Link](https://debt-proof-front-tau.vercel.app/)).
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Vanilla CSS design token system, Ethers.js v6.
+- **Backend**: Django 5.0 REST Framework, `AIFinancialEngine` calculator, SQLite / PostgreSQL.
+- **Blockchain**: Monad Testnet (Chain ID: `10143`), Solidity Smart Contracts (EVM), SHA-256 Hasher.
+- **Hosting**: Deployed on Vercel ([Live Application](https://debt-proof-front-tau.vercel.app/)).
 
 ---
 
@@ -337,10 +432,10 @@ flowchart LR
 cd backend
 python -m venv .venv
 
-# On Windows:
+# Windows:
 .\.venv\Scripts\activate
 
-# On Mac/Linux:
+# Linux / Mac:
 # source .venv/bin/activate
 
 pip install -r requirements.txt

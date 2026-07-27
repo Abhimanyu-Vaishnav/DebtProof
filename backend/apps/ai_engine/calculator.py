@@ -26,7 +26,13 @@ class AIFinancialEngine:
         "credit_cards": ["card", "credit card", "limit", "utilization", "card debt"],
         "net_worth": ["net worth", "assets", "wealth", "asset"],
         "monthly_emi": ["emi", "monthly payment", "installment", "how much per month", "due date"],
-        "summary": ["summary", "overview", "report", "status", "everything", "financial health"],
+        "zk_proofs": ["zk", "zk proof", "zero knowledge", "privacy proof", "credit proof"],
+        "refinance": ["refinance", "balance transfer", "lower rate", "processing fee"],
+        "auto_saver": ["auto saver", "spare change", "roundup", "micro deposit"],
+        "reports": ["report", "pdf", "statement", "export", "download pdf"],
+        "p2p": ["p2p", "peer to peer", "monad", "escrow", "lending market"],
+        "verify": ["verify", "receipt proof", "hash", "sha256", "blockchain proof"],
+        "summary": ["summary", "overview", "report", "status", "everything", "financial health", "help", "faq", "how to use"],
     }
 
     def __init__(self, user):
@@ -48,6 +54,12 @@ class AIFinancialEngine:
             "credit_cards": self._calc_credit_cards,
             "monthly_emi": self._calc_monthly_emi,
             "net_worth": self._calc_net_worth,
+            "zk_proofs": self._explain_zk_proofs,
+            "refinance": self._explain_refinance,
+            "auto_saver": self._explain_auto_saver,
+            "reports": self._explain_reports,
+            "p2p": self._explain_p2p,
+            "verify": self._explain_verify,
         }
 
         handler = handlers.get(intent, self._financial_summary)
@@ -249,6 +261,72 @@ class AIFinancialEngine:
                 "total_interest_paid": float(total_interest),
             },
             "intent": "summary",
+        }
+
+    def _explain_zk_proofs(self) -> dict:
+        return {
+            "answer": (
+                "🛡️ **Zero-Knowledge (ZK) Credit Proofs**: "
+                "ZK proofs allow you to cryptographically prove your creditworthiness (e.g. Credit Score > 750 or 0 defaults) "
+                "to lenders on the Monad Blockchain *without revealing your private income, bank statement, or identity*."
+            ),
+            "data": {},
+            "intent": "zk_proofs",
+        }
+
+    def _explain_refinance(self) -> dict:
+        return {
+            "answer": (
+                "🏦 **Refinance & Balance Transfer**: "
+                "Transferring your active high-interest loan to a lender with a lower interest rate saves significant money. "
+                "Use the Refinance Savings Studio (`/dashboard/refinance`) to calculate net savings after processing fees!"
+            ),
+            "data": {},
+            "intent": "refinance",
+        }
+
+    def _explain_auto_saver(self) -> dict:
+        return {
+            "answer": (
+                "⚡ **Auto-Saver Micro-Deposit Engine**: "
+                "Auto-Saver rounds up your daily transaction spare change (e.g. ₹42 coffee rounds to ₹50; ₹8 saved). "
+                "Accumulated spare change is auto-applied at month end as part-payment to trim years off your debt!"
+            ),
+            "data": {},
+            "intent": "auto_saver",
+        }
+
+    def _explain_reports(self) -> dict:
+        return {
+            "answer": (
+                "📄 **Official PDF Reports Engine**: "
+                "Export bank-grade PDF statements, CSV, and JSON data logs from `/dashboard/reports`. "
+                "Reports include complete loan portfolio audits, payment vouchers, and net worth summaries."
+            ),
+            "data": {},
+            "intent": "reports",
+        }
+
+    def _explain_p2p(self) -> dict:
+        return {
+            "answer": (
+                "🤝 **P2P Web3 Monad Marketplace**: "
+                "Borrow and lend MON tokens directly using Monad smart contract escrow (`/dashboard/p2p-market`). "
+                "Zero middleman fees, transparent terms, and on-chain repayment verification."
+            ),
+            "data": {},
+            "intent": "p2p",
+        }
+
+    def _explain_verify(self) -> dict:
+        return {
+            "answer": (
+                "🛡️ **Cryptographic Proof Verifier**: "
+                "Upload any payment receipt file or enter its 64-character SHA-256 hash at `/verify-proof`. "
+                "It checks Monad Blockchain block records to verify document authenticity with 100% legal proof."
+            ),
+            "data": {},
+            "intent": "verify",
         }
 
     def get_dashboard_insights(self) -> list:

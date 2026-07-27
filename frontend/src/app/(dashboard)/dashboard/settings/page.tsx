@@ -9,12 +9,14 @@ import { Topbar } from "@/components/layout/Topbar";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { useToast } from "@/components/ui/Toast";
 
-type SettingsTab = "currency" | "appearance" | "dashboard" | "notifications" | "privacy" | "about";
+type SettingsTab = "currency" | "appearance" | "dashboard" | "notifications" | "web3" | "audio" | "privacy" | "about";
 
 const TABS: { id: SettingsTab; label: string; icon: string }[] = [
   { id: "currency",      label: "Currency & Region",  icon: "💰" },
   { id: "appearance",    label: "Appearance & Theme",  icon: "🎨" },
   { id: "dashboard",     label: "Dashboard Widgets",   icon: "🎛️" },
+  { id: "web3",          label: "Monad & Web3",        icon: "⛓️" },
+  { id: "audio",         label: "Audio & Experience",  icon: "🔊" },
   { id: "notifications", label: "Notifications",       icon: "🔔" },
   { id: "privacy",       label: "Privacy & Security",  icon: "🔒" },
   { id: "about",         label: "About",               icon: "ℹ️" },
@@ -629,6 +631,92 @@ export default function SettingsPage() {
               </>
             )}
 
+            {/* ── Monad & Web3 Settings ────────────────────────────────────── */}
+            {activeTab === "web3" && (
+              <>
+                <SectionCard title="Monad Blockchain & Web3 Configuration" icon="⛓️">
+                  <SettingRow
+                    label="Monad Network Target"
+                    desc="Choose Monad EVM RPC Network target for receipt proof anchoring"
+                  >
+                    <select
+                      value={settings.monadNetwork || "testnet"}
+                      onChange={(e) => {
+                        updateSettings({ monadNetwork: e.target.value as "testnet" | "mainnet" });
+                        showToast(`Network switched to Monad ${e.target.value}`, "info");
+                      }}
+                      className="form-input text-xs py-1.5 px-3 rounded-lg font-bold"
+                    >
+                      <option value="testnet">Monad Testnet (Chain ID: 10143)</option>
+                      <option value="mainnet">Monad Mainnet (Production)</option>
+                    </select>
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Auto-Anchor Payment Receipts"
+                    desc="Automatically prompt MetaMask Web3 signature when uploading payment receipts"
+                  >
+                    <ToggleSwitch
+                      id="auto-anchor-receipts"
+                      checked={settings.autoAnchorReceipts ?? true}
+                      onChange={(val) => updateSettings({ autoAnchorReceipts: val })}
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Default Gas Limit Buffer"
+                    desc="Custom Gas Limit parameter for Monad Smart Contract executions"
+                  >
+                    <input
+                      type="number"
+                      value={settings.defaultGasLimit || 300000}
+                      onChange={(e) => updateSettings({ defaultGasLimit: Number(e.target.value) })}
+                      className="form-input text-xs py-1.5 px-3 rounded-lg w-28 text-right font-mono"
+                    />
+                  </SettingRow>
+                </SectionCard>
+
+                <SectionCard title="Monad Smart Contract Status" icon="📜">
+                  <div className="py-4 space-y-3">
+                    <div className="p-3 bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] rounded-xl flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-[var(--color-text-primary)]">Escrow Smart Contract</p>
+                        <p className="text-[10px] font-mono text-[var(--color-text-tertiary)]">0x316dF00a399d655734CeaeFfEE0A7DD432e1DB5f</p>
+                      </div>
+                      <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Active</span>
+                    </div>
+                  </div>
+                </SectionCard>
+              </>
+            )}
+
+            {/* ── Audio & Sound Experience ──────────────────────────────────── */}
+            {activeTab === "audio" && (
+              <SectionCard title="Audio & Sensory Experience" icon="🔊">
+                <SettingRow
+                  label="UI Sound Effects"
+                  desc="Play subtle audio chimes when completing payments or quests"
+                >
+                  <ToggleSwitch
+                    id="sound-effects"
+                    checked={settings.soundEffects ?? true}
+                    onChange={(val) => updateSettings({ soundEffects: val })}
+                  />
+                </SettingRow>
+
+                <SettingRow
+                  label="Haptic Vibration Feedback"
+                  desc="Vibrate mobile device on button clicks and action triggers"
+                >
+                  <ToggleSwitch
+                    id="haptic-feedback"
+                    checked={settings.hapticFeedback ?? true}
+                    onChange={(val) => updateSettings({ hapticFeedback: val })}
+                  />
+                </SettingRow>
+              </SectionCard>
+            )}
+
             {/* ── Notifications ──────────────────────────────────────────── */}
             {activeTab === "notifications" && (
               <SectionCard title="Notification Preferences" icon="🔔">
@@ -681,7 +769,33 @@ export default function SettingsPage() {
             {/* ── Privacy & Security ─────────────────────────────────────── */}
             {activeTab === "privacy" && (
               <>
-                <SectionCard title="Data & Privacy" icon="🔒">
+                <SectionCard title="Data & Privacy Security" icon="🔒">
+                  <SettingRow
+                    label="Auto-Lock Workspace"
+                    desc="Automatically lock session when inactive"
+                  >
+                    <select
+                      value={settings.autoLockMinutes || 15}
+                      onChange={(e) => updateSettings({ autoLockMinutes: Number(e.target.value) })}
+                      className="form-input text-xs py-1.5 px-3 rounded-lg"
+                    >
+                      <option value={5}>After 5 minutes</option>
+                      <option value={15}>After 15 minutes</option>
+                      <option value={30}>After 30 minutes</option>
+                      <option value={0}>Disabled</option>
+                    </select>
+                  </SettingRow>
+
+                  <SettingRow
+                    label="Blur Financial Balances on Window Blur"
+                    desc="Conceal loan amounts and bank figures when switching browser tabs"
+                  >
+                    <ToggleSwitch
+                      id="hide-balances-blur"
+                      checked={settings.hideBalancesOnBlur ?? false}
+                      onChange={(val) => updateSettings({ hideBalancesOnBlur: val })}
+                    />
+                  </SettingRow>
                   <SettingRow
                     label="Export Settings"
                     desc="Download your app preferences as JSON"

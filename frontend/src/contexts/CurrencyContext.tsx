@@ -210,7 +210,15 @@ export interface AppSettings {
   currencyCode: string;
   compactNumbers: boolean;
   dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
-  theme: "dark" | "light" | "emerald" | "midnight" | "titanium";
+  theme: "dark" | "light" | "emerald" | "midnight" | "titanium" | "custom";
+  fontFamily?: string;
+  soundEffects: boolean;
+  hapticFeedback: boolean;
+  autoLockMinutes: number;
+  hideBalancesOnBlur: boolean;
+  monadNetwork: "testnet" | "mainnet";
+  autoAnchorReceipts: boolean;
+  defaultGasLimit: number;
   emiReminderDays: number;
   overdueAlerts: boolean;
   paymentConfirmation: boolean;
@@ -222,6 +230,14 @@ const DEFAULT_SETTINGS: AppSettings = {
   compactNumbers: false,
   dateFormat: "DD/MM/YYYY",
   theme: "titanium",
+  fontFamily: "'Inter', sans-serif",
+  soundEffects: true,
+  hapticFeedback: true,
+  autoLockMinutes: 15,
+  hideBalancesOnBlur: false,
+  monadNetwork: "testnet",
+  autoAnchorReceipts: true,
+  defaultGasLimit: 300000,
   emiReminderDays: 3,
   overdueAlerts: true,
   paymentConfirmation: true,
