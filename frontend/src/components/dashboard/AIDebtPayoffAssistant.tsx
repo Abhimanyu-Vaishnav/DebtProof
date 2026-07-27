@@ -51,17 +51,52 @@ export function AIDebtPayoffAssistant() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [dashData, setDashData] = useState<DashboardData | null>(null);
   
-  // Dragging state for desktop & mobile
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number }>({
-    startX: 0,
-    startY: 0,
-    initialX: 0,
-    initialY: 0,
-  });
-  const windowRef = useRef<HTMLDivElement>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  // Voice Recognition & Speech Synthesis State
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = "en-IN";
+
+      rec.onresult = (event: any) => {
+        const current = event.resultIndex;
+        const text = event.results[current][0].transcript;
+        setInputValue(text);
+      };
+
+      rec.onerror = () => setIsListening(false);
+      rec.onend = () => setIsListening(false);
+
+      setRecognition(rec);
+    }
+  }, []);
+
+  const speakText = (text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text.replace(/[*_#`]/g, ""));
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.lang = "en-IN";
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const toggleListening = () => {
+    if (!recognition) return;
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      setInputValue("");
+      recognition.start();
+      setIsListening(true);
+    }
+  };
 
   // Load real financial context
   useEffect(() => {
@@ -275,6 +310,7 @@ export function AIDebtPayoffAssistant() {
       };
       setMessages((prev) => [...prev, aiMsg]);
       setIsThinking(false);
+      speakText(responseText);
     }, 700);
   };
 
@@ -408,16 +444,32 @@ export function AIDebtPayoffAssistant() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Chat Input Bar */}
+          {/* Chat Input Bar with Integrated Mic Button */}
           <div className="p-2.5 bg-[var(--color-surface)] border-t border-[var(--color-border)] flex items-center gap-2">
             <input
               type="text"
-              placeholder="Ask anything..."
+              placeholder={isListening ? "Listening to your voice..." : "Ask AI Coach or tap mic to speak..."}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
               className="flex-1 px-3 py-2 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-xs font-bold text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-primary)]"
             />
+
+            {/* Mic Toggle Button */}
+            <button
+              onClick={toggleListening}
+              type="button"
+              className={`p-2 rounded-xl border transition cursor-pointer shrink-0 font-bold text-xs ${
+                isListening
+                  ? "bg-rose-600 text-white border-rose-500 animate-pulse"
+                  : "bg-[var(--color-surface-secondary)] text-[var(--color-text-primary)] border-[var(--color-border)] hover:border-purple-500"
+              }`}
+              title="Speak to AI"
+            >
+              🎙️
+            </button>
+
+            {/* Send Button */}
             <button
               onClick={() => handleSendMessage()}
               disabled={!inputValue.trim()}
@@ -426,7 +478,6 @@ export function AIDebtPayoffAssistant() {
               🚀
             </button>
           </div>
-
         </div>
       )}
     </>
