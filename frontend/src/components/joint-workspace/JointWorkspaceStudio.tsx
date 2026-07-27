@@ -199,9 +199,19 @@ export function JointWorkspaceStudio() {
         );
         playSuccessSound();
       }
+
+      try {
+        const { recordPaymentActivityAndNotification } = require("@/services/activity.service");
+        recordPaymentActivityAndNotification({
+          title: `Co-Signer Web3 Multi-Sig Executed`,
+          description: `Joint liability agreement for "${activeLoan.name}" cryptographically anchored on Monad Testnet.`,
+          icon: "✍️",
+          color: "purple",
+          event_type: "multisig_co_signed",
+        });
+      } catch {}
     } catch (err: any) {
-      console.error("Multi-sig sign-off error:", err);
-      alert("Transaction failed or was rejected in MetaMask.");
+      alert(`Signature execution notice: ${err.message || "User cancelled wallet signature"}`);
     } finally {
       setSigningOnChain(false);
     }
