@@ -18,7 +18,7 @@ export function AIDebtSettlementStudio() {
   const [loans, setLoans] = useState<LoanOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLoanId, setSelectedLoanId] = useState<string>("");
-  const [settlementPercent, setSettlementPercent] = useState<number>(75); // Pay 75%, get 25% discount
+  const [settlementPercent, setSettlementPercent] = useState<number>(75);
   const [proposalType, setProposalType] = useState<"lump_sum" | "rate_reduction" | "hardship">("lump_sum");
   const [copied, setCopied] = useState(false);
 
@@ -116,9 +116,7 @@ export function AIDebtSettlementStudio() {
           });
         }
 
-        // Combine fetched real loans with default samples if needed
         const combined = [...fetchedList, ...defaultSampleLoans];
-        // Remove duplicates by ID if any
         const uniqueLoans = combined.filter(
           (item, index, self) => index === self.findIndex((t) => t.id === item.id)
         );
@@ -163,11 +161,26 @@ export function AIDebtSettlementStudio() {
 
   const activeLoan = loans.find((l) => l.id === selectedLoanId) || loans[0] || defaultSampleLoans[0];
 
+  // Multi-Loan Consolidation Calculator
+  const totalDebtBalance = loans.reduce((acc, curr) => acc + curr.principal, 0);
+  const weightedInterestRate = loans.length > 0 
+    ? (loans.reduce((acc, curr) => acc + (curr.principal * curr.interestRate), 0) / totalDebtBalance).toFixed(1)
+    : "14.0";
+  const totalCurrentMonthlyEmi = loans.reduce((acc, curr) => acc + curr.monthlyEmi, 0);
+
+  // Consolidated Single Loan Offer (e.g. 9.5% p.a. balance transfer offer)
+  const consolidatedRate = 9.5;
+  const consolidatedTenureMonths = 48;
+  const consolidatedMonthlyRate = consolidatedRate / (12 * 100);
+  const consolidatedNewEmi = Math.round(
+    (totalDebtBalance * consolidatedMonthlyRate * Math.pow(1 + consolidatedMonthlyRate, consolidatedTenureMonths)) /
+    (Math.pow(1 + consolidatedMonthlyRate, consolidatedTenureMonths) - 1)
+  ) || 0;
+  const monthlyEmiSavings = Math.max(0, totalCurrentMonthlyEmi - consolidatedNewEmi);
+
   // Settlement calculations
   const settlementOfferAmount = Math.round(activeLoan.principal * (settlementPercent / 100));
   const directSavings = activeLoan.principal - settlementOfferAmount;
-  const estimatedInterestSaved = Math.round(activeLoan.monthlyEmi * 12 * 0.4);
-  const totalSavings = directSavings + estimatedInterestSaved;
 
   // AI Generated Proposal Templates
   const generateProposalText = () => {
@@ -212,9 +225,7 @@ Dear Credit Officer,
 
 I have been maintaining an active account (${activeLoan.name}) with your institution at an existing interest rate of ${activeLoan.interestRate}%.
 
-Based on current competitive rate benchmarks and my cryptographically verified on-chain payment track record on the Monad Blockchain, I request a reduction of my interest rate to Math.max(7.5, ${(
-        activeLoan.interestRate - 4.5
-      ).toFixed(1)})% per annum or an EMI recalculation.
+Based on current competitive rate benchmarks and my cryptographically verified on-chain payment track record on the Monad Blockchain, I request a reduction of my interest rate to ${Math.max(7.5, activeLoan.interestRate - 4.5).toFixed(1)}% per annum or an EMI recalculation.
 
 Thank you for your prompt cooperation.
 
@@ -244,158 +255,232 @@ Abhimanyu Vaishnav`;
     navigator.clipboard.writeText(currentProposal);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
 
-    try {
-      const { recordPaymentActivityAndNotification } = require("@/services/activity.service");
-      recordPaymentActivityAndNotification({
-        title: `Settlement Proposal Generated: ${activeLoan?.name || "Loan"}`,
-        description: `Settlement offer letter created (Discount Offer: ₹${settlementOfferAmount.toLocaleString()}).`,
-        amount: settlementOfferAmount,
-        icon: "📄",
-        color: "purple",
-        event_type: "settlement_proposal",
-      });
-    } catch {}
+  const handlePrintPDF = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Debt Settlement & Consolidation Proposal - ${activeLoan.name}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; }
+            .header { border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 30px; }
+            .title { font-size: 20px; font-weight: bold; color: #0f172a; }
+            .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+            .content { font-family: monospace; font-size: 13px; background: #f8fafc; padding: 25px; border-radius: 8px; border: 1px solid #cbd5e1; whitespace: pre-wrap; }
+            .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 11px; color: #94a3b8; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title">DebtProof — Official Bank Settlement & Negotiation Proposal</div>
+            <div class="subtitle">Cryptographically Verified On-Chain Payment Records | Monad Blockchain ID: 10143</div>
+          </div>
+          <div class="content">${currentProposal}</div>
+          <div class="footer">Generated by DebtProof AI Strategy Coach · Admissible Financial Record · Sanatan Labs</div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   return (
-    <div className="space-y-6">
-      {/* Studio Header Banner */}
-      <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-6 md:p-8 rounded-2xl shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="max-w-3xl space-y-3 relative z-10">
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
-              🤖 AI Debt Settlement Engine
+    <div className="space-y-8 animate-fade-in">
+      {/* Feature Banner */}
+      <div className="card p-6 border-2 border-purple-500/30 bg-gradient-to-r from-purple-950/30 via-[var(--color-surface)] to-[var(--color-surface)] relative overflow-hidden">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+          <div className="space-y-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20">
+              🤖 AI Debt Optimization Suite
             </span>
-            <span className="text-xs text-[var(--color-text-tertiary)] font-mono font-bold">
-              Monad ZK-Proof Enhanced • All Active Liabilities Loaded ({loans.length})
-            </span>
+            <h2 className="text-xl font-black text-[var(--color-text-primary)]">
+              AI Debt Consolidation & Multi-Lender Negotiation Assistant
+            </h2>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              Combine multiple high-interest debts into one low EMI loan & generate formal settlement letters embedded with Monad ZK proofs.
+            </p>
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-[var(--color-text-primary)]">
-            AI Debt Settlement & Bank Negotiation Studio
-          </h2>
-
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed font-medium">
-            Calculate lump-sum settlement discount savings across all your bank loans and credit cards, model single-payoff offers (50% - 90% principal discounts), and generate formal AI negotiation letters.
-          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAddCustom(true)}
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>+</span> <span>Add Custom Liability</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Studio Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Controls & Loan Selector (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* Target Liability Selection */}
-          <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-5 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                1. Select Liability ({loans.length} Total)
-              </h3>
+      {/* Multi-Loan Consolidation Strategy Card */}
+      <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">📊</span>
+            <div>
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">1. Multi-Loan Debt Consolidation Plan</h3>
+              <p className="text-xs text-[var(--color-text-tertiary)]">Consolidate all {loans.length} active liabilities into a single 9.5% p.a. balance transfer</p>
+            </div>
+          </div>
+          <span className="text-xs font-black uppercase text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+            Save ₹{monthlyEmiSavings.toLocaleString()}/mo
+          </span>
+        </div>
 
-              <button
-                onClick={() => setShowAddCustom(!showAddCustom)}
-                className="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
-              >
-                {showAddCustom ? "Cancel" : "+ Add Other Loan"}
-              </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] text-center">
+            <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase">Total Outstanding Debt</p>
+            <p className="text-lg font-black text-[var(--color-text-primary)] mt-1">₹{totalDebtBalance.toLocaleString()}</p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] text-center">
+            <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase">Current Average Rate</p>
+            <p className="text-lg font-black text-rose-500 mt-1">{weightedInterestRate}% p.a.</p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] text-center">
+            <p className="text-[10px] font-bold text-[var(--color-text-tertiary)] uppercase">Current Combined EMI</p>
+            <p className="text-lg font-black text-[var(--color-text-primary)] mt-1">₹{totalCurrentMonthlyEmi.toLocaleString()}/mo</p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+            <p className="text-[10px] font-bold text-emerald-400 uppercase">Consolidated Single EMI</p>
+            <p className="text-lg font-black text-emerald-400 mt-1">₹{consolidatedNewEmi.toLocaleString()}/mo</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Custom Loan Modal */}
+      {showAddCustom && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="card max-w-md w-full p-6 space-y-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-3">
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Add Liability to Negotiate</h3>
+              <button onClick={() => setShowAddCustom(false)} className="text-xs text-[var(--color-text-tertiary)] hover:text-white">✕</button>
             </div>
 
-            {/* Custom loan addition form */}
-            {showAddCustom && (
-              <form onSubmit={handleAddCustomLoan} className="p-4 rounded-xl bg-[var(--color-surface-tertiary)] border border-purple-500/30 space-y-3">
-                <span className="text-xs font-bold block text-purple-400">Add Loan / Liability for Settlement</span>
+            <form onSubmit={handleAddCustomLoan} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Debt Name</label>
                 <input
                   type="text"
-                  placeholder="Loan / Debt Name (e.g. Bajaj Finserv Personal Loan)"
+                  placeholder="e.g. HDFC Credit Card / Car Loan"
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-light)] text-xs font-sans"
+                  className="form-input text-xs w-full mt-1"
                   required
                 />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    placeholder="Lender Name"
-                    value={customLender}
-                    onChange={(e) => setCustomLender(e.target.value)}
-                    className="px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-light)] text-xs"
-                  />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Lender / Bank Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. HDFC Bank Ltd"
+                  value={customLender}
+                  onChange={(e) => setCustomLender(e.target.value)}
+                  className="form-input text-xs w-full mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-xs font-bold text-[var(--color-text-secondary)]">Principal (₹)</label>
                   <input
                     type="number"
-                    placeholder="Principal (₹)"
                     value={customPrincipal}
                     onChange={(e) => setCustomPrincipal(e.target.value)}
-                    className="px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border-light)] text-xs font-mono"
+                    className="form-input text-xs w-full mt-1"
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition cursor-pointer"
-                >
-                  Add to Settlement Studio ✓
-                </button>
-              </form>
-            )}
+                <div>
+                  <label className="text-xs font-bold text-[var(--color-text-secondary)] font-mono">Rate (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={customRate}
+                    onChange={(e) => setCustomRate(e.target.value)}
+                    className="form-input text-xs w-full mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[var(--color-text-secondary)]">EMI (₹)</label>
+                  <input
+                    type="number"
+                    value={customEmi}
+                    onChange={(e) => setCustomEmi(e.target.value)}
+                    className="form-input text-xs w-full mt-1"
+                  />
+                </div>
+              </div>
 
-            {/* Loans Scroll List */}
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-              {loading ? (
-                <div className="p-4 text-center text-xs text-[var(--color-text-tertiary)]">Loading liabilities...</div>
-              ) : (
-                loans.map((loan) => (
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 btn btn-primary font-bold text-xs py-2">Add Debt</button>
+                <button type="button" onClick={() => setShowAddCustom(false)} className="btn btn-secondary text-xs">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid: Left Column Selector (5 cols) & Right Column Proposal Studio (7 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Select Target Loan & Discount Parameters */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* 1. Target Loan Selector */}
+          <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-5 rounded-2xl space-y-4">
+            <h3 className="text-sm font-bold text-[var(--color-text-primary)] border-b border-[var(--color-border-light)] pb-2">
+              2. Select Target Debt for Proposal
+            </h3>
+
+            {loading ? (
+              <div className="h-24 rounded-xl bg-[var(--color-surface-secondary)] animate-pulse" />
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {loans.map((l) => (
                   <button
-                    key={loan.id}
-                    onClick={() => setSelectedLoanId(loan.id)}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
-                      selectedLoanId === loan.id
-                        ? "bg-purple-500/15 border-purple-500/50 ring-1 ring-purple-500/30"
-                        : "bg-[var(--color-surface-tertiary)] border-[var(--color-border-light)] hover:bg-[var(--color-surface-secondary)]"
+                    key={l.id}
+                    onClick={() => setSelectedLoanId(l.id)}
+                    className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                      selectedLoanId === l.id
+                        ? "bg-purple-600/10 border-purple-500/50 ring-2 ring-purple-500/30"
+                        : "border-[var(--color-border-light)] hover:bg-[var(--color-surface-secondary)]"
                     }`}
                   >
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs block text-[var(--color-text-primary)]">
-                          {loan.name}
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold">
-                          {loan.category}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-[var(--color-text-tertiary)]">
-                        {loan.lender} • {loan.interestRate}% APR
-                      </span>
+                      <p className="text-xs font-bold text-[var(--color-text-primary)]">{l.name}</p>
+                      <p className="text-[10px] text-[var(--color-text-tertiary)]">{l.lender} · {l.category}</p>
                     </div>
-                    <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      ₹{loan.principal.toLocaleString()}
-                    </span>
+                    <div className="text-right font-mono">
+                      <p className="text-xs font-bold text-[var(--color-text-primary)]">₹{l.principal.toLocaleString()}</p>
+                      <p className="text-[10px] text-rose-500 font-bold">{l.interestRate}% p.a.</p>
+                    </div>
                   </button>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Settlement Percentage Slider */}
+          {/* 2. Settlement Percentage Slider */}
           <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-5 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-                2. One-Time Settlement Offer
-              </h3>
-              <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-400">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-bold text-[var(--color-text-primary)]">One-Time Settlement Offer</h3>
+              <span className="text-xs font-mono font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
                 {settlementPercent}% of Principal
               </span>
             </div>
 
             <input
               type="range"
-              min="50"
-              max="90"
-              step="5"
+              min={40}
+              max={90}
+              step={5}
               value={settlementPercent}
               onChange={(e) => setSettlementPercent(Number(e.target.value))}
-              className="w-full h-2 bg-purple-200 dark:bg-purple-950 rounded-lg appearance-none cursor-pointer accent-purple-600"
+              className="w-full accent-purple-500 cursor-pointer"
             />
 
             <div className="flex justify-between text-[10px] font-mono text-[var(--color-text-tertiary)]">
@@ -493,12 +578,18 @@ Abhimanyu Vaishnav`;
             </div>
 
             {/* Action Bar */}
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <span className="text-xs text-[var(--color-text-tertiary)] font-mono">
                 Ready to send to bank manager or credit department
               </span>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrintPDF}
+                  className="px-4 py-2.5 rounded-xl bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] hover:border-purple-500 text-[var(--color-text-primary)] font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>📄 Print / Export PDF</span>
+                </button>
                 <button
                   onClick={handleCopy}
                   className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-500/25 transition-all cursor-pointer"
