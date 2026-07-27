@@ -14,13 +14,18 @@ type ConditionType =
   | "loan_overdue"
   | "budget_exceeded"
   | "card_utilization_high"
-  | "investment_drop";
+  | "investment_drop"
+  | "salary_deposited"
+  | "monad_proof_generated"
+  | "surplus_balance_exceeded";
 
 type ActionType =
   | "send_notification"
   | "send_email"
   | "show_warning"
-  | "recommend_payment";
+  | "recommend_payment"
+  | "auto_prepay_highest_interest"
+  | "auto_anchor_monad_proof";
 
 interface AutomationRule {
   id: string;
@@ -52,13 +57,18 @@ const CONDITION_LABELS: Record<ConditionType, string> = {
   budget_exceeded: "Budget Exceeds Limit",
   card_utilization_high: "Credit Card Utilization Exceeds N%",
   investment_drop: "Investment Drops by N%",
+  salary_deposited: "Salary Credit Detected in Bank",
+  monad_proof_generated: "Payment Hash Generated",
+  surplus_balance_exceeded: "Account Surplus Exceeds Reserve",
 };
 
 const ACTION_LABELS: Record<ActionType, string> = {
   send_notification: "Send In-App Notification",
-  send_email: "Send Email",
+  send_email: "Send Email Alert",
   show_warning: "Show Dashboard Warning",
   recommend_payment: "Recommend Payment Action",
+  auto_prepay_highest_interest: "Auto-Prepay Highest Interest Debt",
+  auto_anchor_monad_proof: "Auto-Anchor ZK Proof to Monad",
 };
 
 const ACTION_ICONS: Record<ActionType, string> = {
@@ -66,6 +76,8 @@ const ACTION_ICONS: Record<ActionType, string> = {
   send_email: "📧",
   show_warning: "⚠️",
   recommend_payment: "💳",
+  auto_prepay_highest_interest: "⚡",
+  auto_anchor_monad_proof: "📜",
 };
 
 const CONDITION_ICONS: Record<ConditionType, string> = {
@@ -74,6 +86,9 @@ const CONDITION_ICONS: Record<ConditionType, string> = {
   budget_exceeded: "💰",
   card_utilization_high: "💳",
   investment_drop: "📉",
+  salary_deposited: "💵",
+  monad_proof_generated: "🛡️",
+  surplus_balance_exceeded: "🚀",
 };
 
 const STATUS_STYLES = {
@@ -252,6 +267,34 @@ export default function AutomationPage() {
             onChange={(e) => setForm({ ...form, condition_value: { threshold: parseInt(e.target.value) || 70 } })}
             className="input w-full text-sm"
             placeholder="e.g. 70"
+          />
+        </div>
+      );
+    }
+    if (form.condition_type === "surplus_balance_exceeded") {
+      return (
+        <div>
+          <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1">Surplus Reserve Limit (₹)</label>
+          <input
+            type="number" min={5000} step={5000}
+            value={(form.condition_value as { reserve: number }).reserve || 50000}
+            onChange={(e) => setForm({ ...form, condition_value: { reserve: parseInt(e.target.value) || 50000 } })}
+            className="input w-full text-sm font-mono font-bold"
+            placeholder="e.g. 50000"
+          />
+        </div>
+      );
+    }
+    if (form.condition_type === "salary_deposited") {
+      return (
+        <div>
+          <label className="block text-xs font-bold text-[var(--color-text-secondary)] mb-1">Min Salary Amount (₹)</label>
+          <input
+            type="number" min={10000} step={5000}
+            value={(form.condition_value as { min_salary: number }).min_salary || 30000}
+            onChange={(e) => setForm({ ...form, condition_value: { min_salary: parseInt(e.target.value) || 30000 } })}
+            className="input w-full text-sm font-mono font-bold"
+            placeholder="e.g. 30000"
           />
         </div>
       );
