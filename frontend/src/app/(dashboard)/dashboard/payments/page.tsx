@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { paymentsService } from "@/services/payments.service";
 import { formatCurrency } from "@/utils/formatters";
+import { SmartAutoPayEMISplitterStudio } from "@/components/payments/SmartAutoPayEMISplitterStudio";
 import type { Payment } from "@/types";
 
 export default function PaymentsPage() {
@@ -77,7 +78,10 @@ export default function PaymentsPage() {
   return (
     <>
       <Topbar title="Payment History" subtitle={`${totalCount} total payment${totalCount !== 1 ? "s" : ""}`} />
-      <main className="page-content">
+      <main className="page-content space-y-6">
+        {/* Dynamic Auto-Pay EMI Splitter Studio */}
+        <SmartAutoPayEMISplitterStudio />
+
         {/* Modern Filter Toolbar */}
         <div className="bg-[var(--color-surface)] border border-[var(--color-border-light)] p-4 rounded-2xl shadow-sm mb-6 flex flex-col gap-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">

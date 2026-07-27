@@ -16,6 +16,7 @@ import { TaxSavingsCalculator } from "@/components/analytics/TaxSavingsCalculato
 import { RefinancingCalculatorModal } from "@/components/analytics/RefinancingCalculatorModal";
 import { DebtBattleSimulator } from "@/components/analytics/DebtBattleSimulator";
 import { ModernMultiMetricChartStudio } from "@/components/analytics/ModernMultiMetricChartStudio";
+import { AICreditScoreHealthAuditor } from "@/components/analytics/AICreditScoreHealthAuditor";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 const DONUT_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#6366f1", "#f43f5e", "#14b8a6", "#a855f7"];
@@ -205,6 +206,9 @@ export default function AnalyticsPage() {
       <Topbar title="Analytics" subtitle="Financial intelligence at a glance" />
 
       <main className="page-content space-y-8">
+
+        {/* AI Credit Score Health Auditor */}
+        <AICreditScoreHealthAuditor />
 
         {/* ── TOP KPI STRIP ────────────────────────────────── */}
         <section>

@@ -7,6 +7,7 @@ import { loansService } from "@/services/loans.service";
 import { formatCurrency } from "@/utils/formatters";
 
 import { PayoffMethodComparisonModal } from "@/components/analytics/PayoffMethodComparisonModal";
+import { MonteCarloDebtFreedomPredictor } from "@/components/analytics/MonteCarloDebtFreedomPredictor";
 
 function formatDebtFreeDate(dateStr: string | null) {
   if (!dateStr) return "No active debts!";
@@ -112,6 +113,9 @@ export default function RepaymentSimulatorPage() {
       <Topbar title="Repayment Simulator" subtitle="Simulate extra monthly contributions and compare snowball vs avalanche payoff strategies" />
       <main className="page-content space-y-6">
         
+        {/* Monte Carlo Risk & AI Debt Freedom Predictor */}
+        <MonteCarloDebtFreedomPredictor />
+
         {/* Interactive Extra Payment Slider & Custom Input */}
         <div className="card p-4 sm:p-6 border border-[var(--color-border-light)] space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
