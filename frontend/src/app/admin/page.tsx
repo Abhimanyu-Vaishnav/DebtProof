@@ -246,7 +246,6 @@ export default function DedicatedDebtProofAdminPortal() {
       }
     }
 
-    alert(`📢 System Push Notification Broadcasted Successfully!\nTarget Audience: ${targetAudience} Users\nTitle: ${pushTitle}`);
     setPushTitle("");
     setPushBody("");
   };
