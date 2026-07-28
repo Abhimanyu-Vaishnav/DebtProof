@@ -458,6 +458,9 @@ export default function DedicatedDebtProofAdminPortal() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
         {/* Tab 6: Global Risk & Liquidation Engine */}
         {activeTab === "risk_engine" && (
           <div className="card p-6 border border-rose-500/30 bg-[var(--color-surface)] space-y-5 rounded-2xl shadow-xl">
