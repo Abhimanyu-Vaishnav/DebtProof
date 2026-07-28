@@ -92,8 +92,23 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       if (custom.detail) {
         setNotifications((prev) => [custom.detail, ...prev]);
         setUnreadCount((prev) => prev + 1);
+
+        // Native Web Push Notification Popup if permission granted
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+          try {
+            new Notification(custom.detail.title || "DebtProof Alert", {
+              body: custom.detail.body || "New notification received.",
+              icon: "/favicon.ico",
+            });
+          } catch {}
+        }
       }
     };
+
+    // Request native browser push notification permission
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      try { Notification.requestPermission(); } catch {}
+    }
 
     window.addEventListener("debtproof_refresh_notifications", handleRefresh);
     window.addEventListener("debtproof_add_notification", handleAddNotif);
