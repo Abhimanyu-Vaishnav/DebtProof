@@ -149,7 +149,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       };
     } catch {}
 
-    const interval = setInterval(fetchNotifications, 15_000);
+    const interval = setInterval(fetchNotifications, 3_000);
     return () => {
       window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
       window.removeEventListener("debtproof_add_notification", handleAddNotif);

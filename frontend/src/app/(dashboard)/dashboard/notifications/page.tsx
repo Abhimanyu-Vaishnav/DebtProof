@@ -144,11 +144,14 @@ export default function NotificationsPage() {
       };
     } catch {}
 
+    const interval = setInterval(loadNotifications, 3_000);
+
     return () => {
       window.removeEventListener("debtproof_add_notification", handleAddNotif);
       window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
       window.removeEventListener("storage", handleStorageChange);
       if (bc) bc.close();
+      clearInterval(interval);
     };
   }, [loadNotifications]);
 
