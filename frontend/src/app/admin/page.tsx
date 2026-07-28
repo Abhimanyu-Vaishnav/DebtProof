@@ -1424,11 +1424,8 @@ export default function SuperAdminPortal() {
           </div>
         </div>
       )}
-          </div>
-        </div>
-      )}
-
 
     </div>
   );
 }
+
