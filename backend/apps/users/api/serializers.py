@@ -33,10 +33,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate_email(self, value: str) -> str:
-        """Ensure the email is not already registered."""
-        if User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
-        return value.lower()
+        """Ensure the email is normalized and not already registered."""
+        email_clean = value.strip().lower() if value else ""
+        if not email_clean:
+            raise serializers.ValidationError("Email address is required.")
+        if User.objects.filter(email__iexact=email_clean).exists():
+            raise serializers.ValidationError("A user with this email address already exists. Please log in instead.")
+        return email_clean
 
     def validate_password(self, value: str) -> str:
         """Run Django's built-in password validators."""

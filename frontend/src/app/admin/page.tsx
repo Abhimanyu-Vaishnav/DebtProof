@@ -199,9 +199,66 @@ export default function SuperAdminPortal() {
       ]);
 
       if (statsRes.status === "fulfilled" && statsRes.value?.stats) setStats(statsRes.value.stats);
-      if (usersRes.status === "fulfilled" && usersRes.value?.users) setUserList(usersRes.value.users);
-      if (loansRes.status === "fulfilled" && loansRes.value?.loans) setLoanList(loansRes.value.loans);
-      if (paymentsRes.status === "fulfilled" && paymentsRes.value?.payments) setPaymentList(paymentsRes.value.payments);
+
+      const fetchedLoans = (loansRes.status === "fulfilled" && loansRes.value?.loans) ? loansRes.value.loans : [];
+      const localLoansRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_loans") : null;
+      const localLoans: any[] = localLoansRaw ? JSON.parse(localLoansRaw) : [];
+
+      const combinedLoans = [...fetchedLoans];
+      localLoans.forEach((ll: any) => {
+        if (!combinedLoans.some((cl: any) => cl.id === ll.id)) {
+          combinedLoans.push({
+            id: ll.id,
+            name: ll.name || "Personal Loan",
+            user_name: ll.user_name || "Sumit Kumar",
+            user_email: ll.user_email || "sumit@gmail.com",
+            loan_type: ll.loan_type || "personal",
+            principal: parseFloat(ll.principal_amount || ll.principal) || 0,
+            monthly_emi: parseFloat(ll.monthly_emi) || 0,
+            interest_rate: parseFloat(ll.interest_rate) || 0,
+            status: ll.status || "active",
+            created_at: ll.start_date || ll.created_at || new Date().toISOString().split("T")[0],
+          });
+        }
+      });
+      setLoanList(combinedLoans);
+
+      const fetchedUsers = (usersRes.status === "fulfilled" && usersRes.value?.users) ? usersRes.value.users : [];
+      const updatedUsers = fetchedUsers.map((u: any) => {
+        const uLoans = combinedLoans.filter((l: any) =>
+          l.user_id === u.id ||
+          (l.user_email && u.email && l.user_email.toLowerCase() === u.email.toLowerCase())
+        );
+        const totalVol = uLoans.reduce((sum: number, l: any) => sum + (parseFloat(l.principal) || 0), 0);
+        return {
+          ...u,
+          loansCount: Math.max(uLoans.length, u.loansCount || 0),
+          totalDebtVolume: Math.max(totalVol, u.totalDebtVolume || 0),
+        };
+      });
+      setUserList(updatedUsers);
+
+      const fetchedPayments = (paymentsRes.status === "fulfilled" && paymentsRes.value?.payments) ? paymentsRes.value.payments : [];
+      const localPaymentsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_payments") : null;
+      const localPayments: any[] = localPaymentsRaw ? JSON.parse(localPaymentsRaw) : [];
+
+      const combinedPayments = [...fetchedPayments];
+      localPayments.forEach((lp: any) => {
+        if (!combinedPayments.some((cp: any) => cp.id === lp.id)) {
+          combinedPayments.push({
+            id: lp.id,
+            amount: parseFloat(lp.amount) || 0,
+            status: lp.status || "confirmed",
+            payment_method: lp.payment_method || "upi",
+            loan_name: lp.loan_name || "Personal Loan",
+            user_name: lp.user_name || "Sumit Kumar",
+            user_email: lp.user_email || "sumit@gmail.com",
+            paid_on: lp.payment_date || lp.created_at?.split("T")[0] || new Date().toISOString().split("T")[0],
+            reference: lp.reference_number || "",
+          });
+        }
+      });
+      setPaymentList(combinedPayments);
       if (staffRes.status === "fulfilled" && staffRes.value?.staff) setStaffList(staffRes.value.staff);
       if (ticketsRes.status === "fulfilled" && ticketsRes.value?.tickets) setTicketList(ticketsRes.value.tickets);
       if (monadRes.status === "fulfilled" && monadRes.value?.records) setBlockchainLogs(monadRes.value.records);
@@ -1124,6 +1181,9 @@ export default function SuperAdminPortal() {
             </div>
           )}
 
+          {/* ══════════ TAB 13: SETTINGS ══════════ */}
+          {activeTab === "settings" && (
+            <div className="space-y-6">
               {/* ── Theme Selector Section ── */}
               <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
                 <h3 className="text-xs font-black text-slate-300">🎨 Appearance & Theme Settings</h3>
@@ -1208,32 +1268,64 @@ export default function SuperAdminPortal() {
         </div>
       </main>
 
-      {/* ── USER DETAIL MODAL OVERLAY ── */}
+      {/* ── USER DETAIL MODAL OVERLAY (Ultra-Modern Redesign) ── */}
       {selectedUserDetail && (
-        <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-3xl max-h-[92vh] overflow-y-auto space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-xl font-black shadow-lg shadow-rose-500/20">
-                  {selectedUserDetail.name.charAt(0)}
+        <div className="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-xl animate-in fade-in duration-200">
+          <div className="bg-slate-900/95 border border-slate-800/90 rounded-3xl p-5 sm:p-7 w-full max-w-4xl max-h-[92vh] overflow-y-auto space-y-6 shadow-2xl shadow-rose-950/20">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-800/80 pb-5">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-500 via-purple-600 to-blue-500 flex items-center justify-center text-2xl font-black text-white shadow-xl shadow-rose-500/20">
+                    {selectedUserDetail.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-900 ${selectedUserDetail.is_active ? "bg-emerald-400 animate-pulse" : "bg-red-500"}`} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-black text-white">{selectedUserDetail.name}</h3>
-                    {selectedUserDetail.is_superuser && <span className="text-[9px] px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded-full font-bold">SUPERUSER</span>}
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="text-lg font-black text-white tracking-tight">{selectedUserDetail.name}</h3>
+                    {selectedUserDetail.is_superuser ? (
+                      <span className="text-[9px] px-2 py-0.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-full font-black uppercase tracking-wider">
+                        ⭐ SUPERUSER
+                      </span>
+                    ) : selectedUserDetail.is_staff ? (
+                      <span className="text-[9px] px-2 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full font-black uppercase tracking-wider">
+                        👔 STAFF
+                      </span>
+                    ) : (
+                      <span className="text-[9px] px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded-full font-bold uppercase tracking-wider">
+                        👤 USER
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-slate-400">{selectedUserDetail.email} • Joined {selectedUserDetail.joined}</p>
+                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                    <span className="font-mono text-slate-300">📧 {selectedUserDetail.email}</span>
+                    <span>•</span>
+                    <span>Joined {selectedUserDetail.joined}</span>
+                    <span>•</span>
+                    <span>Last Login: <b className="text-emerald-400 font-mono">{selectedUserDetail.last_login || "Never"}</b></span>
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setSelectedUserDetail(null)} className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-bold transition cursor-pointer">✕ Close</button>
+              <button
+                onClick={() => setSelectedUserDetail(null)}
+                className="w-9 h-9 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 font-bold transition flex items-center justify-center text-sm cursor-pointer"
+                title="Close"
+              >
+                ✕
+              </button>
             </div>
 
-            {/* Admin Action Control Bar */}
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">⚡ SuperAdmin Quick Actions</p>
-              <div className="flex flex-wrap gap-2">
-                {/* Send Direct Message */}
+            {/* SuperAdmin Actions Toolbar */}
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                  SuperAdmin Control Actions
+                </span>
+                <span className="text-[10px] font-mono text-slate-500">ID: {selectedUserDetail.id}</span>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
                 <button
                   onClick={async () => {
                     const msg = prompt(`Send Direct Message/Notification to ${selectedUserDetail.email}:`);
@@ -1245,12 +1337,11 @@ export default function SuperAdminPortal() {
                     if (res?.success) alert("Direct notification sent!");
                     else alert(res?.error || "Failed to send message");
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition cursor-pointer flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition cursor-pointer flex items-center gap-1.5"
                 >
                   💬 Send Message
                 </button>
 
-                {/* Change Subscription Plan */}
                 <button
                   onClick={async () => {
                     const plan = prompt("Change User Plan (Free / Pro / Enterprise):", "Pro");
@@ -1264,12 +1355,11 @@ export default function SuperAdminPortal() {
                       fetchAllData();
                     } else alert(res?.error || "Failed to update plan");
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-bold hover:bg-purple-500/20 transition cursor-pointer flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-bold hover:bg-purple-500/20 transition cursor-pointer flex items-center gap-1.5"
                 >
-                  ⭐ Change Plan (Free/Pro/Ent)
+                  ⭐ Change Plan
                 </button>
 
-                {/* Edit Profile */}
                 <button
                   onClick={async () => {
                     const newName = prompt("Edit Full Name:", selectedUserDetail.name);
@@ -1287,12 +1377,11 @@ export default function SuperAdminPortal() {
                       fetchAllData();
                     } else alert(res?.error || "Failed to edit user");
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5"
                 >
                   ✏️ Edit Profile
                 </button>
 
-                {/* Suspend / Activate Toggle */}
                 <button
                   onClick={async () => {
                     const action = selectedUserDetail.is_active ? "suspend" : "activate";
@@ -1303,12 +1392,11 @@ export default function SuperAdminPortal() {
                       fetchAllData();
                     } else alert(res?.error || "Action failed");
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${selectedUserDetail.is_active ? "bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20" : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"}`}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${selectedUserDetail.is_active ? "bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20" : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"}`}
                 >
                   {selectedUserDetail.is_active ? "🚫 Suspend User" : "🟢 Activate User"}
                 </button>
 
-                {/* Delete Account */}
                 {!selectedUserDetail.is_superuser && (
                   <button
                     onClick={async () => {
@@ -1320,7 +1408,7 @@ export default function SuperAdminPortal() {
                         fetchAllData();
                       } else alert(res?.error || "Failed to delete user");
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition cursor-pointer flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition cursor-pointer flex items-center gap-1.5"
                   >
                     🗑️ Delete Account
                   </button>
@@ -1328,41 +1416,77 @@ export default function SuperAdminPortal() {
               </div>
             </div>
 
-            {/* Quick Stats Grid - 6 KPI cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">TOTAL DEBT</p><p className="text-xs font-black text-rose-400 mt-0.5">{fmt(selectedUserDetail.total_debt)}</p></div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">TOTAL PAID</p><p className="text-xs font-black text-emerald-400 mt-0.5">{fmt(selectedUserDetail.total_paid)}</p></div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">MONTHLY EMI</p><p className="text-xs font-black text-amber-400 mt-0.5">{fmt((selectedUserDetail as any).total_monthly_emi ?? 0)}/mo</p></div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">CREDIT SCORE</p><p className="text-xs font-black text-blue-400 mt-0.5">{(selectedUserDetail as any).credit_score ?? 750}</p></div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">RISK SCORE</p><p className="text-xs font-black text-purple-400 mt-0.5">{(selectedUserDetail as any).risk_score ?? 15}/99</p></div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">STATUS</p><div className="mt-0.5"><StatusBadge status={selectedUserDetail.is_active ? "Active" : "Suspended"} /></div></div>
+            {/* Financial & Health Metrics KPI Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-500/10 to-rose-600/5 border border-rose-500/20">
+                <p className="text-[9px] font-black uppercase tracking-wider text-rose-400">Total Debt</p>
+                <p className="text-sm font-black text-white mt-1">{fmt(selectedUserDetail.total_debt)}</p>
+                <p className="text-[9px] text-slate-500 mt-0.5">{selectedUserDetail.total_loans} active loans</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20">
+                <p className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Total Paid</p>
+                <p className="text-sm font-black text-white mt-1">{fmt(selectedUserDetail.total_paid)}</p>
+                <p className="text-[9px] text-slate-500 mt-0.5">{selectedUserDetail.payments.length} payments</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20">
+                <p className="text-[9px] font-black uppercase tracking-wider text-amber-400">Monthly EMI</p>
+                <p className="text-sm font-black text-white mt-1">{fmt((selectedUserDetail as any).total_monthly_emi ?? 0)}</p>
+                <p className="text-[9px] text-slate-500 mt-0.5">per month</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <p className="text-[9px] font-black uppercase tracking-wider text-blue-400">Credit Score</p>
+                <p className="text-sm font-black text-white mt-1">{(selectedUserDetail as any).credit_score ?? 750}</p>
+                <p className="text-[9px] text-emerald-400 mt-0.5">Good Standing</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <p className="text-[9px] font-black uppercase tracking-wider text-purple-400">Risk Score</p>
+                <p className="text-sm font-black text-white mt-1">{(selectedUserDetail as any).risk_score ?? 15}/99</p>
+                <p className="text-[9px] text-slate-500 mt-0.5">Low Risk Profile</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Account Status</p>
+                <div className="mt-1.5">
+                  <StatusBadge status={selectedUserDetail.is_active ? "Active" : "Suspended"} />
+                </div>
+              </div>
             </div>
 
-            {/* Profile Info Details */}
-            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs flex flex-wrap justify-between gap-2">
-              <div><span className="text-slate-500 font-bold">Phone:</span> <span className="text-white font-mono">{selectedUserDetail.phone || "Not set"}</span></div>
-              <div><span className="text-slate-500 font-bold">Last Login:</span> <span className="text-white font-mono">{selectedUserDetail.last_login || "Never"}</span></div>
-              <div><span className="text-slate-500 font-bold">Bio/Notes:</span> <span className="text-slate-300">{selectedUserDetail.bio || "—"}</span></div>
-            </div>
-
-            {/* User Loans List */}
-            <div>
-              <h4 className="text-xs font-black text-slate-300 mb-2.5">💰 User Loans ({selectedUserDetail.loans.length})</h4>
-              {selectedUserDetail.loans.length === 0 ? <p className="text-xs text-slate-500 italic">No loans recorded for this user</p> : (
-                <div className="space-y-2">
+            {/* Loans List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>💰</span> User Loans Portfolio ({selectedUserDetail.loans.length})
+                </h4>
+                <span className="text-[10px] text-slate-400">Active & Settled Contracts</span>
+              </div>
+              {selectedUserDetail.loans.length === 0 ? (
+                <div className="p-6 text-center rounded-2xl bg-slate-950 border border-slate-800 text-slate-500 text-xs">
+                  No loans recorded for this user account.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                   {selectedUserDetail.loans.map((l: any) => (
-                    <div key={l.id} className="flex justify-between items-center p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-                      <div>
+                    <div key={l.id} className="flex justify-between items-center p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 hover:border-slate-700 transition">
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="text-xs font-bold text-white">{l.name}</p>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">{LOAN_TYPE_LABEL[l.loan_type] || l.loan_type}</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">
+                            {LOAN_TYPE_LABEL[l.loan_type] || l.loan_type}
+                          </span>
                         </div>
-                        <p className="text-[10px] text-slate-400 mt-1">Lender: <b>{l.lender}</b> • Interest Rate: <b>{l.interest_rate}%</b> • Started: <b>{l.start_date || l.created_at}</b></p>
+                        <p className="text-[10px] text-slate-400">
+                          Lender: <b className="text-slate-200">{l.lender || "Bank"}</b> • Rate: <b className="text-slate-200">{l.interest_rate}%</b> • Started: <b className="text-slate-200">{l.start_date || l.created_at}</b>
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-black text-rose-400">{fmt(l.principal)}</p>
-                        <p className="text-[10px] text-slate-400">EMI: {fmt(l.monthly_emi)}/mo</p>
-                        <StatusBadge status={l.status} />
+                        <p className="text-[10px] text-slate-400 mt-0.5">EMI: {fmt(l.monthly_emi)}/mo</p>
+                        <div className="mt-1"><StatusBadge status={l.status} /></div>
                       </div>
                     </div>
                   ))}
@@ -1370,20 +1494,32 @@ export default function SuperAdminPortal() {
               )}
             </div>
 
-            {/* User Payments List */}
-            <div>
-              <h4 className="text-xs font-black text-slate-300 mb-2.5">💳 Recent Payments ({selectedUserDetail.payments.length})</h4>
-              {selectedUserDetail.payments.length === 0 ? <p className="text-xs text-slate-500 italic">No payments recorded</p> : (
-                <div className="space-y-2">
+            {/* Payments List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>💳</span> Payment History & Receipts ({selectedUserDetail.payments.length})
+                </h4>
+                <span className="text-[10px] text-slate-400">Verified Transactions</span>
+              </div>
+              {selectedUserDetail.payments.length === 0 ? (
+                <div className="p-6 text-center rounded-2xl bg-slate-950 border border-slate-800 text-slate-500 text-xs">
+                  No payment history recorded yet.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                   {selectedUserDetail.payments.map((p: any) => (
-                    <div key={p.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
-                      <div>
+                    <div key={p.id} className="flex justify-between items-center p-3 rounded-2xl bg-slate-950 border border-slate-800/80 hover:border-slate-700 transition">
+                      <div className="space-y-0.5">
                         <p className="text-xs font-bold text-white">{p.loan_name}</p>
-                        <p className="text-[10px] text-slate-400">{p.paid_on} • Method: <b>{p.method}</b> {p.receipt_hash && <span className="text-purple-400 font-mono"> • Receipt Hash: {p.receipt_hash}</span>}</p>
+                        <p className="text-[10px] text-slate-400">
+                          Paid on: <b className="text-slate-300">{p.paid_on}</b> • Method: <b className="text-slate-300">{p.method?.toUpperCase()}</b>
+                          {p.receipt_hash && <span className="text-purple-400 font-mono ml-2">🔗 Hash: {p.receipt_hash}</span>}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-black text-emerald-400">{fmt(p.amount)}</p>
-                        <StatusBadge status={p.status} />
+                        <div className="mt-1"><StatusBadge status={p.status} /></div>
                       </div>
                     </div>
                   ))}
@@ -1391,34 +1527,38 @@ export default function SuperAdminPortal() {
               )}
             </div>
 
-            {/* Support Tickets & Audit Trail Grid */}
+            {/* Support Tickets & Activity Audit Trail */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-xs font-black text-slate-300 mb-2">🎧 Support Tickets</h4>
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🎧</span> Support Tickets
+                </h4>
                 {((selectedUserDetail as any).tickets && (selectedUserDetail as any).tickets.length > 0) ? (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
                     {(selectedUserDetail as any).tickets.map((t: any) => (
-                      <div key={t.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center text-[10px]">
+                      <div key={t.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center text-[10px]">
                         <div><p className="font-bold text-white">{t.subject}</p><p className="text-slate-500">{t.created_at}</p></div>
                         <StatusBadge status={t.status} />
                       </div>
                     ))}
                   </div>
-                ) : <p className="text-xs text-slate-500 italic">No tickets filed</p>}
+                ) : <p className="text-xs text-slate-500 italic py-2 text-center">No support tickets filed</p>}
               </div>
 
-              <div>
-                <h4 className="text-xs font-black text-slate-300 mb-2">📜 Activity Audit Trail</h4>
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <span>📜</span> Activity Audit Trail
+                </h4>
                 {((selectedUserDetail as any).audit_logs && (selectedUserDetail as any).audit_logs.length > 0) ? (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
                     {(selectedUserDetail as any).audit_logs.map((a: any) => (
-                      <div key={a.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] flex justify-between items-center">
-                        <div><p className="font-bold text-rose-400">{a.action}</p><p className="text-slate-500">{a.target || "System"}</p></div>
+                      <div key={a.id} className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px] flex justify-between items-center">
+                        <div><p className="font-bold text-rose-400">{a.action}</p><p className="text-slate-400">{a.target || "System"}</p></div>
                         <span className="text-slate-500 font-mono">{a.time}</span>
                       </div>
                     ))}
                   </div>
-                ) : <p className="text-xs text-slate-500 italic">No activity logged</p>}
+                ) : <p className="text-xs text-slate-500 italic py-2 text-center">No activity logged</p>}
               </div>
             </div>
           </div>

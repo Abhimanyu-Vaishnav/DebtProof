@@ -28,8 +28,11 @@ export const authService = {
    * Register a new user account.
    */
   register: async (payload: RegisterPayload): Promise<AuthResponse> => {
+    const cleanEmail = (payload.email || "").trim().toLowerCase();
+    const normalizedPayload = { ...payload, email: cleanEmail };
+
     try {
-      const { data } = await apiClient.post<AuthResponse>("/auth/register/", payload);
+      const { data } = await apiClient.post<AuthResponse>("/auth/register/", normalizedPayload);
       if (data.tokens) {
         tokenStorage.set(data.tokens.access, data.tokens.refresh);
       }
@@ -38,14 +41,32 @@ export const authService = {
       }
       return data;
     } catch (err: any) {
-      // If server responded with a validation error (e.g. email exists), throw it
+      // If server responded with a validation error (e.g. email exists 400), throw it
       if (err?.response?.status && err.response.status < 500) {
         throw err;
       }
+
+      // Check if duplicate user exists in local demo storage
+      const existingDemoUser = getLocalDemoUser();
+      if (existingDemoUser && existingDemoUser.email.trim().toLowerCase() === cleanEmail) {
+        const dupError: any = new Error("A user with this email address already exists.");
+        dupError.response = {
+          status: 400,
+          data: {
+            success: false,
+            error: {
+              code: "BAD_REQUEST",
+              message: "A user with this email address already exists. Please log in instead.",
+            },
+          },
+        };
+        throw dupError;
+      }
+
       // Fallback for offline network failure
       const newUser: User = {
         id: `usr-${Date.now()}`,
-        email: payload.email,
+        email: cleanEmail,
         first_name: payload.first_name,
         last_name: payload.last_name,
         full_name: `${payload.first_name} ${payload.last_name}`.trim(),

@@ -140,7 +140,7 @@ class SuperAdminUserListView(APIView):
 
         for u in users:
             user_loans = Loan.objects.filter(user=u)
-            active_loans_count = user_loans.filter(status="active").count()
+            total_loans_count = user_loans.count()
             total_vol = user_loans.aggregate(total=Sum("principal_amount"))["total"] or 0
 
             results.append({
@@ -151,7 +151,7 @@ class SuperAdminUserListView(APIView):
                 "priority": "High" if u.is_superuser else "Normal",
                 "status": "Active" if u.is_active else "Suspended",
                 "joinedDate": u.created_at.strftime("%Y-%m-%d"),
-                "loansCount": active_loans_count,
+                "loansCount": total_loans_count,
                 "totalDebtVolume": float(total_vol),
                 "isSuperuser": u.is_superuser,
                 "isStaff": u.is_staff,

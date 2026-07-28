@@ -57,12 +57,17 @@ export default function RegisterPage() {
     try {
       await register(formData);
       router.push("/dashboard");
-    } catch (err: unknown) {
-      const message =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message
-          : undefined;
-      setGlobalError(message ?? "Registration failed. Please try again.");
+    } catch (err: any) {
+      let message = err?.response?.data?.error?.message;
+      if (!message && err?.response?.data?.error?.details?.email) {
+        const emailErr = err.response.data.error.details.email;
+        message = Array.isArray(emailErr) ? emailErr[0] : emailErr;
+      }
+      if (!message && err?.response?.data?.email) {
+        const emailErr = err.response.data.email;
+        message = Array.isArray(emailErr) ? emailErr[0] : emailErr;
+      }
+      setGlobalError(message ?? err?.message ?? "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }

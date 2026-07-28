@@ -37,9 +37,19 @@ export const notificationsService = {
 
     const readIdsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_read_notif_ids") : null;
     const readIds: string[] = readIdsRaw ? JSON.parse(readIdsRaw) : [];
-
     const finalResults = unique.map((n) => (readIds.includes(n.id) ? { ...n, is_read: true } : n));
-    return { count: finalResults.length, next: null, previous: null, results: finalResults };
+
+    return {
+      success: true,
+      pagination: {
+        count: finalResults.length,
+        total_pages: 1,
+        current_page: 1,
+        next: null,
+        previous: null,
+      },
+      results: finalResults,
+    };
   },
 
   /**
