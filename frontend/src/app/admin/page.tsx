@@ -214,7 +214,7 @@ export default function DedicatedDebtProofAdminPortal() {
       })
     );
 
-    // Trigger Browser Native Desktop Push Popup
+    // Trigger Browser Native Desktop Push Popup immediately
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "granted") {
         try {
@@ -223,8 +223,17 @@ export default function DedicatedDebtProofAdminPortal() {
             icon: "/favicon.ico",
           });
         } catch {}
-      } else if (Notification.permission === "default") {
-        Notification.requestPermission();
+      } else {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            try {
+              new Notification(`📢 DebtProof: ${pushTitle}`, {
+                body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+                icon: "/favicon.ico",
+              });
+            } catch {}
+          }
+        });
       }
     }
 
