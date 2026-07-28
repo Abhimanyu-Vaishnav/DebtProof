@@ -112,8 +112,33 @@ export default function RedesignedSuperAdminPortal() {
     async function fetchRealUsers() {
       try {
         const res = await apiClient.get("/auth/superadmin/users/");
-        if (res.data?.users && Array.isArray(res.data.users)) {
-          const fetchedUsers = res.data.users.map((u: any) => ({
+        const usersArray = res.data?.users;
+        if (usersArray && Array.isArray(usersArray) && usersArray.length > 0) {
+          const fetchedUsers = usersArray.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            plan: u.plan,
+            priority: u.priority,
+            status: u.status,
+            loansCount: u.loansCount || 0,
+            totalDebtVolume: u.totalDebtVolume || 0,
+            creditScore: 750,
+            joinedDate: u.joinedDate,
+          }));
+          setUserList(fetchedUsers);
+          return;
+        }
+      } catch (err: any) {
+        console.warn("Axios fetch failed, attempting direct fetch fallback...");
+      }
+
+      // Direct native fetch fallback to Django port 8000
+      try {
+        const rawRes = await fetch("http://localhost:8000/api/v1/auth/superadmin/users/");
+        const data = await rawRes.json();
+        if (data?.users && Array.isArray(data.users)) {
+          const fetchedUsers = data.users.map((u: any) => ({
             id: u.id,
             name: u.name,
             email: u.email,
@@ -127,8 +152,8 @@ export default function RedesignedSuperAdminPortal() {
           }));
           setUserList(fetchedUsers);
         }
-      } catch (err: any) {
-        console.warn("SuperAdmin Portal database fetch fallback mode.");
+      } catch (e) {
+        console.error("Failed to load database users for SuperAdmin:", e);
       }
     }
     fetchRealUsers();
