@@ -215,7 +215,19 @@ export default function RedesignedSuperAdminPortal() {
         body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
         target_audience: targetAudience,
       });
-    } catch {}
+    } catch {
+      try {
+        await fetch("http://localhost:8000/api/v1/notifications/broadcast/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: formattedTitle,
+            body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+            target_audience: targetAudience,
+          }),
+        });
+      } catch {}
+    }
 
     if (typeof window !== "undefined") {
       const existingRaw = localStorage.getItem("debtproof_local_broadcasts");
