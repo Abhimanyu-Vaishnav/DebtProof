@@ -85,7 +85,7 @@ export default function RedesignedSuperAdminPortal() {
 
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "monad_audit" | "risk_engine" | "web3_gas" | "payment_gateways" | "security_audit" | "push_notifications">("overview");
   const [staffList, setStaffList] = useState<StaffMember[]>(SAMPLE_STAFF);
-  const [userList, setUserList] = useState<UserData[]>(SAMPLE_USERS);
+  const [userList, setUserList] = useState<UserData[]>([]);
   const [queryList, setQueryList] = useState<SupportQuery[]>(SAMPLE_QUERIES);
 
   // New Staff Modal State
@@ -125,9 +125,7 @@ export default function RedesignedSuperAdminPortal() {
             creditScore: 750,
             joinedDate: u.joinedDate,
           }));
-          if (fetchedUsers.length > 0) {
-            setUserList(fetchedUsers);
-          }
+          setUserList(fetchedUsers);
         }
       } catch (err: any) {
         console.warn("SuperAdmin Portal database fetch fallback mode.");
