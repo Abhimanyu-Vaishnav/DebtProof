@@ -180,25 +180,26 @@ export default function DedicatedDebtProofAdminPortal() {
     e.preventDefault();
     if (!pushTitle.trim()) return;
 
+    const formattedTitle = pushTitle.startsWith("📢") ? pushTitle : `📢 ${pushTitle}`;
+    const newNotifObj = {
+      id: `notif-superadmin-${Date.now()}`,
+      title: formattedTitle,
+      body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+      notif_type: "info",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+
     try {
       // POST broadcast to Django Database so all users receive push notification on reload/login
       await apiClient.post("/notifications/broadcast/", {
-        title: `📢 SuperAdmin Broadcast: ${pushTitle}`,
+        title: formattedTitle,
         body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
         target_audience: targetAudience,
       });
     } catch {
       // Graceful fallback to client broadcast
     }
-
-    const newNotifObj = {
-      id: `notif-superadmin-${Date.now()}`,
-      title: `📢 SuperAdmin Broadcast: ${pushTitle}`,
-      body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
-      notif_type: "info",
-      is_read: false,
-      created_at: new Date().toISOString(),
-    };
 
     if (typeof window !== "undefined") {
       const existingRaw = localStorage.getItem("debtproof_local_broadcasts");
