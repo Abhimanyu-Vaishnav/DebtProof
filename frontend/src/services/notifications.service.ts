@@ -11,61 +11,117 @@ export const notificationsService = {
    * Pass unread_only=true to fetch only unread.
    */
   getNotifications: async (unreadOnly = false): Promise<PaginatedResponse<Notification>> => {
-    const { data } = await apiClient.get<any>(
-      "/notifications/",
-      { params: unreadOnly ? { unread_only: "true" } : {} }
-    );
-    if (Array.isArray(data)) {
-      return { count: data.length, next: null, previous: null, results: data };
+    try {
+      const { data } = await apiClient.get<any>(
+        "/notifications/",
+        { params: unreadOnly ? { unread_only: "true" } : {} }
+      );
+      if (Array.isArray(data)) {
+        return { count: data.length, next: null, previous: null, results: data };
+      }
+      if (data?.results && Array.isArray(data.results)) {
+        return data;
+      }
+    } catch {
+      // API Offline / fallback
     }
-    if (data?.results && Array.isArray(data.results)) {
-      return data;
-    }
-    return { count: 0, next: null, previous: null, results: [] };
+
+    const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
+    const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
+    return { count: localBroadcasts.length, next: null, previous: null, results: localBroadcasts };
   },
 
   /**
    * Get the unread count — fast endpoint for the Topbar badge.
    */
   getUnreadCount: async (): Promise<number> => {
-    const { data } = await apiClient.get<{ count: number }>("/notifications/unread-count/");
-    return data.count;
+    try {
+      const { data } = await apiClient.get<{ count: number }>("/notifications/unread-count/");
+      return data?.count ?? 0;
+    } catch {
+      const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
+      const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
+      return localBroadcasts.filter(n => !n.is_read).length;
+    }
   },
 
   /**
    * Mark a single notification as read.
    */
   markRead: async (id: string): Promise<void> => {
-    await apiClient.post(`/notifications/${id}/read/`);
+    try {
+      await apiClient.post(`/notifications/${id}/read/`);
+    } catch {}
+
+    if (typeof window !== "undefined") {
+      const localBroadcastsRaw = localStorage.getItem("debtproof_local_broadcasts");
+      if (localBroadcastsRaw) {
+        const localBroadcasts: Notification[] = JSON.parse(localBroadcastsRaw);
+        const updated = localBroadcasts.map(n => n.id === id ? { ...n, is_read: true } : n);
+        localStorage.setItem("debtproof_local_broadcasts", JSON.stringify(updated));
+      }
+    }
   },
 
   /**
    * Mark all notifications as read.
    */
   markAllRead: async (): Promise<void> => {
-    await apiClient.post("/notifications/read-all/");
+    try {
+      await apiClient.post("/notifications/read-all/");
+    } catch {}
+
+    if (typeof window !== "undefined") {
+      const localBroadcastsRaw = localStorage.getItem("debtproof_local_broadcasts");
+      if (localBroadcastsRaw) {
+        const localBroadcasts: Notification[] = JSON.parse(localBroadcastsRaw);
+        const updated = localBroadcasts.map(n => ({ ...n, is_read: true }));
+        localStorage.setItem("debtproof_local_broadcasts", JSON.stringify(updated));
+      }
+    }
   },
 
   /**
    * Delete (dismiss) a notification.
    */
   deleteNotification: async (id: string): Promise<void> => {
-    await apiClient.delete(`/notifications/${id}/`);
+    try {
+      await apiClient.delete(`/notifications/${id}/`);
+    } catch {}
+
+    if (typeof window !== "undefined") {
+      const localBroadcastsRaw = localStorage.getItem("debtproof_local_broadcasts");
+      if (localBroadcastsRaw) {
+        const localBroadcasts: Notification[] = JSON.parse(localBroadcastsRaw);
+        const updated = localBroadcasts.filter(n => n.id !== id);
+        localStorage.setItem("debtproof_local_broadcasts", JSON.stringify(updated));
+      }
+    }
   },
 
   /**
    * Delete all notifications for the authenticated user.
    */
   clearAll: async (): Promise<void> => {
-    await apiClient.post("/notifications/clear-all/");
+    try {
+      await apiClient.post("/notifications/clear-all/");
+    } catch {}
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("debtproof_local_broadcasts");
+    }
   },
 
   /**
    * Trigger automatic evaluation of active EMI due dates and generate upcoming/overdue alerts.
    */
   evaluateEMIReminders: async (): Promise<{ success: boolean; unread_count: number }> => {
-    const { data } = await apiClient.post<{ success: boolean; unread_count: number }>("/notifications/evaluate/");
-    return data;
+    try {
+      const { data } = await apiClient.post<{ success: boolean; unread_count: number }>("/notifications/evaluate/");
+      return data;
+    } catch {
+      return { success: true, unread_count: 0 };
+    }
   },
 
   /**
@@ -95,8 +151,12 @@ export const notificationsService = {
       // Offline / fallback catch
     }
 
-    // Dispatch window event so Topbar badge updates dynamically
     if (typeof window !== "undefined") {
+      const existingRaw = localStorage.getItem("debtproof_local_broadcasts");
+      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      localStorage.setItem("debtproof_local_broadcasts", JSON.stringify([newNotif, ...existing]));
+
+      // Dispatch window event so Topbar badge updates dynamically
       window.dispatchEvent(new CustomEvent("debtproof_add_notification", { detail: newNotif }));
 
       // Trigger OS/Browser push notification if allowed
