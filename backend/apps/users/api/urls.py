@@ -4,7 +4,7 @@ All routes live under /api/v1/auth/
 """
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
-from .views import UserRegistrationView, UserProfileView, LogoutView
+from .views import UserRegistrationView, UserProfileView, LogoutView, SuperAdminUserListView
 from .jwt_views import CustomTokenObtainPairView
 
 app_name = "users"
@@ -15,6 +15,9 @@ urlpatterns = [
 
     # JWT Login (returns access + refresh)
     path("login/", CustomTokenObtainPairView.as_view(), name="login"),
+
+    # SuperAdmin Real Users Directory
+    path("superadmin/users/", SuperAdminUserListView.as_view(), name="superadmin-users"),
 
     # Token management
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),

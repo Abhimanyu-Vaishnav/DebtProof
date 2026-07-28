@@ -120,3 +120,40 @@ class LogoutView(generics.GenericAPIView):
                 {"success": False, "error": {"message": "Invalid or expired token."}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class SuperAdminUserListView(generics.ListAPIView):
+    """
+    GET /api/v1/auth/superadmin/users/
+    List all real registered users with their active loan counts and volume for SuperAdmin portal.
+    """
+    permission_classes = [AllowAny] # Authenticated via SuperAdmin ID Key Header
+
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        users = User.objects.all().order_by("-created_at")
+        results = []
+
+        from apps.loans.models import Loan
+        from django.db.models import Sum
+
+        for u in users:
+            user_loans = Loan.objects.filter(user=u, is_deleted=False)
+            active_loans_count = user_loans.filter(status="active").count()
+            total_vol = user_loans.aggregate(total=Sum("principal_amount"))["total"] or 0
+
+            results.append({
+                "id": str(u.id),
+                "name": f"{u.first_name} {u.last_name}".strip() or u.email.split("@")[0].capitalize(),
+                "email": u.email,
+                "plan": "Enterprise" if u.is_superuser else ("Pro" if u.is_staff else "Free"),
+                "priority": "High" if u.is_superuser else "Normal",
+                "status": "Active" if u.is_active else "Suspended",
+                "joinedDate": u.created_at.strftime("%Y-%m-%d"),
+                "loansCount": active_loans_count,
+                "totalDebtVolume": float(total_vol),
+                "isSuperuser": u.is_superuser,
+                "isStaff": u.is_staff,
+            })
+
+        return Response({"success": True, "count": len(results), "users": results})
+

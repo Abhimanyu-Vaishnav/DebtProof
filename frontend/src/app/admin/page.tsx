@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import apiClient from "@/services/api";
 import { formatCurrency } from "@/utils/formatters";
 
 // Roles definition
@@ -85,6 +86,7 @@ export default function DedicatedDebtProofAdminPortal() {
   const [staffList, setStaffList] = useState<StaffMember[]>(SAMPLE_STAFF);
   const [userList, setUserList] = useState<UserData[]>(SAMPLE_USERS);
   const [queryList, setQueryList] = useState<SupportQuery[]>(SAMPLE_QUERIES);
+  const [loadingRealUsers, setLoadingRealUsers] = useState(false);
 
   // New Staff Modal State
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
@@ -96,6 +98,38 @@ export default function DedicatedDebtProofAdminPortal() {
   const [pushTitle, setPushTitle] = useState("");
   const [pushBody, setPushBody] = useState("");
   const [targetAudience, setTargetAudience] = useState<"All" | "Enterprise" | "Pro" | "Free">("All");
+
+  // Fetch real users from backend Django API
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+    async function fetchRealUsers() {
+      setLoadingRealUsers(true);
+      try {
+        const res = await apiClient.get("/auth/superadmin/users/");
+        if (res.data?.users && Array.isArray(res.data.users)) {
+          const fetchedUsers = res.data.users.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            plan: u.plan,
+            priority: u.priority,
+            status: u.status,
+            loansCount: u.loansCount || 0,
+            totalDebtVolume: u.totalDebtVolume || 0,
+          }));
+          const merged = [...fetchedUsers, ...SAMPLE_USERS];
+          const unique = merged.filter((item, index, self) => index === self.findIndex((t) => t.email === item.email));
+          setUserList(unique);
+        }
+      } catch (err) {
+        console.error("Failed to load real users for SuperAdmin:", err);
+      } finally {
+        setLoadingRealUsers(false);
+      }
+    }
+
+    fetchRealUsers();
+  }, [isAuthenticated]);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
