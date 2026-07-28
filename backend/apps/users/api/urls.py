@@ -11,6 +11,8 @@ from .views import (
     SuperAdminUserActionView, SuperAdminUserDetailView, SuperAdminBlockchainAuditView,
     SuperAdminAuditLogView, SuperAdminCSVExportView,
     SuperAdminFraudAlertsView, SuperAdminBackupView, SuperAdminMonadEscrowView, SuperAdminRevenueAnalyticsView,
+    SuperAdminLegalRecoveryView, SuperAdminLenderSyndicationView, SuperAdminAIUnderwritingView,
+    SuperAdminWhitelabelRBACView, SuperAdminBureauComplianceView, SuperAdminClearCacheView,
 )
 from .jwt_views import CustomTokenObtainPairView
 
@@ -44,6 +46,12 @@ urlpatterns = [
     path("superadmin/backups/create/", SuperAdminBackupView.as_view(), name="superadmin-backups-create"),
     path("superadmin/monad-escrow/", SuperAdminMonadEscrowView.as_view(), name="superadmin-monad-escrow"),
     path("superadmin/revenue-analytics/", SuperAdminRevenueAnalyticsView.as_view(), name="superadmin-revenue-analytics"),
+    path("superadmin/legal-recovery/", SuperAdminLegalRecoveryView.as_view(), name="superadmin-legal-recovery"),
+    path("superadmin/lender-syndication/", SuperAdminLenderSyndicationView.as_view(), name="superadmin-lender-syndication"),
+    path("superadmin/ai-underwriting/", SuperAdminAIUnderwritingView.as_view(), name="superadmin-ai-underwriting"),
+    path("superadmin/whitelabel-rbac/", SuperAdminWhitelabelRBACView.as_view(), name="superadmin-whitelabel-rbac"),
+    path("superadmin/bureau-compliance/", SuperAdminBureauComplianceView.as_view(), name="superadmin-bureau-compliance"),
+    path("superadmin/clear-cache/", SuperAdminClearCacheView.as_view(), name="superadmin-clear-cache"),
 
     # Token management
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),

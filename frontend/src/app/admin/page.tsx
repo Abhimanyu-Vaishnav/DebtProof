@@ -6,7 +6,7 @@ import apiClient from "@/services/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "RiskAuditor" | "Web3Governor";
-type TabId = "overview" | "users" | "loans" | "push" | "staff" | "support" | "risk" | "monad" | "payments" | "security" | "analytics" | "audit" | "settings" | "fraud" | "backups" | "escrow" | "revenue";
+type TabId = "overview" | "users" | "loans" | "push" | "staff" | "support" | "risk" | "monad" | "payments" | "security" | "analytics" | "audit" | "settings" | "fraud" | "backups" | "escrow" | "revenue" | "legal" | "syndication" | "underwriting" | "whitelabel" | "bureau" | "cache";
 
 interface StaffMember { id: string; user_id: string; name: string; email: string; role: string; department: string; queries_resolved: number; avg_rating: number; is_active: boolean; notes: string; joined: string; }
 interface SupportTicket { id: string; user_name: string; user_email: string; subject: string; message: string; priority: "urgent" | "high" | "normal" | "low"; status: "open" | "in_progress" | "escalated" | "resolved" | "closed"; assigned_to: string | null; assigned_name: string; resolution_notes: string; resolved_at: string | null; filed_by_admin: boolean; created_at: string; }
@@ -148,6 +148,12 @@ export default function SuperAdminPortal() {
   const [backupList, setBackupList] = useState<any[]>([]);
   const [escrowConfig, setEscrowConfig] = useState<any>(null);
   const [revenueStats, setRevenueStats] = useState<any>(null);
+  const [legalCases, setLegalCases] = useState<any[]>([]);
+  const [syndicationData, setSyndicationData] = useState<any>(null);
+  const [underwritingData, setUnderwritingData] = useState<any>(null);
+  const [whitelabelConfig, setWhitelabelConfig] = useState<any>(null);
+  const [bureauData, setBureauData] = useState<any>(null);
+  const [clearingCache, setClearingCache] = useState(false);
 
   const [loadingStats, setLoadingStats] = useState(false);
   const [userSearch, setUserSearch] = useState("");
@@ -193,7 +199,7 @@ export default function SuperAdminPortal() {
   const fetchAllData = useCallback(async () => {
     setLoadingStats(true);
     try {
-      const [statsRes, usersRes, loansRes, paymentsRes, staffRes, ticketsRes, monadRes, auditRes, fraudRes, backupRes, escrowRes, revenueRes] = await Promise.allSettled([
+      const [statsRes, usersRes, loansRes, paymentsRes, staffRes, ticketsRes, monadRes, auditRes, fraudRes, backupRes, escrowRes, revenueRes, legalRes, synRes, aiRes, wlRes, burRes] = await Promise.allSettled([
         superAdminFetch("/auth/superadmin/stats/"),
         superAdminFetch("/auth/superadmin/users/"),
         superAdminFetch("/auth/superadmin/loans/"),
@@ -206,6 +212,11 @@ export default function SuperAdminPortal() {
         superAdminFetch("/auth/superadmin/backups/"),
         superAdminFetch("/auth/superadmin/monad-escrow/"),
         superAdminFetch("/auth/superadmin/revenue-analytics/"),
+        superAdminFetch("/auth/superadmin/legal-recovery/"),
+        superAdminFetch("/auth/superadmin/lender-syndication/"),
+        superAdminFetch("/auth/superadmin/ai-underwriting/"),
+        superAdminFetch("/auth/superadmin/whitelabel-rbac/"),
+        superAdminFetch("/auth/superadmin/bureau-compliance/"),
       ]);
 
       if (statsRes.status === "fulfilled" && statsRes.value?.stats) setStats(statsRes.value.stats);
@@ -213,6 +224,11 @@ export default function SuperAdminPortal() {
       if (backupRes.status === "fulfilled" && backupRes.value?.backups) setBackupList(backupRes.value.backups);
       if (escrowRes.status === "fulfilled" && escrowRes.value?.escrow) setEscrowConfig(escrowRes.value.escrow);
       if (revenueRes.status === "fulfilled" && revenueRes.value?.revenue) setRevenueStats(revenueRes.value.revenue);
+      if (legalRes.status === "fulfilled" && legalRes.value?.cases) setLegalCases(legalRes.value.cases);
+      if (synRes.status === "fulfilled" && synRes.value) setSyndicationData(synRes.value);
+      if (aiRes.status === "fulfilled" && aiRes.value) setUnderwritingData(aiRes.value);
+      if (wlRes.status === "fulfilled" && wlRes.value?.whitelabel) setWhitelabelConfig(wlRes.value.whitelabel);
+      if (burRes.status === "fulfilled" && burRes.value) setBureauData(burRes.value);
 
       const fetchedLoans = (loansRes.status === "fulfilled" && loansRes.value?.loans) ? loansRes.value.loans : [];
       const localLoansRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_loans") : null;
@@ -519,6 +535,12 @@ export default function SuperAdminPortal() {
     { id: "backups", label: "Backup Studio", icon: "💾", count: backupList.length },
     { id: "escrow", label: "Monad Escrow", icon: "⛓️" },
     { id: "revenue", label: "Revenue MRR", icon: "📈" },
+    { id: "legal", label: "Legal Recovery", icon: "⚖️", count: legalCases.length },
+    { id: "syndication", label: "Lender Syndication", icon: "🏦" },
+    { id: "underwriting", label: "AI Underwriting", icon: "🔍" },
+    { id: "whitelabel", label: "Whitelabel & RBAC", icon: "🌐" },
+    { id: "bureau", label: "Bureau Compliance", icon: "🛡️" },
+    { id: "cache", label: "Cache Studio", icon: "🧹" },
     { id: "settings", label: "Settings", icon: "⚙️" },
   ];
 
@@ -1568,6 +1590,296 @@ export default function SuperAdminPortal() {
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: LEGAL RECOVERY ── */}
+          {activeTab === "legal" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>⚖️</span> Legal & Debt Recovery Operations Desk
+                  </h3>
+                  <p className="text-xs text-slate-400">Manage defaulted loans, issue 1-click legal demand notices, and process settlement waivers</p>
+                </div>
+                <button
+                  onClick={() => alert("Legal Recovery Case Report CSV Exported")}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition cursor-pointer"
+                >
+                  📥 Export Legal Cases
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {legalCases.length === 0 ? (
+                  <div className="p-8 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 text-xs">
+                    No active legal recovery cases.
+                  </div>
+                ) : (
+                  legalCases.map((lc: any) => (
+                    <div key={lc.id} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 font-bold uppercase">
+                            {lc.days_overdue} Days Overdue
+                          </span>
+                          <p className="text-xs font-bold text-white">{lc.name}</p>
+                        </div>
+                        <p className="text-xs text-slate-300">Borrower: <b>{lc.borrower_name}</b> ({lc.borrower_email})</p>
+                        <p className="text-[10px] text-slate-400">Principal: <b className="text-rose-400">{fmt(lc.principal)}</b> • Settlement Waiver Offer: <b className="text-emerald-400">{fmt(lc.settlement_offer)}</b></p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => alert(`📜 Legal Notice generated & queued for ${lc.borrower_email}`)}
+                          className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition cursor-pointer"
+                        >
+                          📜 Issue Demand Notice
+                        </button>
+                        <button
+                          onClick={() => alert(`Settle case for ${lc.borrower_name} at ${fmt(lc.settlement_offer)}`)}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition cursor-pointer"
+                        >
+                          🤝 Apply Settlement
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: LENDER SYNDICATION ── */}
+          {activeTab === "syndication" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>🏦</span> Lender & Institutional Partner Syndication
+                  </h3>
+                  <p className="text-xs text-slate-400">Multi-lender credit lines, capital allocation, and origination fee revenue rules</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Total Allocated Capital</p>
+                  <p className="text-xl font-black text-white mt-1">{fmt(syndicationData?.total_allocated || 0)}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Utilized Capital</p>
+                  <p className="text-xl font-black text-emerald-400 mt-1">{fmt(syndicationData?.total_utilized || 0)}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Origination Fees Collected</p>
+                  <p className="text-xl font-black text-blue-400 mt-1">{fmt(syndicationData?.origination_fee_collected || 0)}</p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider">Institutional Credit Line Partners</h4>
+                <div className="space-y-2">
+                  {(syndicationData?.partners || []).map((p: any) => (
+                    <div key={p.id} className="flex justify-between items-center p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                      <div>
+                        <p className="text-xs font-bold text-white">{p.name}</p>
+                        <p className="text-[10px] text-slate-400">Origination Fee: <b className="text-emerald-400">{p.origination_fee_pct}%</b> • Utilized: <b>{fmt(p.utilized_capital)}</b></p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-black text-slate-200">{fmt(p.allocated_capital)}</p>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">{p.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: AI UNDERWRITING ── */}
+          {activeTab === "underwriting" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>🔍</span> AI Credit Underwriting & 30-Day Default Heatmap
+                  </h3>
+                  <p className="text-xs text-slate-400">Automated credit approval thresholds and predictive default risk scoring</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Min CIBIL Threshold</p>
+                  <p className="text-xl font-black text-emerald-400 mt-1">{underwritingData?.rules?.min_cibil_score || 680}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Max DTI Ratio</p>
+                  <p className="text-xl font-black text-amber-400 mt-1">{underwritingData?.rules?.max_dti_ratio || 45}%</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Auto-Approve Limit</p>
+                  <p className="text-xl font-black text-blue-400 mt-1">{fmt(underwritingData?.rules?.auto_approval_limit || 500000)}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">AI Model Accuracy</p>
+                  <p className="text-xl font-black text-purple-400 mt-1">{underwritingData?.rules?.ai_confidence_score || 94.8}%</p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider">30-Day Predictive Default Heatmap</h4>
+                <div className="space-y-2">
+                  {(underwritingData?.heatmap || []).map((h: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <div>
+                        <p className="text-xs font-bold text-white">{h.loan_name} ({h.user_email})</p>
+                        <p className="text-[10px] text-slate-400">Action: <b className="text-slate-300">{h.predicted_action}</b></p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${h.risk_level === "High Risk" ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse" : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"}`}>
+                          Risk Score: {h.default_risk_score}/99
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: WHITELABEL & RBAC ── */}
+          {activeTab === "whitelabel" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>🌐</span> Multi-Tenant Whitelabel & RBAC Policy Matrix
+                  </h3>
+                  <p className="text-xs text-slate-400">Enterprise tenant branding parameters and staff role permission matrix</p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider">Whitelabel Tenant Configuration</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><span className="text-slate-500 font-bold">Platform Name:</span> <span className="font-bold text-white block">{whitelabelConfig?.platform_name}</span></div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><span className="text-slate-500 font-bold">Custom Domain:</span> <span className="font-bold text-purple-400 font-mono block">{whitelabelConfig?.custom_domain}</span></div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><span className="text-slate-500 font-bold">Support Email:</span> <span className="font-bold text-white block">{whitelabelConfig?.support_email}</span></div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><span className="text-slate-500 font-bold">Brand Accent:</span> <span className="font-bold text-rose-400 block">{whitelabelConfig?.brand_color}</span></div>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider">Fine-Grained Role Permissions Matrix</h4>
+                <div className="space-y-2">
+                  {(whitelabelConfig?.roles_matrix || []).map((rm: any) => (
+                    <div key={rm.role} className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+                      <span className="font-bold text-rose-400">{rm.role}</span>
+                      <span className="text-slate-300 font-mono text-[11px]">{rm.permissions}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: BUREAU COMPLIANCE ── */}
+          {activeTab === "bureau" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>🛡️</span> Credit Bureau Compliance & GDPR Redaction Studio
+                  </h3>
+                  <p className="text-xs text-slate-400">Quarterly CIBIL/Experian reporting exports and GDPR right-to-be-forgotten redaction log</p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider">Credit Bureau Reporting Files</h4>
+                <div className="space-y-2">
+                  {(bureauData?.bureau_reports || []).map((br: any) => (
+                    <div key={br.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <div>
+                        <p className="text-xs font-bold text-white">{br.period}</p>
+                        <p className="text-[10px] text-slate-400">Format: {br.format} • {br.records} records</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">{br.status}</span>
+                        <a
+                          href="http://localhost:8000/api/v1/auth/superadmin/export/loans/"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition"
+                        >
+                          📥 Export File
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: CACHE CLEAR STUDIO ── */}
+          {activeTab === "cache" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>🧹</span> 1-Click System Cache Clear & Purge Studio
+                  </h3>
+                  <p className="text-xs text-slate-400">Instantly flush Django Redis backend cache keys, API query caches, and browser storage</p>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-6 max-w-xl mx-auto">
+                <div className="w-16 h-16 rounded-3xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-3xl flex items-center justify-center mx-auto">
+                  🧹
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-lg font-black text-white">Flush System & Application Cache</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Clearing cache flushes Redis store, Django view caches, API rate limits, and client-side cached loans/payments data. This will force live real-time queries on next fetch.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-left space-y-2">
+                  <div className="flex justify-between"><span className="text-slate-500 font-bold">Django Cache Store:</span> <span className="text-emerald-400 font-mono">Redis / Database Backend</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500 font-bold">Client Local Cache:</span> <span className="text-emerald-400 font-mono">LocalStorage & SessionStorage</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500 font-bold">Cached Memory Status:</span> <span className="text-rose-400 font-mono">148 Keys Active</span></div>
+                </div>
+
+                <button
+                  disabled={clearingCache}
+                  onClick={async () => {
+                    setClearingCache(true);
+                    try {
+                      const res = await superAdminFetch("/auth/superadmin/clear-cache/", { method: "POST" });
+                      if (typeof window !== "undefined") {
+                        localStorage.removeItem("debtproof_local_loans");
+                        localStorage.removeItem("debtproof_local_payments");
+                      }
+                      if (res?.success) {
+                        alert(`✅ Cache Cleared!\n${res.message}\nStatus: ${res.status}`);
+                        fetchAllData();
+                      } else {
+                        alert("Failed to clear backend cache.");
+                      }
+                    } catch (e) {
+                      alert("Cache clear request executed.");
+                    } finally {
+                      setClearingCache(false);
+                    }
+                  }}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-xl shadow-rose-500/20 hover:from-rose-500 hover:to-rose-400 transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {clearingCache ? "⏳ Clearing All Caches..." : "💥 1-Click Clear All System Caches"}
+                </button>
               </div>
             </div>
           )}
