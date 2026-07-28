@@ -17,11 +17,12 @@ from .serializers import NotificationSerializer
 logger = logging.getLogger(__name__)
 
 
-class NotificationListView(ListAPIView):
+class NotificationListView(ListCreateAPIView):
     """
     GET /api/v1/notifications/
     Returns the authenticated user's notifications, unread first.
-    Accepts optional ?unread_only=true query param.
+    POST /api/v1/notifications/
+    Allows creating a new notification for the authenticated user.
     """
     permission_classes = [IsAuthenticated]
     serializer_class = NotificationSerializer
@@ -32,6 +33,9 @@ class NotificationListView(ListAPIView):
         if self.request.query_params.get("unread_only") == "true":
             qs = qs.filter(is_read=False)
         return qs.order_by("is_read", "-created_at")
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 class NotificationUnreadCountView(APIView):

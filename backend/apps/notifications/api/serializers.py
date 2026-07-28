@@ -20,7 +20,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             "is_read",
             "created_at",
         ]
-        read_only_fields = fields
+        read_only_fields = ["id", "loan_name", "created_at"]
 
     def get_loan_name(self, obj) -> str | None:
         return obj.loan.name if obj.loan else None
