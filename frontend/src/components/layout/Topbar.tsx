@@ -93,7 +93,20 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       // Instant Toast Alert for any newly arrived unread notification
       const unreadItems = unique.filter((n) => !n.is_read);
       setPrevNotifIds((prev) => {
-        if (prev.length > 0) {
+        if (prev.length === 0) {
+          // Initial load: trigger toast for latest unread if any
+          if (unreadItems.length > 0) {
+            const newest = unreadItems[0];
+            window.dispatchEvent(
+              new CustomEvent("debtproof-toast", {
+                detail: {
+                  message: newest.title || "New notification received!",
+                  type: "info",
+                },
+              })
+            );
+          }
+        } else {
           const newlyArrived = unreadItems.filter((n) => !prev.includes(n.id));
           newlyArrived.forEach((item) => {
             window.dispatchEvent(
