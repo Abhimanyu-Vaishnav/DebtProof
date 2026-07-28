@@ -127,9 +127,15 @@ export const authService = {
         /* ignore */
       } finally {
         tokenStorage.clear();
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(DEMO_USER_KEY);
+        }
       }
     } else {
       tokenStorage.clear();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(DEMO_USER_KEY);
+      }
     }
   },
 
