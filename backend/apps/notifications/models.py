@@ -28,6 +28,8 @@ class Notification(BaseModel):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name="notifications",
         db_index=True,
     )

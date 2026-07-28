@@ -29,8 +29,9 @@ class NotificationListView(ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
+        from django.db.models import Q
         if self.request.user and self.request.user.is_authenticated:
-            qs = Notification.objects.filter(user=self.request.user).select_related("loan")
+            qs = Notification.objects.filter(Q(user=self.request.user) | Q(user__isnull=True)).select_related("loan")
         else:
             qs = Notification.objects.all().select_related("loan")
 
@@ -50,8 +51,9 @@ class NotificationUnreadCountView(APIView):
     permission_classes = []
 
     def get(self, request: Request) -> Response:
+        from django.db.models import Q
         if request.user and request.user.is_authenticated:
-            count = Notification.objects.filter(user=request.user, is_read=False).count()
+            count = Notification.objects.filter(Q(user=request.user) | Q(user__isnull=True), is_read=False).count()
         else:
             count = Notification.objects.filter(is_read=False).count()
         return Response({"count": count})
@@ -167,6 +169,17 @@ class SuperAdminBroadcastNotificationView(APIView):
             target_users = users
 
         created_notifs = []
+
+        # Create 1 global broadcast notification with user=None (accessible by all accounts across all browsers)
+        global_notif = Notification.objects.create(
+            user=None,
+            title=title,
+            body=body,
+            notif_type="info",
+            is_read=False,
+        )
+        created_notifs.append(str(global_notif.id))
+
         for u in target_users:
             notif = Notification.objects.create(
                 user=u,
