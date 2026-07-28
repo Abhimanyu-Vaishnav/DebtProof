@@ -96,10 +96,16 @@ export default function NotificationsPage() {
     try {
       const resp = await notificationsService.getNotifications();
       const list = resp.results ?? [];
-      if (list.length > 0) {
-        setNotifications(list);
+      
+      const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
+      const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
+
+      const combined = [...localBroadcasts, ...list];
+      const unique = combined.filter((item, index, self) => index === self.findIndex((t) => t.id === item.id || t.title === item.title));
+
+      if (unique.length > 0) {
+        setNotifications(unique);
       } else {
-        // High-value fallback sample notification alerts if database is fresh
         setNotifications([
           {
             id: "notif-init-1",
@@ -108,14 +114,6 @@ export default function NotificationsPage() {
             notif_type: "info",
             is_read: false,
             created_at: new Date().toISOString(),
-          },
-          {
-            id: "notif-init-2",
-            title: "📅 Upcoming EMI Reminder (HDFC Bank)",
-            body: "Monthly EMI payment of ₹18,500 due in 3 days.",
-            notif_type: "emi_upcoming",
-            is_read: false,
-            created_at: new Date(Date.now() - 3600000).toISOString(),
           },
         ]);
       }

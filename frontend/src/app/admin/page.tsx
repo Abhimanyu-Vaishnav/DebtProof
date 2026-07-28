@@ -191,17 +191,25 @@ export default function DedicatedDebtProofAdminPortal() {
       // Graceful fallback to client broadcast
     }
 
+    const newNotifObj = {
+      id: `notif-superadmin-${Date.now()}`,
+      title: `📢 SuperAdmin Broadcast: ${pushTitle}`,
+      body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+      notif_type: "info",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+
+    if (typeof window !== "undefined") {
+      const existingRaw = localStorage.getItem("debtproof_local_broadcasts");
+      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      localStorage.setItem("debtproof_local_broadcasts", JSON.stringify([newNotifObj, ...existing]));
+    }
+
     // Dispatch global real-time notification custom event & toast
     window.dispatchEvent(
       new CustomEvent("debtproof_add_notification", {
-        detail: {
-          id: `notif-superadmin-${Date.now()}`,
-          title: `📢 SuperAdmin Broadcast: ${pushTitle}`,
-          body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
-          notif_type: "info",
-          is_read: false,
-          created_at: new Date().toISOString(),
-        },
+        detail: newNotifObj,
       })
     );
     window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));

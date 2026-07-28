@@ -141,17 +141,22 @@ class SuperAdminBroadcastNotificationView(APIView):
         target_audience = request.data.get("target_audience", "All")
 
         from apps.users.models import User
-        users = User.objects.all()
+        users = list(User.objects.all())
 
         if target_audience == "Enterprise":
-            users = users.filter(is_superuser=True)
+            target_users = [u for u in users if u.is_superuser]
         elif target_audience == "Pro":
-            users = users.filter(is_staff=True, is_superuser=False)
+            target_users = [u for u in users if u.is_staff and not u.is_superuser]
         elif target_audience == "Free":
-            users = users.filter(is_staff=False, is_superuser=False)
+            target_users = [u for u in users if not u.is_staff and not u.is_superuser]
+        else:
+            target_users = users
+
+        if not target_users and users:
+            target_users = users
 
         created_notifs = []
-        for u in users:
+        for u in target_users:
             notif = Notification.objects.create(
                 user=u,
                 title=title,
