@@ -375,8 +375,15 @@ export default function LandingPage() {
                     </ul>
                   </div>
 
-                  <Link
-                    href={p.ctaHref}
+                  <button
+                    onClick={() => {
+                      const tagMap: Record<string, any> = { free: "Free", basic: "Basic", pro: "Pro", premium: "Premium", enterprise: "Enterprise" };
+                      const targetTag = tagMap[p.id] || "Pro";
+                      import("@/services/plan.service").then((mod) => {
+                        mod.setUserPlan(targetTag);
+                        window.location.href = "/dashboard";
+                      });
+                    }}
                     className={`w-full py-3 rounded-xl font-black text-xs uppercase tracking-wider text-center transition cursor-pointer ${
                       p.popular
                         ? "bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-lg shadow-rose-500/20 hover:from-rose-500 hover:to-rose-400"
@@ -386,10 +393,115 @@ export default function LandingPage() {
                     }`}
                   >
                     {p.ctaText}
-                  </Link>
+                  </button>
                 </div>
               );
             })}
+          </div>
+
+          {/* ── ALL APP FEATURES DETAILED COMPARISON TABLE ── */}
+          <div className="pt-8 space-y-6">
+            <div className="text-center space-y-2">
+              <h3 className={`text-xl font-black ${isLight ? "text-slate-900" : "text-white"}`}>Complete Feature Matrix Comparison</h3>
+              <p className={`text-xs ${isLight ? "text-slate-600" : "text-slate-400"}`}>See every single capability included in each plan tier</p>
+            </div>
+
+            <div className={`rounded-3xl border overflow-x-auto ${isLight ? "bg-white border-slate-200 shadow-xl shadow-slate-200/50" : "bg-slate-900/90 border-slate-800"}`}>
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className={`border-b font-black ${isLight ? "bg-slate-100 border-slate-200 text-slate-900" : "bg-slate-950 border-slate-800 text-white"}`}>
+                    <th className="p-4">App Capability / Feature</th>
+                    <th className="p-4 text-center">Free (₹0)</th>
+                    <th className="p-4 text-center">Basic (₹299)</th>
+                    <th className="p-4 text-center text-rose-500">Pro (₹999) ⭐</th>
+                    <th className="p-4 text-center">Premium (₹2.4k)</th>
+                    <th className="p-4 text-center">Enterprise (₹4.9k)</th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isLight ? "divide-slate-200 text-slate-700" : "divide-slate-800/80 text-slate-300"}`}>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">Active Loan Tracking Limit</td>
+                    <td className="p-4 text-center font-bold">2 Loans</td>
+                    <td className="p-4 text-center font-bold">5 Loans</td>
+                    <td className="p-4 text-center font-bold text-rose-500">15 Loans</td>
+                    <td className="p-4 text-center font-bold text-emerald-500">Unlimited</td>
+                    <td className="p-4 text-center font-bold text-purple-500">Unlimited</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">EMI Calendar & Reminders</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">Monad Blockchain SHA-256 Proofs</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">AI Debt Destroyer Assistant</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">Snowball vs Avalanche Simulator</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">Zero-Debt PDF Clearance Certificates</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">P2P Settlement & Waiver Desk</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">CIBIL Score & 30-Day Risk Heatmap</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">Web3 Monad Escrow Vault</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                  <tr className="hover:bg-slate-500/5 transition">
+                    <td className="p-4 font-bold">Whitelabel RBAC & Bureau Exports</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-slate-400">✕</td>
+                    <td className="p-4 text-center text-emerald-500 font-bold">✓</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

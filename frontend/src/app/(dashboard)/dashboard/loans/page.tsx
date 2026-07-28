@@ -86,6 +86,21 @@ export default function LoansPage() {
     }
   }, [page, debouncedSearch, statusFilter, typeFilter, ordering, showToast]);
 
+  const [activePlan, setActivePlan] = useState<string>("Free");
+
+  useEffect(() => {
+    import("@/services/plan.service").then((mod) => {
+      setActivePlan(mod.getUserPlan());
+    });
+    const onPlanChanged = () => {
+      import("@/services/plan.service").then((mod) => {
+        setActivePlan(mod.getUserPlan());
+      });
+    };
+    window.addEventListener("debtproof_plan_changed", onPlanChanged);
+    return () => window.removeEventListener("debtproof_plan_changed", onPlanChanged);
+  }, []);
+
   useEffect(() => {
     fetchLoans();
   }, [fetchLoans]);
@@ -230,8 +245,33 @@ export default function LoansPage() {
           </div>
         </div>
 
-        {/* 🤖 AI Debt Destroyer Assistant Widget */}
-        <div className="mb-6">
+        {/* ── PLAN FEATURE ENFORCEMENT BANNER ── */}
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-rose-500/10 via-purple-500/10 to-blue-500/10 border border-rose-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 font-black text-xl flex items-center justify-center shrink-0">
+              💎
+            </span>
+            <div>
+              <p className="text-xs font-black text-[var(--color-text-primary)]">
+                Active Plan: <span className="text-rose-500 uppercase">{activePlan} Plan</span>
+              </p>
+              <p className="text-[11px] text-[var(--color-text-secondary)]">
+                {activePlan === "Free" ? "Limited to 2 loans • AI Destroyer & PDF Certificates Locked" :
+                 activePlan === "Basic" ? "Limited to 5 loans • Monad Blockchain Proofs Active" :
+                 "Full Enterprise Access Unlocked • All Features Active"}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/#pricing"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-rose-500/20 hover:scale-105 transition shrink-0"
+          >
+            ⭐ View / Upgrade Plan
+          </Link>
+        </div>
+
+        {/* AI Assistant Section */}
+        <div className="mb-8">
           <DebtDestroyerAssistant />
         </div>
 
