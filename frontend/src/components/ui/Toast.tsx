@@ -11,11 +11,12 @@ type ToastType = "success" | "error" | "warning" | "info";
 interface Toast {
   id: string;
   message: string;
+  body?: string;
   type: ToastType;
 }
 
 interface ToastContextValue {
-  showToast: (message: string, type?: ToastType) => void;
+  showToast: (message: string, type?: ToastType, body?: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue>({ showToast: () => {} });
@@ -70,20 +71,28 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   return (
     <div
       className={cn(
-        "flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold max-w-sm w-full border border-white/20 backdrop-blur-md",
+        "flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold w-full border border-white/20 backdrop-blur-md",
         "transition-all duration-300",
         COLOR_CLASSES[toast.type],
         visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-4 scale-95"
       )}
     >
       <div className="mt-0.5 shrink-0">{ICONS[toast.type]}</div>
-      <div
-        className="flex-1 text-xs leading-relaxed overflow-hidden break-words"
-        dangerouslySetInnerHTML={{ __html: toast.message }}
-      />
+      <div className="flex-1 min-w-0 space-y-1">
+        <div
+          className="text-xs font-bold leading-snug break-words"
+          dangerouslySetInnerHTML={{ __html: toast.message }}
+        />
+        {toast.body && (
+          <div
+            className="text-[11px] font-normal leading-relaxed break-words opacity-90 [&_img]:rounded-lg [&_img]:max-h-32 [&_img]:w-full [&_img]:object-cover [&_img]:mt-1 [&_a]:underline [&_a]:font-bold"
+            dangerouslySetInnerHTML={{ __html: toast.body }}
+          />
+        )}
+      </div>
       <button
         onClick={() => onRemove(toast.id)}
-        className="ml-1 opacity-70 hover:opacity-100 transition-opacity shrink-0 p-1"
+        className="ml-1 opacity-70 hover:opacity-100 transition-opacity shrink-0 p-1 mt-0.5"
         aria-label="Dismiss"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -104,9 +113,9 @@ export function triggerToast(message: string, type: ToastType = "info") {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = useCallback((message: string, type: ToastType = "info") => {
+  const showToast = useCallback((message: string, type: ToastType = "info", body?: string) => {
     const id = Math.random().toString(36).slice(2);
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, body, type }]);
 
     // Play synthesized Web Audio UI sound effects
     try {
@@ -123,9 +132,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleCustomToast = (event: Event) => {
-      const customEvent = event as CustomEvent<{ message: string; type: ToastType }>;
+      const customEvent = event as CustomEvent<{ message: string; type: ToastType; body?: string }>;
       if (customEvent.detail && customEvent.detail.message) {
-        showToast(customEvent.detail.message, customEvent.detail.type || "info");
+        showToast(customEvent.detail.message, customEvent.detail.type || "info", customEvent.detail.body);
       }
     };
     window.addEventListener("debtproof-toast", handleCustomToast);

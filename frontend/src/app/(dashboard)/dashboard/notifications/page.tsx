@@ -419,8 +419,8 @@ export default function NotificationsPage() {
                         {n.loan_name}
                       </span>
                     )}
-                    <p
-                      className="text-[11px] text-[var(--color-text-secondary)] line-clamp-2 leading-normal break-words"
+                    <div
+                      className="text-[11px] text-[var(--color-text-secondary)] leading-normal break-words [&_img]:rounded-lg [&_img]:max-h-28 [&_img]:w-full [&_img]:object-cover [&_img]:mt-1.5 [&_a]:text-blue-500 [&_a]:font-bold [&_a]:underline [&_strong]:font-bold [&_em]:italic [&_u]:underline"
                       dangerouslySetInnerHTML={{ __html: n.body }}
                     />
                   </div>

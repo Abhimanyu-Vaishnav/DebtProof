@@ -100,6 +100,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
             new CustomEvent("debtproof-toast", {
               detail: {
                 message: item.title || "New notification received!",
+                body: item.body || undefined,
                 type: "info",
               },
             })
