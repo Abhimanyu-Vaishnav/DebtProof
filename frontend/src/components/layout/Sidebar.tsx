@@ -390,12 +390,12 @@ export function Sidebar() {
         
         // Track visited NEW features in localStorage so badge disappears after first click
         const storageKey = `visited_feature_${item.href.replace(/\//g, "_")}`;
-        const [isVisited, setIsVisited] = React.useState<boolean>(() => {
-          if (typeof window === "undefined") return false;
-          return !!localStorage.getItem(storageKey);
-        });
+        const [isVisited, setIsVisited] = React.useState<boolean>(false);
 
         React.useEffect(() => {
+          if (typeof window !== "undefined" && localStorage.getItem(storageKey)) {
+            setIsVisited(true);
+          }
           if (isActive && item.badge) {
             localStorage.setItem(storageKey, "true");
             setIsVisited(true);
