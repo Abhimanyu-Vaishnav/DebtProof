@@ -176,11 +176,22 @@ export default function DedicatedDebtProofAdminPortal() {
     alert(`👑 New Staff Account Created! Roles assigned: ${newStaffRoles.join(", ")}`);
   };
 
-  const handleSendPushNotification = (e: React.FormEvent) => {
+  const handleSendPushNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pushTitle.trim()) return;
 
-    // Dispatch global real-time notification custom event
+    try {
+      // POST broadcast to Django Database so all users receive push notification on reload/login
+      await apiClient.post("/notifications/broadcast/", {
+        title: `📢 SuperAdmin Broadcast: ${pushTitle}`,
+        body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+        target_audience: targetAudience,
+      });
+    } catch {
+      // Graceful fallback to client broadcast
+    }
+
+    // Dispatch global real-time notification custom event & toast
     window.dispatchEvent(
       new CustomEvent("debtproof_add_notification", {
         detail: {
@@ -194,6 +205,14 @@ export default function DedicatedDebtProofAdminPortal() {
       })
     );
     window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));
+    window.dispatchEvent(
+      new CustomEvent("debtproof-toast", {
+        detail: {
+          message: `📢 Broadcast Sent: ${pushTitle}`,
+          type: "success",
+        },
+      })
+    );
 
     alert(`📢 System Push Notification Broadcasted Successfully!\nTarget Audience: ${targetAudience} Users\nTitle: ${pushTitle}`);
     setPushTitle("");

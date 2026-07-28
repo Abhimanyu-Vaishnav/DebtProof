@@ -126,3 +126,43 @@ class NotificationEvaluateEMIRemindersView(APIView):
         except Exception as e:
             logger.error("Failed to evaluate EMI notifications: %s", str(e))
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SuperAdminBroadcastNotificationView(APIView):
+    """
+    POST /api/v1/notifications/broadcast/
+    Creates broadcast notifications for all registered users in database.
+    """
+    permission_classes = []
+
+    def post(self, request: Request) -> Response:
+        title = request.data.get("title", "SuperAdmin Announcement")
+        body = request.data.get("body", "System notification broadcasted.")
+        target_audience = request.data.get("target_audience", "All")
+
+        from apps.users.models import User
+        users = User.objects.all()
+
+        if target_audience == "Enterprise":
+            users = users.filter(is_superuser=True)
+        elif target_audience == "Pro":
+            users = users.filter(is_staff=True, is_superuser=False)
+        elif target_audience == "Free":
+            users = users.filter(is_staff=False, is_superuser=False)
+
+        created_notifs = []
+        for u in users:
+            notif = Notification.objects.create(
+                user=u,
+                title=title,
+                body=body,
+                notif_type="info",
+                is_read=False,
+            )
+            created_notifs.append(str(notif.id))
+
+        return Response({
+            "success": True,
+            "message": f"Broadcast sent to {len(created_notifs)} users.",
+            "count": len(created_notifs)
+        })
