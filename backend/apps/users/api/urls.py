@@ -10,6 +10,7 @@ from .views import (
     SuperAdminStaffView, SuperAdminStaffDetailView, SuperAdminTicketsView, SuperAdminTicketActionView,
     SuperAdminUserActionView, SuperAdminUserDetailView, SuperAdminBlockchainAuditView,
     SuperAdminAuditLogView, SuperAdminCSVExportView,
+    SuperAdminFraudAlertsView, SuperAdminBackupView, SuperAdminMonadEscrowView, SuperAdminRevenueAnalyticsView,
 )
 from .jwt_views import CustomTokenObtainPairView
 
@@ -36,6 +37,13 @@ urlpatterns = [
     path("superadmin/blockchain-audit/", SuperAdminBlockchainAuditView.as_view(), name="superadmin-blockchain-audit"),
     path("superadmin/audit-log/", SuperAdminAuditLogView.as_view(), name="superadmin-audit-log"),
     path("superadmin/export/<str:resource>/", SuperAdminCSVExportView.as_view(), name="superadmin-export-csv"),
+
+    # Advanced SuperAdmin Modules
+    path("superadmin/fraud-alerts/", SuperAdminFraudAlertsView.as_view(), name="superadmin-fraud-alerts"),
+    path("superadmin/backups/", SuperAdminBackupView.as_view(), name="superadmin-backups"),
+    path("superadmin/backups/create/", SuperAdminBackupView.as_view(), name="superadmin-backups-create"),
+    path("superadmin/monad-escrow/", SuperAdminMonadEscrowView.as_view(), name="superadmin-monad-escrow"),
+    path("superadmin/revenue-analytics/", SuperAdminRevenueAnalyticsView.as_view(), name="superadmin-revenue-analytics"),
 
     # Token management
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),

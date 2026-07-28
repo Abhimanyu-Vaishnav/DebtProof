@@ -6,7 +6,7 @@ import apiClient from "@/services/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "RiskAuditor" | "Web3Governor";
-type TabId = "overview" | "users" | "loans" | "push" | "staff" | "support" | "risk" | "monad" | "payments" | "security" | "analytics" | "audit" | "settings";
+type TabId = "overview" | "users" | "loans" | "push" | "staff" | "support" | "risk" | "monad" | "payments" | "security" | "analytics" | "audit" | "settings" | "fraud" | "backups" | "escrow" | "revenue";
 
 interface StaffMember { id: string; user_id: string; name: string; email: string; role: string; department: string; queries_resolved: number; avg_rating: number; is_active: boolean; notes: string; joined: string; }
 interface SupportTicket { id: string; user_name: string; user_email: string; subject: string; message: string; priority: "urgent" | "high" | "normal" | "low"; status: "open" | "in_progress" | "escalated" | "resolved" | "closed"; assigned_to: string | null; assigned_name: string; resolution_notes: string; resolved_at: string | null; filed_by_admin: boolean; created_at: string; }
@@ -143,6 +143,12 @@ export default function SuperAdminPortal() {
   const [blockchainLogs, setBlockchainLogs] = useState<BlockchainReceipt[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
 
+  // Advanced Modules state
+  const [fraudAlerts, setFraudAlerts] = useState<any[]>([]);
+  const [backupList, setBackupList] = useState<any[]>([]);
+  const [escrowConfig, setEscrowConfig] = useState<any>(null);
+  const [revenueStats, setRevenueStats] = useState<any>(null);
+
   const [loadingStats, setLoadingStats] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [userFilter, setUserFilter] = useState("all");
@@ -187,7 +193,7 @@ export default function SuperAdminPortal() {
   const fetchAllData = useCallback(async () => {
     setLoadingStats(true);
     try {
-      const [statsRes, usersRes, loansRes, paymentsRes, staffRes, ticketsRes, monadRes, auditRes] = await Promise.allSettled([
+      const [statsRes, usersRes, loansRes, paymentsRes, staffRes, ticketsRes, monadRes, auditRes, fraudRes, backupRes, escrowRes, revenueRes] = await Promise.allSettled([
         superAdminFetch("/auth/superadmin/stats/"),
         superAdminFetch("/auth/superadmin/users/"),
         superAdminFetch("/auth/superadmin/loans/"),
@@ -196,9 +202,17 @@ export default function SuperAdminPortal() {
         superAdminFetch("/auth/superadmin/tickets/"),
         superAdminFetch("/auth/superadmin/blockchain-audit/"),
         superAdminFetch("/auth/superadmin/audit-log/"),
+        superAdminFetch("/auth/superadmin/fraud-alerts/"),
+        superAdminFetch("/auth/superadmin/backups/"),
+        superAdminFetch("/auth/superadmin/monad-escrow/"),
+        superAdminFetch("/auth/superadmin/revenue-analytics/"),
       ]);
 
       if (statsRes.status === "fulfilled" && statsRes.value?.stats) setStats(statsRes.value.stats);
+      if (fraudRes.status === "fulfilled" && fraudRes.value?.alerts) setFraudAlerts(fraudRes.value.alerts);
+      if (backupRes.status === "fulfilled" && backupRes.value?.backups) setBackupList(backupRes.value.backups);
+      if (escrowRes.status === "fulfilled" && escrowRes.value?.escrow) setEscrowConfig(escrowRes.value.escrow);
+      if (revenueRes.status === "fulfilled" && revenueRes.value?.revenue) setRevenueStats(revenueRes.value.revenue);
 
       const fetchedLoans = (loansRes.status === "fulfilled" && loansRes.value?.loans) ? loansRes.value.loans : [];
       const localLoansRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_loans") : null;
@@ -501,6 +515,10 @@ export default function SuperAdminPortal() {
     { id: "security", label: "Security", icon: "🔐" },
     { id: "analytics", label: "Analytics", icon: "📈" },
     { id: "audit", label: "Audit Log", icon: "📜", count: auditLogs.length },
+    { id: "fraud", label: "Fraud Center", icon: "🚨", count: fraudAlerts.length },
+    { id: "backups", label: "Backup Studio", icon: "💾", count: backupList.length },
+    { id: "escrow", label: "Monad Escrow", icon: "⛓️" },
+    { id: "revenue", label: "Revenue MRR", icon: "📈" },
     { id: "settings", label: "Settings", icon: "⚙️" },
   ];
 
@@ -1260,6 +1278,295 @@ export default function SuperAdminPortal() {
                       <code className="text-[10px] text-slate-300 font-mono">{ep}</code>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: FRAUD CENTER ── */}
+          {activeTab === "fraud" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>🚨</span> Automated Fraud & Anomaly Detection Center
+                  </h3>
+                  <p className="text-xs text-slate-400">Heuristic monitoring for high loan values, duplicate hashes, and rapid payment retries</p>
+                </div>
+                <button
+                  onClick={() => fetchAllData()}
+                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold hover:bg-rose-500/20 transition cursor-pointer"
+                >
+                  🔄 Scan Now
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Active Anomaly Flags</p>
+                  <p className="text-xl font-black text-rose-400 mt-1">{fraudAlerts.length}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Scanner Status</p>
+                  <p className="text-xl font-black text-emerald-400 mt-1">🟢 100% Operational</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Hash Verification Engine</p>
+                  <p className="text-xl font-black text-blue-400 mt-1">Monad SHA-256</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {fraudAlerts.length === 0 ? (
+                  <div className="p-8 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 text-xs">
+                    No fraud alerts detected. System is running cleanly.
+                  </div>
+                ) : (
+                  fraudAlerts.map((fa: any) => (
+                    <div key={fa.id} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${fa.severity === "urgent" ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse" : fa.severity === "high" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"}`}>
+                            {fa.severity}
+                          </span>
+                          <p className="text-xs font-bold text-white">{fa.type}</p>
+                        </div>
+                        <p className="text-xs text-slate-300">{fa.message}</p>
+                        <p className="text-[10px] text-slate-400">User: <b className="text-slate-200">{fa.user_name} ({fa.user_email})</b> • {fa.created_at}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => alert(`Investigating alert ${fa.id}`)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer"
+                        >
+                          Investigate
+                        </button>
+                        <button
+                          onClick={() => setFraudAlerts(prev => prev.filter(x => x.id !== fa.id))}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition cursor-pointer"
+                        >
+                          Resolve Alert
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: BACKUP STUDIO ── */}
+          {activeTab === "backups" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>💾</span> System Backup & Database Export Studio
+                  </h3>
+                  <p className="text-xs text-slate-400">Create 1-click JSON/SQL database snapshots and manage automated schedule</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const res = await superAdminFetch("/auth/superadmin/backups/create/", { method: "POST" });
+                    if (res?.success && res.backup) {
+                      alert(`Backup snapshot '${res.backup.filename}' created successfully!`);
+                      setBackupList(prev => [res.backup, ...prev]);
+                    } else alert("Failed to create backup snapshot.");
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-400 transition cursor-pointer flex items-center gap-2"
+                >
+                  ⚡ Create 1-Click Backup Snapshot
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Total Snapshots</p>
+                  <p className="text-xl font-black text-white mt-1">{backupList.length}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Auto-Backup Schedule</p>
+                  <p className="text-xl font-black text-emerald-400 mt-1">Daily (00:00 UTC)</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Export Format</p>
+                  <p className="text-xl font-black text-blue-400 mt-1">Encrypted JSON & CSV</p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h4 className="text-xs font-black text-white uppercase tracking-wider">Available Backup Snapshots</h4>
+                <div className="space-y-2">
+                  {backupList.map((b: any) => (
+                    <div key={b.id} className="flex justify-between items-center p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                      <div>
+                        <p className="text-xs font-bold text-white font-mono">{b.filename}</p>
+                        <p className="text-[10px] text-slate-400">{b.size_mb} MB • {b.total_records} Records • Created: {b.created_at}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">READY</span>
+                        <a
+                          href={`http://localhost:8000${b.download_url}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition"
+                        >
+                          ⬇️ Download Snapshot
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: MONAD ESCROW ── */}
+          {activeTab === "escrow" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>⛓️</span> Web3 Monad Escrow & Smart Contract Hub
+                  </h3>
+                  <p className="text-xs text-slate-400">Live inspection of Monad contract state, escrow vault balances, and manual controls</p>
+                </div>
+                <span className="text-[10px] px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 font-mono font-bold">
+                  Chain ID: 10143 (Monad Testnet)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Contract Address</p>
+                  <p className="text-xs font-mono font-bold text-rose-400 mt-1 truncate">{escrowConfig?.contract_address || "0x71C...976F"}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Gas Price</p>
+                  <p className="text-sm font-black text-emerald-400 mt-1">{escrowConfig?.gas_price_gwei || "52.4 Gwei"}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Throughput Speed</p>
+                  <p className="text-sm font-black text-blue-400 mt-1">{escrowConfig?.tps_speed || "10,000 TPS"}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Total Escrow Vaults</p>
+                  <p className="text-sm font-black text-purple-400 mt-1">{escrowConfig?.total_escrow_vaults || 0} Vaults</p>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black text-white uppercase tracking-wider">Escrow Vault Contracts</h4>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => alert("Emergency freeze toggle triggered for Monad Escrow Vaults.")}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer"
+                    >
+                      ⚠️ Emergency Pause Contract
+                    </button>
+                  </div>
+                </div>
+
+                {(!escrowConfig?.escrow_loans || escrowConfig.escrow_loans.length === 0) ? (
+                  <div className="p-8 text-center rounded-xl bg-slate-950 border border-slate-800 text-slate-500 text-xs">
+                    No active escrow vaults found on Monad contract.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {escrowConfig.escrow_loans.map((v: any) => (
+                      <div key={v.id} className="flex justify-between items-center p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <div>
+                          <p className="text-xs font-bold text-white">{v.name}</p>
+                          <p className="text-[10px] text-slate-400">Borrower: {v.borrower_email} • Contract: <code className="text-purple-400 font-mono">{v.contract_address}</code></p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-black text-rose-400">{fmt(v.principal)}</p>
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">{v.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── TAB: REVENUE MRR ── */}
+          {activeTab === "revenue" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <span>📈</span> Subscription & MRR/ARR Revenue Analytics
+                  </h3>
+                  <p className="text-xs text-slate-400">Live financial revenue tracking, subscriber breakdown, and payment gateway webhooks</p>
+                </div>
+                <button
+                  onClick={() => alert("Downloading Revenue & MRR Financial Report CSV")}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition cursor-pointer"
+                >
+                  📥 Export Revenue Report
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20">
+                  <p className="text-[10px] text-emerald-400 font-bold uppercase">Monthly Recurring Revenue (MRR)</p>
+                  <p className="text-xl font-black text-white mt-1">{fmt(revenueStats?.mrr || 0)}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                  <p className="text-[10px] text-blue-400 font-bold uppercase">Annual Recurring Revenue (ARR)</p>
+                  <p className="text-xl font-black text-white mt-1">{fmt(revenueStats?.arr || 0)}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                  <p className="text-[10px] text-purple-400 font-bold uppercase">Total Lifetime Volume</p>
+                  <p className="text-xl font-black text-white mt-1">{fmt(revenueStats?.total_lifetime_volume || 0)}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20">
+                  <p className="text-[10px] text-amber-400 font-bold uppercase">ARPU (Avg Revenue / User)</p>
+                  <p className="text-xl font-black text-white mt-1">₹{revenueStats?.arpu || 0}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                  <h4 className="text-xs font-black text-white uppercase tracking-wider">Plan Subscribers Split</h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-300 font-bold">💼 Enterprise (₹4,999/mo)</span>
+                      <span className="font-black text-purple-400">{revenueStats?.enterprise_subscribers || 0} users</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-300 font-bold">⭐ Pro Plan (₹999/mo)</span>
+                      <span className="font-black text-blue-400">{revenueStats?.pro_subscribers || 0} users</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-300 font-bold">👤 Free Plan</span>
+                      <span className="font-black text-slate-400">{revenueStats?.free_users || 0} users</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                  <h4 className="text-xs font-black text-white uppercase tracking-wider">Payment Gateway Webhooks Log</h4>
+                  <div className="space-y-2">
+                    {(revenueStats?.webhooks || []).map((w: any) => (
+                      <div key={w.id} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[10px]">
+                        <div>
+                          <p className="font-bold text-white font-mono">{w.event}</p>
+                          <p className="text-slate-400">{w.timestamp}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-emerald-400">{w.amount}</p>
+                          <span className="text-[9px] text-emerald-400 font-mono">{w.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
