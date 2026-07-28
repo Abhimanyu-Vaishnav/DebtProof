@@ -76,10 +76,8 @@ const SAMPLE_MONAD_LOGS: MonadTxAuditLog[] = [
 export default function DedicatedDebtProofAdminPortal() {
   const SUPERADMIN_KEY = "debtproof_superadmin_auth_token";
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(SUPERADMIN_KEY) === "granted";
-  });
+  const [isMounted, setIsMounted] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [adminUserIdInput, setAdminUserIdInput] = useState("");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
@@ -99,6 +97,13 @@ export default function DedicatedDebtProofAdminPortal() {
   const [pushTitle, setPushTitle] = useState("");
   const [pushBody, setPushBody] = useState("");
   const [targetAudience, setTargetAudience] = useState<"All" | "Enterprise" | "Pro" | "Free">("All");
+
+  React.useEffect(() => {
+    setIsMounted(true);
+    if (typeof window !== "undefined" && localStorage.getItem(SUPERADMIN_KEY) === "granted") {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   // Fetch real users from backend API
   React.useEffect(() => {
@@ -173,6 +178,8 @@ export default function DedicatedDebtProofAdminPortal() {
       )
     );
   };
+
+  if (!isMounted) return null;
 
   if (!isAuthenticated) {
     return (
