@@ -176,6 +176,30 @@ export default function DedicatedDebtProofAdminPortal() {
     alert(`👑 New Staff Account Created! Roles assigned: ${newStaffRoles.join(", ")}`);
   };
 
+  const handleSendPushNotification = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pushTitle.trim()) return;
+
+    // Dispatch global real-time notification custom event
+    window.dispatchEvent(
+      new CustomEvent("debtproof_add_notification", {
+        detail: {
+          id: `notif-superadmin-${Date.now()}`,
+          title: `📢 SuperAdmin Broadcast: ${pushTitle}`,
+          body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+          notif_type: "info",
+          is_read: false,
+          created_at: new Date().toISOString(),
+        },
+      })
+    );
+    window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));
+
+    alert(`📢 System Push Notification Broadcasted Successfully!\nTarget Audience: ${targetAudience} Users\nTitle: ${pushTitle}`);
+    setPushTitle("");
+    setPushBody("");
+  };
+
   const handleToggleUserStatus = (userId: string) => {
     setUserList((prev) =>
       prev.map((u) =>
@@ -612,7 +636,59 @@ export default function DedicatedDebtProofAdminPortal() {
                 </div>
                 <span className="text-[10px] text-slate-400 font-bold">Audit Pass</span>
               </div>
+          </div>
+        )}
+
+        {/* Tab 10: Broadcast Push Notifications */}
+        {activeTab === "push_notifications" && (
+          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4 font-mono text-xs">
+            <div className="border-b border-[var(--color-border-light)] pb-4">
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Broadcast Real-Time System Push Notifications</h3>
+              <p className="text-[10px] text-[var(--color-text-tertiary)]">Send push notifications to all users or specific plan tiers (Enterprise, Pro, Free)</p>
             </div>
+
+            <form onSubmit={handleSendPushNotification} className="space-y-4 max-w-md">
+              <div>
+                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Target User Audience</label>
+                <select
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value as any)}
+                  className="form-select text-xs w-full mt-1 bg-[var(--color-surface-secondary)] border-[var(--color-border)]"
+                >
+                  <option value="All">All Registered Users</option>
+                  <option value="Enterprise">Enterprise SaaS Users Only</option>
+                  <option value="Pro">Pro Plan Users Only</option>
+                  <option value="Free">Free Plan Users Only</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Notification Title *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. System Upgrade v3.7.0 Live!"
+                  value={pushTitle}
+                  onChange={(e) => setPushTitle(e.target.value)}
+                  className="form-input text-xs w-full mt-1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Message Body</label>
+                <textarea
+                  placeholder="Enter broadcast message details..."
+                  value={pushBody}
+                  onChange={(e) => setPushBody(e.target.value)}
+                  rows={4}
+                  className="form-input text-xs w-full mt-1"
+                />
+              </div>
+
+              <button type="submit" className="btn bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs py-2.5 px-5 shadow-lg cursor-pointer">
+                📢 Broadcast Push Notification Now
+              </button>
+            </form>
           </div>
         )}
 
