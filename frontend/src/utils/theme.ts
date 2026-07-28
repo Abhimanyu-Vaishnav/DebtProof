@@ -223,7 +223,13 @@ export function applyGlobalTheme(themeId: string): void {
   if (typeof window === "undefined") return;
   const root = document.documentElement;
 
-  if (themeId === "custom") {
+  let targetThemeId = themeId;
+  if (themeId === "system") {
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    targetThemeId = isDark ? "dark" : "light";
+  }
+
+  if (targetThemeId === "custom") {
     try {
       const raw = localStorage.getItem("debtproof_custom_colors");
       if (raw) {
@@ -231,13 +237,19 @@ export function applyGlobalTheme(themeId: string): void {
         return;
       }
     } catch {}
+    targetThemeId = "dark";
   }
 
-  const config = THEME_PRESETS.find((t) => t.id === themeId) || THEME_PRESETS[0];
+  const config = THEME_PRESETS.find((t) => t.id === targetThemeId) || THEME_PRESETS[0];
 
   Object.entries(config.vars).forEach(([key, val]) => {
     root.style.setProperty(key, val);
   });
+
+  const isLight = targetThemeId === "light";
+  root.classList.remove("dark", "light");
+  root.classList.add(isLight ? "light" : "dark");
+  root.setAttribute("data-theme", targetThemeId);
 
   // Re-apply saved custom font if selected
   const savedFont = localStorage.getItem("debtproof_font_family");

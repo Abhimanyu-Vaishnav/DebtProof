@@ -1,8 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { applyGlobalTheme } from "@/utils/theme";
 
-export type ThemeMode = "dark" | "light" | "system";
+export type ThemeMode = "dark" | "light" | "system" | string;
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -11,54 +12,41 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "system",
+  theme: "dark",
   resolvedTheme: "dark",
   setTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>("system");
+  const [theme, setThemeState] = useState<ThemeMode>("dark");
   const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("debtproof_theme") as ThemeMode | null;
-    if (savedTheme && ["dark", "light", "system"].includes(savedTheme)) {
-      setThemeState(savedTheme);
-    }
+    const savedTheme = localStorage.getItem("debtproof_theme") || "dark";
+    setThemeState(savedTheme);
+    applyGlobalTheme(savedTheme);
+
+    const onThemeChanged = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setThemeState(customEvent.detail);
+      }
+    };
+
+    window.addEventListener("debtproof_theme_changed", onThemeChanged);
+    return () => window.removeEventListener("debtproof_theme_changed", onThemeChanged);
   }, []);
 
   useEffect(() => {
+    applyGlobalTheme(theme);
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const applyTheme = () => {
-      let activeTheme: "dark" | "light" = "dark";
-      if (theme === "system") {
-        activeTheme = mediaQuery.matches ? "dark" : "light";
-      } else {
-        activeTheme = theme;
-      }
-
-      setResolvedTheme(activeTheme);
-      document.documentElement.classList.remove("dark", "light");
-      document.documentElement.classList.add(activeTheme);
-      document.documentElement.setAttribute("data-theme", activeTheme);
-    };
-
-    applyTheme();
-
-    const handleChange = () => {
-      if (theme === "system") {
-        applyTheme();
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    const active = theme === "system" ? (mediaQuery.matches ? "dark" : "light") : (theme === "light" ? "light" : "dark");
+    setResolvedTheme(active);
   }, [theme]);
 
   const setTheme = (newTheme: ThemeMode) => {
     setThemeState(newTheme);
-    localStorage.setItem("debtproof_theme", newTheme);
+    applyGlobalTheme(newTheme);
   };
 
   return (
