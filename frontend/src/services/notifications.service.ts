@@ -11,11 +11,17 @@ export const notificationsService = {
    * Pass unread_only=true to fetch only unread.
    */
   getNotifications: async (unreadOnly = false): Promise<PaginatedResponse<Notification>> => {
-    const { data } = await apiClient.get<PaginatedResponse<Notification>>(
+    const { data } = await apiClient.get<any>(
       "/notifications/",
       { params: unreadOnly ? { unread_only: "true" } : {} }
     );
-    return data;
+    if (Array.isArray(data)) {
+      return { count: data.length, next: null, previous: null, results: data };
+    }
+    if (data?.results && Array.isArray(data.results)) {
+      return data;
+    }
+    return { count: 0, next: null, previous: null, results: [] };
   },
 
   /**
