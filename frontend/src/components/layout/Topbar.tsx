@@ -69,6 +69,8 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const router = useRouter();
   const { logout } = useAuth();
 
+  const [prevNotifIds, setPrevNotifIds] = useState<string[]>([]);
+
   // ── Fetch notifications ────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
     try {
@@ -87,6 +89,26 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       setNotifications(unique);
       const actualUnread = unique.filter((n) => !n.is_read).length;
       setUnreadCount(actualUnread);
+
+      // Check if new unread notification arrived during 3s polling loop
+      const unreadItems = unique.filter(n => !n.is_read);
+      setPrevNotifIds((prev) => {
+        if (prev.length > 0) {
+          const brandNew = unreadItems.filter(n => !prev.includes(n.id));
+          if (brandNew.length > 0) {
+            const newest = brandNew[0];
+            window.dispatchEvent(
+              new CustomEvent("debtproof-toast", {
+                detail: {
+                  message: newest.title || "New broadcast notification received!",
+                  type: "info",
+                },
+              })
+            );
+          }
+        }
+        return unique.map(n => n.id);
+      });
     } catch {
       // Silent fail — don't break UI if notification API is unavailable
     }
