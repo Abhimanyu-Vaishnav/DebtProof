@@ -155,5 +155,19 @@ class SuperAdminUserListView(generics.ListAPIView):
                 "isStaff": u.is_staff,
             })
 
-        return Response({"success": True, "count": len(results), "users": results})
+        # Calculate actual system-wide database aggregates
+        all_loans_volume = Loan.objects.filter(is_deleted=False).aggregate(total=Sum("principal_amount"))["total"] or 0
+        enterprise_count = User.objects.filter(is_superuser=True).count()
+        pro_count = User.objects.filter(is_staff=True, is_superuser=False).count()
+
+        stats = {
+            "totalUsersCount": len(results),
+            "enterpriseUsersCount": enterprise_count,
+            "proUsersCount": pro_count,
+            "freeUsersCount": max(0, len(results) - (enterprise_count + pro_count)),
+            "totalSystemDebtVolume": float(all_loans_volume),
+        }
+
+        return Response({"success": True, "count": len(results), "users": results, "stats": stats})
+
 

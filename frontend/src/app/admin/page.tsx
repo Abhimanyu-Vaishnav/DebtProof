@@ -313,8 +313,10 @@ export default function DedicatedDebtProofAdminPortal() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
               <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
                 <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Total Registered Users</span>
-                <span className="text-2xl font-black text-[var(--color-text-primary)] mt-1 block">1,480 Users</span>
-                <span className="text-[10px] text-emerald-400 font-bold block mt-1">42 Enterprise · 180 Pro</span>
+                <span className="text-2xl font-black text-[var(--color-text-primary)] mt-1 block">{userList.length} Users</span>
+                <span className="text-[10px] text-emerald-400 font-bold block mt-1">
+                  {userList.filter(u => u.plan === "Enterprise").length} Enterprise · {userList.filter(u => u.plan === "Pro").length} Pro
+                </span>
               </div>
               <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
                 <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Active Staff & Roles</span>
@@ -328,7 +330,9 @@ export default function DedicatedDebtProofAdminPortal() {
               </div>
               <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
                 <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Total Debt Volume Managed</span>
-                <span className="text-2xl font-black text-indigo-400 mt-1 block">₹2.84 Cr</span>
+                <span className="text-2xl font-black text-indigo-400 mt-1 block">
+                  ₹{userList.reduce((sum, u) => sum + (u.totalDebtVolume || 0), 0).toLocaleString()}
+                </span>
                 <span className="text-[10px] text-indigo-300 font-bold block mt-1">Monad ZK Verified</span>
               </div>
             </div>
