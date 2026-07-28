@@ -16,8 +16,9 @@ export function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
+  const isLight = resolvedTheme === "light";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -26,16 +27,20 @@ export function LandingNavbar() {
   }, []);
 
   const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
+    const nextTheme = resolvedTheme === "light" ? "dark" : "light";
     setTheme(nextTheme);
   };
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 border-b ${
-        scrolled
-          ? "bg-slate-950/90 border-slate-800/90 backdrop-blur-xl shadow-xl shadow-slate-950/20"
-          : "bg-slate-950/70 border-slate-800/50 backdrop-blur-md"
+        isLight
+          ? scrolled
+            ? "bg-white/90 border-slate-200 backdrop-blur-xl shadow-md shadow-slate-200/50"
+            : "bg-white/80 border-slate-200/80 backdrop-blur-md"
+          : scrolled
+            ? "bg-slate-950/90 border-slate-800/90 backdrop-blur-xl shadow-xl shadow-slate-950/40"
+            : "bg-slate-950/70 border-slate-800/50 backdrop-blur-md"
       }`}
       role="navigation"
       aria-label="Main navigation"
@@ -47,10 +52,10 @@ export function LandingNavbar() {
             🛡️
           </div>
           <div className="text-left">
-            <span className="font-black text-white text-base tracking-tight block leading-none">
+            <span className={`font-black text-base tracking-tight block leading-none ${isLight ? "text-slate-900" : "text-white"}`}>
               DebtProof
             </span>
-            <span className="text-[10px] font-bold text-rose-400 tracking-wider uppercase leading-none">
+            <span className="text-[10px] font-bold text-rose-500 tracking-wider uppercase leading-none">
               Monad FinTech
             </span>
           </div>
@@ -62,7 +67,9 @@ export function LandingNavbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-xs font-bold text-slate-300 hover:text-white transition-colors py-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-rose-500 hover:after:w-full after:transition-all"
+              className={`text-xs font-bold transition-colors py-1 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-rose-500 hover:after:w-full after:transition-all ${
+                isLight ? "text-slate-700 hover:text-rose-600" : "text-slate-300 hover:text-white"
+              }`}
             >
               {link.label}
             </a>
@@ -74,32 +81,40 @@ export function LandingNavbar() {
           {/* Dark / Light Mode Switcher */}
           <button
             onClick={toggleTheme}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+            className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+              isLight
+                ? "bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200"
+                : "bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800"
+            }`}
             title="Toggle Light/Dark Theme"
           >
-            <span>{theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}</span>
+            <span>{isLight ? "🌙 Dark Mode" : "☀️ Light Mode"}</span>
           </button>
 
           {isAuthenticated && user ? (
             <div className="flex items-center gap-3">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-slate-900 border border-slate-800 hover:border-rose-500/50 transition-all cursor-pointer"
+                className={`flex items-center gap-2.5 px-3.5 py-2 rounded-2xl border transition-all cursor-pointer ${
+                  isLight
+                    ? "bg-slate-100 border-slate-200 hover:border-rose-500/50"
+                    : "bg-slate-900 border-slate-800 hover:border-rose-500/50"
+                }`}
               >
                 <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-rose-500 to-purple-600 text-white font-black text-xs flex items-center justify-center">
                   {user.first_name ? user.first_name[0].toUpperCase() : user.email[0].toUpperCase()}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-black text-white leading-none">
+                  <p className={`text-xs font-black leading-none ${isLight ? "text-slate-900" : "text-white"}`}>
                     {user.first_name ? `${user.first_name} ${user.last_name || ""}` : user.email}
                   </p>
-                  <p className="text-[9px] font-bold text-emerald-400 mt-0.5 leading-none">● Go to Dashboard</p>
+                  <p className="text-[9px] font-bold text-emerald-500 mt-0.5 leading-none">● Go to Dashboard</p>
                 </div>
               </Link>
 
               <button
                 onClick={() => logout()}
-                className="px-3.5 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold hover:bg-rose-500/20 transition cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-bold hover:bg-rose-500/20 transition cursor-pointer"
               >
                 Sign Out
               </button>
@@ -108,7 +123,11 @@ export function LandingNavbar() {
             <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold transition hover:bg-slate-800"
+                className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition ${
+                  isLight
+                    ? "bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200"
+                    : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white"
+                }`}
               >
                 Sign In
               </Link>
@@ -126,13 +145,17 @@ export function LandingNavbar() {
         <div className="flex md:hidden items-center gap-2">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300"
+            className={`p-2 rounded-xl border text-xs font-bold ${
+              isLight ? "bg-slate-100 border-slate-200 text-slate-800" : "bg-slate-900 border-slate-800 text-slate-300"
+            }`}
           >
-            {theme === "light" ? "🌙" : "☀️"}
+            {isLight ? "🌙" : "☀️"}
           </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2.5 rounded-xl bg-slate-900 text-slate-300 hover:text-white text-sm font-bold border border-slate-800"
+            className={`p-2.5 rounded-xl border text-sm font-bold ${
+              isLight ? "bg-slate-100 border-slate-200 text-slate-800" : "bg-slate-900 border-slate-800 text-slate-300"
+            }`}
           >
             {mobileOpen ? "✕" : "☰"}
           </button>
@@ -141,21 +164,23 @@ export function LandingNavbar() {
 
       {/* Mobile Drawer Navigation */}
       {mobileOpen && (
-        <div className="md:hidden p-4 bg-slate-950 border-b border-slate-800 space-y-3">
+        <div className={`md:hidden p-4 border-b space-y-3 ${isLight ? "bg-white border-slate-200" : "bg-slate-950 border-slate-800"}`}>
           <div className="flex flex-col gap-2">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-900 transition"
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+                  isLight ? "text-slate-800 hover:bg-slate-100" : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                }`}
               >
                 {link.label}
               </a>
             ))}
           </div>
 
-          <div className="pt-2 border-t border-slate-800">
+          <div className={`pt-2 border-t ${isLight ? "border-slate-200" : "border-slate-800"}`}>
             {isAuthenticated ? (
               <Link
                 href="/dashboard"
@@ -169,7 +194,9 @@ export function LandingNavbar() {
                 <Link
                   href="/login"
                   onClick={() => setMobileOpen(false)}
-                  className="py-2.5 rounded-xl bg-slate-900 text-slate-300 text-center text-xs font-bold"
+                  className={`py-2.5 rounded-xl text-center text-xs font-bold border ${
+                    isLight ? "bg-slate-100 border-slate-200 text-slate-800" : "bg-slate-900 border-slate-800 text-slate-300"
+                  }`}
                 >
                   Sign In
                 </Link>

@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { LandingNavbar } from "@/components/layout/LandingNavbar";
 import { LandingFooter } from "@/components/layout/LandingFooter";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function LandingPage() {
   const [isYearly, setIsYearly] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const { resolvedTheme } = useTheme();
+  const isLight = resolvedTheme === "light";
 
   const plans = [
     {
@@ -159,28 +163,30 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-rose-500 selection:text-white">
+    <div className={`min-h-screen font-sans transition-colors duration-200 ${isLight ? "bg-slate-50 text-slate-900 selection:bg-rose-500 selection:text-white" : "bg-slate-950 text-white selection:bg-rose-500 selection:text-white"}`}>
       <LandingNavbar />
 
       {/* ── HERO SECTION ── */}
       <section className="relative pt-32 pb-20 px-4 overflow-hidden">
         {/* Background Glowing Orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-rose-500/20 via-purple-600/20 to-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className={`absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-3xl pointer-events-none ${isLight ? "bg-gradient-to-tr from-rose-400/20 via-purple-300/30 to-blue-300/30" : "bg-gradient-to-tr from-rose-500/20 via-purple-600/20 to-blue-500/20"}`} />
 
         <div className="max-w-6xl mx-auto text-center space-y-8 relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/90 border border-slate-800 text-xs font-semibold backdrop-blur-xl animate-bounce">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold backdrop-blur-xl animate-bounce border ${
+            isLight ? "bg-white/90 border-slate-200 text-slate-800 shadow-md shadow-slate-200/50" : "bg-slate-900/90 border-slate-800 text-white"
+          }`}>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Monad Blockchain Testnet Active • 10,000 TPS Speed</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-tight">
             Never Lose Proof of Your <br />
-            <span className="bg-gradient-to-r from-rose-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-rose-500 via-purple-600 to-blue-600 bg-clip-text text-transparent">
               Loan Repayments
             </span>
           </h1>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-3xl mx-auto font-normal leading-relaxed">
+          <p className={`text-base sm:text-lg max-w-3xl mx-auto font-normal leading-relaxed ${isLight ? "text-slate-600" : "text-slate-300"}`}>
             DebtProof is the world’s first FinTech platform combining <strong>Monad Blockchain Cryptographic Proofs</strong> with an <strong>AI Debt Destroyer Assistant</strong>. Lock in unalterable repayment records, simulate debt payoff strategies, and download official Zero-Debt Clearance Certificates.
           </p>
 
@@ -193,7 +199,9 @@ export default function LandingPage() {
             </Link>
             <Link
               href="#pricing"
-              className="px-8 py-4 rounded-2xl bg-slate-900 border border-slate-800 text-white font-bold text-sm hover:bg-slate-800 transition duration-200"
+              className={`px-8 py-4 rounded-2xl border font-bold text-sm transition duration-200 ${
+                isLight ? "bg-white border-slate-200 text-slate-800 hover:bg-slate-100 shadow-md" : "bg-slate-900 border-slate-800 text-white hover:bg-slate-800"
+              }`}
             >
               💎 View 5-Tier Plans
             </Link>
@@ -201,65 +209,65 @@ export default function LandingPage() {
 
           {/* Hero Live Platform Stats */}
           <div className="pt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-md">
-              <p className="text-2xl font-black text-rose-400">₹14.2Cr+</p>
-              <p className="text-[11px] text-slate-400 mt-1 uppercase font-bold tracking-wider">Repayments Anchored</p>
+            <div className={`p-4 rounded-2xl border backdrop-blur-md ${isLight ? "bg-white/90 border-slate-200 shadow-md shadow-slate-200/50" : "bg-slate-900/80 border-slate-800/80"}`}>
+              <p className="text-2xl font-black text-rose-500">₹14.2Cr+</p>
+              <p className={`text-[11px] mt-1 uppercase font-bold tracking-wider ${isLight ? "text-slate-500" : "text-slate-400"}`}>Repayments Anchored</p>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-md">
-              <p className="text-2xl font-black text-emerald-400">100%</p>
-              <p className="text-[11px] text-slate-400 mt-1 uppercase font-bold tracking-wider">Cryptographic Proof</p>
+            <div className={`p-4 rounded-2xl border backdrop-blur-md ${isLight ? "bg-white/90 border-slate-200 shadow-md shadow-slate-200/50" : "bg-slate-900/80 border-slate-800/80"}`}>
+              <p className="text-2xl font-black text-emerald-500">100%</p>
+              <p className={`text-[11px] mt-1 uppercase font-bold tracking-wider ${isLight ? "text-slate-500" : "text-slate-400"}`}>Cryptographic Proof</p>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-md">
-              <p className="text-2xl font-black text-blue-400">10,000</p>
-              <p className="text-[11px] text-slate-400 mt-1 uppercase font-bold tracking-wider">Monad TPS Speed</p>
+            <div className={`p-4 rounded-2xl border backdrop-blur-md ${isLight ? "bg-white/90 border-slate-200 shadow-md shadow-slate-200/50" : "bg-slate-900/80 border-slate-800/80"}`}>
+              <p className="text-2xl font-black text-blue-500">10,000</p>
+              <p className={`text-[11px] mt-1 uppercase font-bold tracking-wider ${isLight ? "text-slate-500" : "text-slate-400"}`}>Monad TPS Speed</p>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-md">
-              <p className="text-2xl font-black text-purple-400">0</p>
-              <p className="text-[11px] text-slate-400 mt-1 uppercase font-bold tracking-wider">Lost Receipts</p>
+            <div className={`p-4 rounded-2xl border backdrop-blur-md ${isLight ? "bg-white/90 border-slate-200 shadow-md shadow-slate-200/50" : "bg-slate-900/80 border-slate-800/80"}`}>
+              <p className="text-2xl font-black text-purple-500">0</p>
+              <p className={`text-[11px] mt-1 uppercase font-bold tracking-wider ${isLight ? "text-slate-500" : "text-slate-400"}`}>Lost Receipts</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── PROBLEM & HOW IT WORKS SHOWCASE ── */}
-      <section id="how-it-works" className="py-20 px-4 bg-slate-950/60 border-y border-slate-900">
+      <section id="how-it-works" className={`py-20 px-4 border-y ${isLight ? "bg-slate-100/70 border-slate-200" : "bg-slate-950/60 border-slate-900"}`}>
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30 text-xs font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/30 text-xs font-bold uppercase tracking-wider">
               ⚠️ THE PROBLEM WITH LOANS TODAY
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
+            <h2 className={`text-3xl sm:text-4xl font-black leading-tight ${isLight ? "text-slate-900" : "text-white"}`}>
               Banks Lose Receipts. <br />
-              <span className="text-rose-400">Borrowers Suffer Penalties.</span>
+              <span className="text-rose-500">Borrowers Suffer Penalties.</span>
             </h2>
-            <p className="text-slate-400 text-sm leading-relaxed">
+            <p className={`text-sm leading-relaxed ${isLight ? "text-slate-600" : "text-slate-400"}`}>
               Every year, thousands of borrowers face disputes over uncredited EMIs, missing bank receipts, or incorrect CIBIL default flags. Traditional paper receipts and bank emails can be lost or deleted.
             </p>
-            <ul className="space-y-3 text-xs text-slate-300">
+            <ul className={`space-y-3 text-xs font-medium ${isLight ? "text-slate-700" : "text-slate-300"}`}>
               <li className="flex items-center gap-2">
-                <span className="text-rose-400">❌</span> No central proof repository across multiple lenders
+                <span className="text-rose-500">❌</span> No central proof repository across multiple lenders
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-rose-400">❌</span> High compounding interest from delayed payoff strategies
+                <span className="text-rose-500">❌</span> High compounding interest from delayed payoff strategies
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-rose-400">❌</span> Difficulty proving 100% repayment when closing loans
+                <span className="text-rose-500">❌</span> Difficulty proving 100% repayment when closing loans
               </li>
             </ul>
           </div>
 
-          <div id="security" className="p-8 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 space-y-6 shadow-2xl relative">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
+          <div id="security" className={`p-8 rounded-3xl border space-y-6 shadow-2xl relative ${isLight ? "bg-white border-slate-200 shadow-slate-200/60" : "bg-gradient-to-br from-slate-900 to-slate-950 border-slate-800"}`}>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
               🛡️ THE DEBTPROOF SOLUTION
             </div>
-            <h3 className="text-xl font-black text-white">Immutable Monad Blockchain Vault</h3>
-            <p className="text-slate-400 text-xs leading-relaxed">
+            <h3 className={`text-xl font-black ${isLight ? "text-slate-900" : "text-white"}`}>Immutable Monad Blockchain Vault</h3>
+            <p className={`text-xs leading-relaxed ${isLight ? "text-slate-600" : "text-slate-400"}`}>
               DebtProof computes a cryptographic SHA-256 fingerprint for every payment receipt and anchors it publicly on Monad Blockchain. It creates an unalterable paper trail that is 100% legally verifiable by anyone.
             </p>
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs font-mono">
-              <div className="flex justify-between text-slate-400"><span>Monad Tx Hash:</span> <span className="text-emerald-400">Verified 0x71C7...976F</span></div>
-              <div className="flex justify-between text-slate-400"><span>Security Seal:</span> <span className="text-purple-400">SHA-256 Encrypted</span></div>
-              <div className="flex justify-between text-slate-400"><span>Verification:</span> <span className="text-blue-400">Monad Testnet (Chain ID 10143)</span></div>
+            <div className={`p-4 rounded-2xl border space-y-2 text-xs font-mono ${isLight ? "bg-slate-50 border-slate-200" : "bg-slate-950 border-slate-800"}`}>
+              <div className={`flex justify-between ${isLight ? "text-slate-600" : "text-slate-400"}`}><span>Monad Tx Hash:</span> <span className="text-emerald-500 font-bold">Verified 0x71C7...976F</span></div>
+              <div className={`flex justify-between ${isLight ? "text-slate-600" : "text-slate-400"}`}><span>Security Seal:</span> <span className="text-purple-500 font-bold">SHA-256 Encrypted</span></div>
+              <div className={`flex justify-between ${isLight ? "text-slate-600" : "text-slate-400"}`}><span>Verification:</span> <span className="text-blue-500 font-bold">Monad Testnet (Chain ID 10143)</span></div>
             </div>
           </div>
         </div>
@@ -268,44 +276,50 @@ export default function LandingPage() {
       {/* ── CORE FEATURES SHOWCASE GRID ── */}
       <section id="features" className="py-24 px-4 max-w-6xl mx-auto space-y-16">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <span className="text-xs font-black uppercase tracking-widest text-rose-400">POWERFUL FINTECH & WEB3 FEATURES</span>
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">Everything You Need To Master Your Debt</h2>
-          <p className="text-slate-400 text-sm">DebtProof comes packed with enterprise-grade debt management, AI strategy calculators, and blockchain security.</p>
+          <span className="text-xs font-black uppercase tracking-widest text-rose-500">POWERFUL FINTECH & WEB3 FEATURES</span>
+          <h2 className={`text-3xl sm:text-5xl font-black tracking-tight ${isLight ? "text-slate-900" : "text-white"}`}>Everything You Need To Master Your Debt</h2>
+          <p className={`text-sm ${isLight ? "text-slate-600" : "text-slate-400"}`}>DebtProof comes packed with enterprise-grade debt management, AI strategy calculators, and blockchain security.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {featuresShowcase.map((f, i) => (
-            <div key={i} className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition duration-200 space-y-3 group hover:-translate-y-1">
-              <div className="w-12 h-12 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+            <div key={i} className={`p-6 rounded-3xl border transition duration-200 space-y-3 group hover:-translate-y-1 ${
+              isLight
+                ? "bg-white border-slate-200 hover:border-slate-300 shadow-lg shadow-slate-200/50"
+                : "bg-slate-900/90 border-slate-800 hover:border-slate-700"
+            }`}>
+              <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-2xl group-hover:scale-110 transition ${
+                isLight ? "bg-slate-100 border-slate-200" : "bg-slate-950 border-slate-800"
+              }`}>
                 {f.icon}
               </div>
-              <h3 className="text-base font-black text-white">{f.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{f.desc}</p>
+              <h3 className={`text-base font-black ${isLight ? "text-slate-900" : "text-white"}`}>{f.title}</h3>
+              <p className={`text-xs leading-relaxed ${isLight ? "text-slate-600" : "text-slate-400"}`}>{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* ── 5-TIER DYNAMIC PRICING SECTION ── */}
-      <section id="pricing" className="py-24 px-4 bg-slate-950/80 border-t border-slate-900">
+      <section id="pricing" className={`py-24 px-4 border-t ${isLight ? "bg-slate-100/70 border-slate-200" : "bg-slate-950/80 border-slate-900"}`}>
         <div className="max-w-7xl mx-auto space-y-12">
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">TRANSPARENT 5-TIER PRICING</span>
-            <h2 className="text-3xl sm:text-5xl font-black text-white">Choose The Plan That Fits Your Goals</h2>
-            <p className="text-slate-400 text-sm">From free basic tracking to institutional multi-tenant SaaS features.</p>
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-500">TRANSPARENT 5-TIER PRICING</span>
+            <h2 className={`text-3xl sm:text-5xl font-black ${isLight ? "text-slate-900" : "text-white"}`}>Choose The Plan That Fits Your Goals</h2>
+            <p className={`text-sm ${isLight ? "text-slate-600" : "text-slate-400"}`}>From free basic tracking to institutional multi-tenant SaaS features.</p>
 
             {/* Monthly / Yearly Toggle Switch */}
             <div className="flex items-center justify-center gap-3 pt-4">
-              <span className={`text-xs font-bold ${!isYearly ? "text-white" : "text-slate-400"}`}>Monthly Billing</span>
+              <span className={`text-xs font-bold ${!isYearly ? (isLight ? "text-slate-900" : "text-white") : (isLight ? "text-slate-500" : "text-slate-400")}`}>Monthly Billing</span>
               <button
                 onClick={() => setIsYearly(!isYearly)}
-                className="relative w-14 h-7 rounded-full bg-slate-800 border border-slate-700 p-1 cursor-pointer transition"
+                className={`relative w-14 h-7 rounded-full border p-1 cursor-pointer transition ${isLight ? "bg-slate-200 border-slate-300" : "bg-slate-800 border-slate-700"}`}
               >
                 <span className={`block w-5 h-5 rounded-full bg-rose-500 transition-transform ${isYearly ? "translate-x-7" : "translate-x-0"}`} />
               </button>
-              <span className={`text-xs font-bold flex items-center gap-1.5 ${isYearly ? "text-white" : "text-slate-400"}`}>
+              <span className={`text-xs font-bold flex items-center gap-1.5 ${isYearly ? (isLight ? "text-slate-900" : "text-white") : (isLight ? "text-slate-500" : "text-slate-400")}`}>
                 Yearly Billing
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-black uppercase">
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-500 font-black uppercase">
                   SAVE 20%
                 </span>
               </span>
@@ -321,35 +335,41 @@ export default function LandingPage() {
                   key={p.id}
                   className={`p-5 rounded-3xl flex flex-col justify-between space-y-6 transition duration-200 ${
                     p.popular
-                      ? "bg-slate-900 border-2 border-rose-500 shadow-2xl shadow-rose-950/40 relative scale-105"
-                      : "bg-slate-900/70 border border-slate-800 hover:border-slate-700"
+                      ? isLight
+                        ? "bg-white border-2 border-rose-500 shadow-2xl shadow-rose-500/10 relative scale-105"
+                        : "bg-slate-900 border-2 border-rose-500 shadow-2xl shadow-rose-950/40 relative scale-105"
+                      : isLight
+                        ? "bg-white border border-slate-200 hover:border-slate-300 shadow-md shadow-slate-200/50"
+                        : "bg-slate-900/70 border border-slate-800 hover:border-slate-700"
                   }`}
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${p.popular ? "bg-rose-500 text-white" : "bg-slate-800 text-slate-400"}`}>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
+                        p.popular ? "bg-rose-500 text-white" : (isLight ? "bg-slate-100 text-slate-600" : "bg-slate-800 text-slate-400")
+                      }`}>
                         {p.badge}
                       </span>
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-black text-white">{p.name}</h3>
-                      <p className="text-[11px] text-slate-400 mt-1 min-h-[32px]">{p.description}</p>
+                      <h3 className={`text-lg font-black ${isLight ? "text-slate-900" : "text-white"}`}>{p.name}</h3>
+                      <p className={`text-[11px] mt-1 min-h-[32px] ${isLight ? "text-slate-600" : "text-slate-400"}`}>{p.description}</p>
                     </div>
 
-                    <div className="py-2 border-y border-slate-800/80">
-                      <p className="text-2xl font-black text-white">
+                    <div className={`py-2 border-y ${isLight ? "border-slate-200" : "border-slate-800/80"}`}>
+                      <p className={`text-2xl font-black ${isLight ? "text-slate-900" : "text-white"}`}>
                         ₹{price.toLocaleString()}
-                        <span className="text-xs text-slate-400 font-normal">/mo</span>
+                        <span className={`text-xs font-normal ${isLight ? "text-slate-500" : "text-slate-400"}`}>/mo</span>
                       </p>
-                      <p className="text-[10px] text-slate-500 font-mono mt-0.5">{p.maxLoans}</p>
+                      <p className={`text-[10px] font-mono mt-0.5 ${isLight ? "text-slate-500" : "text-slate-500"}`}>{p.maxLoans}</p>
                     </div>
 
-                    <ul className="space-y-2 text-xs text-slate-300">
+                    <ul className="space-y-2 text-xs font-medium">
                       {p.features.map((feat, idx) => (
                         <li key={idx} className="flex items-start gap-1.5">
-                          <span className="text-emerald-400 text-xs font-bold shrink-0">✓</span>
-                          <span className="text-[11px]">{feat}</span>
+                          <span className="text-emerald-500 text-xs font-bold shrink-0">✓</span>
+                          <span className={`text-[11px] ${isLight ? "text-slate-700" : "text-slate-300"}`}>{feat}</span>
                         </li>
                       ))}
                     </ul>
@@ -360,7 +380,9 @@ export default function LandingPage() {
                     className={`w-full py-3 rounded-xl font-black text-xs uppercase tracking-wider text-center transition cursor-pointer ${
                       p.popular
                         ? "bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-lg shadow-rose-500/20 hover:from-rose-500 hover:to-rose-400"
-                        : "bg-slate-800 hover:bg-slate-700 text-white"
+                        : isLight
+                          ? "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200"
+                          : "bg-slate-800 hover:bg-slate-700 text-white"
                     }`}
                   >
                     {p.ctaText}
@@ -375,22 +397,22 @@ export default function LandingPage() {
       {/* ── FAQ ACCORDION ── */}
       <section className="py-20 px-4 max-w-4xl mx-auto space-y-8">
         <div className="text-center space-y-2">
-          <span className="text-xs font-black uppercase tracking-widest text-purple-400">FREQUENTLY ASKED QUESTIONS</span>
-          <h2 className="text-3xl font-black text-white">Have Questions? We Have Answers</h2>
+          <span className="text-xs font-black uppercase tracking-widest text-purple-500">FREQUENTLY ASKED QUESTIONS</span>
+          <h2 className={`text-3xl font-black ${isLight ? "text-slate-900" : "text-white"}`}>Have Questions? We Have Answers</h2>
         </div>
 
         <div className="space-y-3">
           {faqs.map((f, i) => (
-            <div key={i} className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
+            <div key={i} className={`rounded-2xl border overflow-hidden ${isLight ? "bg-white border-slate-200 shadow-md shadow-slate-200/50" : "bg-slate-900 border-slate-800"}`}>
               <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full p-4 text-left text-sm font-bold text-white flex justify-between items-center cursor-pointer"
+                className={`w-full p-4 text-left text-sm font-bold flex justify-between items-center cursor-pointer ${isLight ? "text-slate-900" : "text-white"}`}
               >
                 <span>{f.q}</span>
-                <span className="text-slate-400 font-mono text-base">{openFaq === i ? "−" : "+"}</span>
+                <span className={`font-mono text-base ${isLight ? "text-slate-500" : "text-slate-400"}`}>{openFaq === i ? "−" : "+"}</span>
               </button>
               {openFaq === i && (
-                <div className="px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-3">
+                <div className={`px-4 pb-4 text-xs leading-relaxed border-t pt-3 ${isLight ? "text-slate-600 border-slate-200" : "text-slate-400 border-slate-800/60"}`}>
                   {f.a}
                 </div>
               )}
