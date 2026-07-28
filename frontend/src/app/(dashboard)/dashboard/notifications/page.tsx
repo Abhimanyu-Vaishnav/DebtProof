@@ -95,28 +95,15 @@ export default function NotificationsPage() {
     setLoading(true);
     try {
       const resp = await notificationsService.getNotifications();
-      const list = resp.results ?? [];
+      const backendList = resp.results ?? [];
       
       const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
       const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
 
-      const combined = [...localBroadcasts, ...list];
+      const combined = [...localBroadcasts, ...backendList];
       const unique = combined.filter((item, index, self) => index === self.findIndex((t) => t.id === item.id || t.title === item.title));
 
-      if (unique.length > 0) {
-        setNotifications(unique);
-      } else {
-        setNotifications([
-          {
-            id: "notif-init-1",
-            title: "📢 System Update v3.9.0 Active",
-            body: "SuperAdmin Control Center & Monad Web3 Gas Relayer activated.",
-            notif_type: "info",
-            is_read: false,
-            created_at: new Date().toISOString(),
-          },
-        ]);
-      }
+      setNotifications(unique);
     } catch {
       // silent fail
     } finally {
