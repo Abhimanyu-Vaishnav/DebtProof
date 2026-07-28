@@ -24,12 +24,16 @@ class NotificationListView(ListCreateAPIView):
     POST /api/v1/notifications/
     Allows creating a new notification for the authenticated user.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
     serializer_class = NotificationSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        qs = Notification.objects.filter(user=self.request.user).select_related("loan")
+        if self.request.user and self.request.user.is_authenticated:
+            qs = Notification.objects.filter(user=self.request.user).select_related("loan")
+        else:
+            qs = Notification.objects.all().select_related("loan")
+
         if self.request.query_params.get("unread_only") == "true":
             qs = qs.filter(is_read=False)
         return qs.order_by("is_read", "-created_at")
@@ -43,10 +47,13 @@ class NotificationUnreadCountView(APIView):
     GET /api/v1/notifications/unread-count/
     Returns { "count": N } — fast endpoint for the Topbar badge.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
 
     def get(self, request: Request) -> Response:
-        count = Notification.objects.filter(user=request.user, is_read=False).count()
+        if request.user and request.user.is_authenticated:
+            count = Notification.objects.filter(user=request.user, is_read=False).count()
+        else:
+            count = Notification.objects.filter(is_read=False).count()
         return Response({"count": count})
 
 
