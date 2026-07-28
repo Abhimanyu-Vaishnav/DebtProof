@@ -125,11 +125,36 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
     window.addEventListener("debtproof_refresh_notifications", handleRefresh);
     window.addEventListener("debtproof_add_notification", handleAddNotif);
     window.addEventListener("storage", handleStorage);
+
+    // BroadcastChannel listener — guarantees real-time notification receipt across tabs
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel("debtproof_notifications_channel");
+      bc.onmessage = (event) => {
+        if (event.data?.type === "ADD_NOTIFICATION" && event.data?.notif) {
+          const newNotif = event.data.notif as Notification;
+          setNotifications((prev) => [newNotif, ...prev]);
+          setUnreadCount((prev) => prev + 1);
+
+          // Trigger native Web Push Popup
+          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+            try {
+              new Notification(newNotif.title || "DebtProof Alert", {
+                body: newNotif.body || "New notification received.",
+                icon: "/favicon.ico",
+              });
+            } catch {}
+          }
+        }
+      };
+    } catch {}
+
     const interval = setInterval(fetchNotifications, 15_000);
     return () => {
       window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
       window.removeEventListener("debtproof_add_notification", handleAddNotif);
       window.removeEventListener("storage", handleStorage);
+      if (bc) bc.close();
       clearInterval(interval);
     };
   }, [fetchNotifications]);

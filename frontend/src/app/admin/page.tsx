@@ -205,6 +205,13 @@ export default function DedicatedDebtProofAdminPortal() {
       const existingRaw = localStorage.getItem("debtproof_local_broadcasts");
       const existing = existingRaw ? JSON.parse(existingRaw) : [];
       localStorage.setItem("debtproof_local_broadcasts", JSON.stringify([newNotifObj, ...existing]));
+
+      // BroadcastChannel API — syncs across all open tabs/windows instantly
+      try {
+        const bc = new BroadcastChannel("debtproof_notifications_channel");
+        bc.postMessage({ type: "ADD_NOTIFICATION", notif: newNotifObj });
+        bc.close();
+      } catch {}
     }
 
     // Dispatch global real-time notification custom event & toast

@@ -131,10 +131,24 @@ export default function NotificationsPage() {
     window.addEventListener("debtproof_add_notification", handleAddNotif);
     window.addEventListener("debtproof_refresh_notifications", handleRefresh);
     window.addEventListener("storage", handleStorageChange);
+
+    // BroadcastChannel listener — guarantees real-time notification receipt in Notification Center
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel("debtproof_notifications_channel");
+      bc.onmessage = (event) => {
+        if (event.data?.type === "ADD_NOTIFICATION" && event.data?.notif) {
+          const newNotif = event.data.notif as Notification;
+          setNotifications((prev) => [newNotif, ...prev]);
+        }
+      };
+    } catch {}
+
     return () => {
       window.removeEventListener("debtproof_add_notification", handleAddNotif);
       window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
       window.removeEventListener("storage", handleStorageChange);
+      if (bc) bc.close();
     };
   }, [loadNotifications]);
 
