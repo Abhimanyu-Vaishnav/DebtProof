@@ -70,17 +70,20 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 px-4 py-3 rounded-[var(--radius-md)] shadow-lg text-sm font-medium",
+        "flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold max-w-sm w-full border border-white/20 backdrop-blur-md",
         "transition-all duration-300",
         COLOR_CLASSES[toast.type],
         visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-4 scale-95"
       )}
     >
-      {ICONS[toast.type]}
-      <span>{toast.message}</span>
+      <div className="mt-0.5 shrink-0">{ICONS[toast.type]}</div>
+      <div
+        className="flex-1 text-xs leading-relaxed overflow-hidden break-words"
+        dangerouslySetInnerHTML={{ __html: toast.message }}
+      />
       <button
         onClick={() => onRemove(toast.id)}
-        className="ml-2 opacity-70 hover:opacity-100 transition-opacity"
+        className="ml-1 opacity-70 hover:opacity-100 transition-opacity shrink-0 p-1"
         aria-label="Dismiss"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

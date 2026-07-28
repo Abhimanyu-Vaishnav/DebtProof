@@ -90,25 +90,13 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       const actualUnread = unique.filter((n) => !n.is_read).length;
       setUnreadCount(actualUnread);
 
-      // Instant Toast Alert for any newly arrived unread notification
+      // Instant Toast Alert for newly arrived unread notification
       const unreadItems = unique.filter((n) => !n.is_read);
       setPrevNotifIds((prev) => {
-        if (prev.length === 0) {
-          // Initial load: trigger toast for latest unread if any
-          if (unreadItems.length > 0) {
-            const newest = unreadItems[0];
-            window.dispatchEvent(
-              new CustomEvent("debtproof-toast", {
-                detail: {
-                  message: newest.title || "New notification received!",
-                  type: "info",
-                },
-              })
-            );
-          }
-        } else {
+        if (prev.length > 0) {
           const newlyArrived = unreadItems.filter((n) => !prev.includes(n.id));
-          newlyArrived.forEach((item) => {
+          if (newlyArrived.length > 0) {
+            const item = newlyArrived[0];
             window.dispatchEvent(
               new CustomEvent("debtproof-toast", {
                 detail: {
@@ -117,7 +105,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                 },
               })
             );
-          });
+          }
         }
         return unique.map((n) => n.id);
       });
@@ -139,16 +127,6 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       if (custom.detail) {
         setNotifications((prev) => [custom.detail, ...prev]);
         setUnreadCount((prev) => prev + 1);
-
-        // Trigger Toast Popup & Native Web Push Notification
-        window.dispatchEvent(
-          new CustomEvent("debtproof-toast", {
-            detail: {
-              message: custom.detail.title || "New notification received!",
-              type: "info",
-            },
-          })
-        );
 
         if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
           try {
@@ -179,16 +157,6 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
           const newNotif = event.data.notif as Notification;
           setNotifications((prev) => [newNotif, ...prev]);
           setUnreadCount((prev) => prev + 1);
-
-          // Trigger Toast Popup & Native Web Push
-          window.dispatchEvent(
-            new CustomEvent("debtproof-toast", {
-              detail: {
-                message: newNotif.title || "New notification received!",
-                type: "info",
-              },
-            })
-          );
 
           // Trigger native Web Push Popup
           if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
