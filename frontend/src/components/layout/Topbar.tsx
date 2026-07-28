@@ -77,8 +77,15 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
         notificationsService.getUnreadCount(),
       ]);
       const notifArray = Array.isArray(listResp) ? listResp : listResp.results ?? [];
-      setNotifications(notifArray);
-      setUnreadCount(count);
+      
+      const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
+      const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
+
+      const combined = [...localBroadcasts, ...notifArray];
+      const unique = combined.filter((item, index, self) => index === self.findIndex((t) => t.id === item.id || t.title === item.title));
+
+      setNotifications(unique);
+      setUnreadCount(count + localBroadcasts.filter(n => !n.is_read).length);
     } catch {
       // Silent fail — don't break UI if notification API is unavailable
     }
@@ -87,6 +94,11 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   useEffect(() => {
     fetchNotifications();
     const handleRefresh = () => fetchNotifications();
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "debtproof_local_broadcasts") {
+        fetchNotifications();
+      }
+    };
     const handleAddNotif = (e: Event) => {
       const custom = e as CustomEvent<Notification>;
       if (custom.detail) {
@@ -112,10 +124,12 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
     window.addEventListener("debtproof_refresh_notifications", handleRefresh);
     window.addEventListener("debtproof_add_notification", handleAddNotif);
+    window.addEventListener("storage", handleStorage);
     const interval = setInterval(fetchNotifications, 15_000);
     return () => {
       window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
       window.removeEventListener("debtproof_add_notification", handleAddNotif);
+      window.removeEventListener("storage", handleStorage);
       clearInterval(interval);
     };
   }, [fetchNotifications]);

@@ -135,12 +135,19 @@ export default function NotificationsPage() {
     };
 
     const handleRefresh = () => loadNotifications();
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "debtproof_local_broadcasts") {
+        loadNotifications();
+      }
+    };
 
     window.addEventListener("debtproof_add_notification", handleAddNotif);
     window.addEventListener("debtproof_refresh_notifications", handleRefresh);
+    window.addEventListener("storage", handleStorageChange);
     return () => {
       window.removeEventListener("debtproof_add_notification", handleAddNotif);
       window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, [loadNotifications]);
 
