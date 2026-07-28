@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { triggerToast } from "./Toast";
 
-const CURRENT_BUILD_ID = "v3.5.0-release"; // Updated build version stamp
+const CURRENT_BUILD_ID = "v3.6.0-release"; // Updated build version stamp
 const VERSION_KEY = "debtproof_system_build_version";
 const DISMISSED_KEY = "debtproof_dismissed_version";
 
