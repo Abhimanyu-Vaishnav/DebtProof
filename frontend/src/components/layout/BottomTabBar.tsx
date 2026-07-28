@@ -68,8 +68,13 @@ export function BottomTabBar() {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const count = await notificationsService.getUnreadCount();
-      setUnreadCount(count);
+      // Compute count from the full notification list (same source as Topbar)
+      const resp = await notificationsService.getNotifications();
+      const list = Array.isArray(resp) ? resp : resp.results ?? [];
+      const readIdsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_read_notif_ids") : null;
+      const readIds: string[] = readIdsRaw ? JSON.parse(readIdsRaw) : [];
+      const unread = list.filter(n => !n.is_read && !readIds.includes(n.id)).length;
+      setUnreadCount(unread);
     } catch {
       // silent fail
     }
@@ -78,14 +83,20 @@ export function BottomTabBar() {
   useEffect(() => {
     setMounted(true);
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30_000);
+    const interval = setInterval(fetchUnreadCount, 4_000);
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
 
   useEffect(() => {
     const handleRefresh = () => fetchUnreadCount();
     window.addEventListener("notifications:refresh", handleRefresh);
-    return () => window.removeEventListener("notifications:refresh", handleRefresh);
+    window.addEventListener("debtproof_refresh_notifications", handleRefresh);
+    window.addEventListener("debtproof_add_notification", handleRefresh);
+    return () => {
+      window.removeEventListener("notifications:refresh", handleRefresh);
+      window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
+      window.removeEventListener("debtproof_add_notification", handleRefresh);
+    };
   }, [fetchUnreadCount]);
 
   if (!mounted) return null;

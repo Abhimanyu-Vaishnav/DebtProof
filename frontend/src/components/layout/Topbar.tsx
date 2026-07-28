@@ -69,12 +69,12 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const router = useRouter();
   const { logout } = useAuth();
 
-  const [prevNotifIds, setPrevNotifIds] = useState<string[]>([]);
+  const seenNotifIdsRef = useRef<Set<string>>(new Set());
 
   // ── Fetch notifications ────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
     try {
-      const [listResp, count] = await Promise.all([
+      const [listResp] = await Promise.all([
         notificationsService.getNotifications(),
         notificationsService.getUnreadCount(),
       ]);
@@ -90,25 +90,23 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       const actualUnread = unique.filter((n) => !n.is_read).length;
       setUnreadCount(actualUnread);
 
-      // Instant Toast Alert for newly arrived unread notification
-      const unreadItems = unique.filter((n) => !n.is_read);
-      setPrevNotifIds((prev) => {
-        if (prev.length > 0) {
-          const newlyArrived = unreadItems.filter((n) => !prev.includes(n.id));
-          if (newlyArrived.length > 0) {
-            const item = newlyArrived[0];
-            window.dispatchEvent(
-              new CustomEvent("debtproof-toast", {
-                detail: {
-                  message: item.title || "New notification received!",
-                  type: "info",
-                },
-              })
-            );
-          }
+      // Toast for genuinely new unread notifications (seen set prevents duplicates from any source)
+      if (seenNotifIdsRef.current.size > 0) {
+        const unreadItems = unique.filter((n) => !n.is_read);
+        const brandNew = unreadItems.filter((n) => !seenNotifIdsRef.current.has(n.id));
+        if (brandNew.length > 0) {
+          const item = brandNew[0];
+          window.dispatchEvent(
+            new CustomEvent("debtproof-toast", {
+              detail: {
+                message: item.title || "New notification received!",
+                type: "info",
+              },
+            })
+          );
         }
-        return unique.map((n) => n.id);
-      });
+      }
+      unique.forEach((n) => seenNotifIdsRef.current.add(n.id));
     } catch {
       // Silent fail — don't break UI if notification API is unavailable
     }
@@ -125,9 +123,11 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
     const handleAddNotif = (e: Event) => {
       const custom = e as CustomEvent<Notification>;
       if (custom.detail) {
-        setNotifications((prev) => [custom.detail, ...prev]);
-        setUnreadCount((prev) => prev + 1);
-
+        setNotifications((prev) => {
+          if (prev.find(n => n.id === custom.detail.id)) return prev;
+          return [custom.detail, ...prev];
+        });
+        // Don't manually increment — fetchNotifications recalculates the true count
         if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
           try {
             new Notification(custom.detail.title || "DebtProof Alert", {
@@ -155,10 +155,11 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       bc.onmessage = (event) => {
         if (event.data?.type === "ADD_NOTIFICATION" && event.data?.notif) {
           const newNotif = event.data.notif as Notification;
-          setNotifications((prev) => [newNotif, ...prev]);
-          setUnreadCount((prev) => prev + 1);
-
-          // Trigger native Web Push Popup
+          setNotifications((prev) => {
+            if (prev.find(n => n.id === newNotif.id)) return prev;
+            return [newNotif, ...prev];
+          });
+          // Don't manually increment — fetchNotifications recalculates the true count
           if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
             try {
               new Notification(newNotif.title || "DebtProof Alert", {
