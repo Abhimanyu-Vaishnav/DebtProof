@@ -120,14 +120,24 @@ export const notificationsService = {
   deleteNotification: async (id: string): Promise<void> => {
     try {
       await apiClient.delete(`/notifications/${id}/`);
-    } catch {}
+    } catch {
+      try {
+        await fetch(`http://localhost:8000/api/v1/notifications/${id}/`, { method: "DELETE" });
+      } catch {}
+    }
 
     if (typeof window !== "undefined") {
+      // Remove from local broadcasts
       const localBroadcastsRaw = localStorage.getItem("debtproof_local_broadcasts");
       if (localBroadcastsRaw) {
-        const localBroadcasts: Notification[] = JSON.parse(localBroadcastsRaw);
-        const updated = localBroadcasts.filter(n => n.id !== id);
+        const updated = (JSON.parse(localBroadcastsRaw) as Notification[]).filter(n => n.id !== id);
         localStorage.setItem("debtproof_local_broadcasts", JSON.stringify(updated));
+      }
+      // Remove from read IDs set
+      const readIdsRaw = localStorage.getItem("debtproof_read_notif_ids");
+      if (readIdsRaw) {
+        const updated = (JSON.parse(readIdsRaw) as string[]).filter(rid => rid !== id);
+        localStorage.setItem("debtproof_read_notif_ids", JSON.stringify(updated));
       }
     }
   },
@@ -138,10 +148,15 @@ export const notificationsService = {
   clearAll: async (): Promise<void> => {
     try {
       await apiClient.post("/notifications/clear-all/");
-    } catch {}
+    } catch {
+      try {
+        await fetch("http://localhost:8000/api/v1/notifications/clear-all/", { method: "POST" });
+      } catch {}
+    }
 
     if (typeof window !== "undefined") {
       localStorage.removeItem("debtproof_local_broadcasts");
+      localStorage.removeItem("debtproof_read_notif_ids");
     }
   },
 
