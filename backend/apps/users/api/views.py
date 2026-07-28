@@ -618,49 +618,105 @@ class SuperAdminUserDetailView(APIView):
     def get(self, request: Request, pk: str) -> Response:
         from apps.loans.models import Loan
         from apps.payments.models import Payment
+        from apps.audit.models import AuditLog
+        from apps.users.models import SupportTicket
         from django.db.models import Sum
+
         try:
             user = User.objects.get(id=pk)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         loans = Loan.objects.filter(user=user).order_by("-created_at")
-        loan_data = [{
-            "id": str(l.id), "name": l.name, "loan_type": l.loan_type,
-            "status": l.status, "principal": float(l.principal_amount),
-            "outstanding": float(l.outstanding_amount) if hasattr(l, "outstanding_amount") else 0,
-            "monthly_emi": float(l.monthly_emi) if l.monthly_emi else 0,
-            "lender": l.lender_name, "created_at": l.created_at.strftime("%Y-%m-%d"),
-        } for l in loans]
+        loan_data = []
+        total_monthly_emi = 0
 
-        payments = Payment.objects.filter(loan__user=user).order_by("-created_at")[:20]
-        payment_data = [{
-            "id": str(p.id), "amount": float(p.amount),
-            "status": p.status, "loan_name": p.loan.name,
-            "paid_on": p.created_at.strftime("%Y-%m-%d"),
-            "method": p.payment_method,
-        } for p in payments]
+        for l in loans:
+            emi = float(l.monthly_emi) if l.monthly_emi else 0
+            total_monthly_emi += emi
+            loan_data.append({
+                "id": str(l.id),
+                "name": l.name,
+                "loan_type": l.loan_type,
+                "status": l.status,
+                "principal": float(l.principal_amount),
+                "outstanding": float(l.outstanding_amount) if hasattr(l, "outstanding_amount") and l.outstanding_amount is not None else float(l.principal_amount),
+                "monthly_emi": emi,
+                "interest_rate": float(l.interest_rate) if l.interest_rate else 0,
+                "tenure_months": l.tenure_months if hasattr(l, "tenure_months") else None,
+                "start_date": l.start_date.strftime("%Y-%m-%d") if hasattr(l, "start_date") and l.start_date else l.created_at.strftime("%Y-%m-%d"),
+                "lender": l.lender_name,
+                "notes": l.notes if hasattr(l, "notes") else "",
+                "created_at": l.created_at.strftime("%Y-%m-%d"),
+            })
+
+        payments = Payment.objects.filter(loan__user=user).order_by("-created_at")[:30]
+        payment_data = []
+        for p in payments:
+            receipt_hash = None
+            if hasattr(p, "receipt") and p.receipt:
+                receipt_hash = p.receipt.document_hash[:16] + "..." if p.receipt.document_hash else None
+            payment_data.append({
+                "id": str(p.id),
+                "amount": float(p.amount),
+                "status": p.status,
+                "loan_name": p.loan.name,
+                "paid_on": p.payment_date.strftime("%Y-%m-%d") if hasattr(p, "payment_date") and p.payment_date else p.created_at.strftime("%Y-%m-%d"),
+                "method": p.payment_method,
+                "reference": p.reference_number if hasattr(p, "reference_number") else "",
+                "receipt_hash": receipt_hash,
+            })
+
+        tickets = SupportTicket.objects.filter(user=user).order_by("-created_at")[:10]
+        ticket_data = [{
+            "id": str(t.id),
+            "subject": t.subject,
+            "priority": t.priority,
+            "status": t.status,
+            "created_at": t.created_at.strftime("%Y-%m-%d"),
+        } for t in tickets]
+
+        audits = AuditLog.objects.filter(user=user).order_by("-created_at")[:10]
+        audit_data = [{
+            "id": str(a.id),
+            "action": a.get_action_display(),
+            "target": a.target_resource,
+            "ip": a.ip_address or "—",
+            "time": a.created_at.strftime("%Y-%m-%d %H:%M"),
+        } for a in audits]
 
         total_debt = loans.aggregate(t=Sum("principal_amount"))["t"] or 0
         total_paid = Payment.objects.filter(loan__user=user, status="confirmed").aggregate(t=Sum("amount"))["t"] or 0
+
+        # Calculate live Debt Health & Risk Score
+        active_loans_count = loans.filter(status="active").count()
+        risk_score = min(active_loans_count * 20 + (35 if total_debt > 1000000 else 15), 99)
+        credit_score = max(850 - (risk_score * 3), 300)
 
         return Response({
             "id": str(user.id),
             "name": f"{user.first_name} {user.last_name}".strip() or user.email,
             "email": user.email,
-            "phone": user.phone_number,
-            "bio": user.bio,
+            "phone": user.phone_number or "Not provided",
+            "bio": user.bio or "No bio set",
             "is_active": user.is_active,
             "is_staff": user.is_staff,
             "is_superuser": user.is_superuser,
             "joined": user.created_at.strftime("%Y-%m-%d"),
-            "last_login": user.last_login.strftime("%Y-%m-%d %H:%M") if user.last_login else None,
+            "last_login": user.last_login.strftime("%Y-%m-%d %H:%M") if user.last_login else "Never",
             "total_loans": loans.count(),
+            "active_loans": active_loans_count,
             "total_debt": float(total_debt),
             "total_paid": float(total_paid),
+            "total_monthly_emi": total_monthly_emi,
+            "risk_score": risk_score,
+            "credit_score": credit_score,
             "loans": loan_data,
             "payments": payment_data,
+            "tickets": ticket_data,
+            "audit_logs": audit_data,
         })
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

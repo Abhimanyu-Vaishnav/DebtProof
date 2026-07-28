@@ -118,9 +118,12 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${STATUS_BADGE[status] || "bg-slate-500/15 text-slate-400 border-slate-500/30"}`}>{status}</span>;
 }
 
+import { useTheme } from "@/contexts/ThemeContext";
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function SuperAdminPortal() {
   const SUPERADMIN_KEY = "debtproof_superadmin_auth_token";
+  const { theme, setTheme } = useTheme();
 
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -1121,10 +1124,27 @@ export default function SuperAdminPortal() {
             </div>
           )}
 
-          {/* ══════════ TAB 13: SETTINGS ══════════ */}
-          {activeTab === "settings" && (
-            <div className="space-y-6 max-w-2xl">
-              <SectionHeader icon="⚙️" title="Platform Settings" sub="Feature flags, maintenance mode and admin credentials" />
+              {/* ── Theme Selector Section ── */}
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h3 className="text-xs font-black text-slate-300">🎨 Appearance & Theme Settings</h3>
+                <p className="text-[10px] text-slate-400">Choose display mode. <b>System Default</b> automatically matches your phone or PC device settings.</p>
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {[
+                    { id: "system", label: "💻 System Default", desc: "Syncs with Device OS" },
+                    { id: "dark", label: "🌙 Dark Mode", desc: "Sleek Dark Theme" },
+                    { id: "light", label: "☀️ Light Mode", desc: "Clean Bright Theme" },
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setTheme(t.id as any)}
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer ${theme === t.id ? "bg-rose-500/10 border-rose-500 text-white" : "bg-slate-800/40 border-slate-700/30 text-slate-400 hover:text-white"}`}
+                    >
+                      <p className="text-xs font-bold">{t.label}</p>
+                      <p className="text-[9px] opacity-75 mt-0.5">{t.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
                 <h3 className="text-xs font-black text-slate-300">🚦 Feature Flags</h3>
@@ -1308,12 +1328,21 @@ export default function SuperAdminPortal() {
               </div>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold uppercase">TOTAL DEBT</p><p className="text-sm font-black text-rose-400">{fmt(selectedUserDetail.total_debt)}</p></div>
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold uppercase">TOTAL PAID</p><p className="text-sm font-black text-emerald-400">{fmt(selectedUserDetail.total_paid)}</p></div>
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold uppercase">LOANS COUNT</p><p className="text-sm font-black text-white">{selectedUserDetail.total_loans}</p></div>
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold uppercase">STATUS</p><StatusBadge status={selectedUserDetail.is_active ? "Active" : "Suspended"} /></div>
+            {/* Quick Stats Grid - 6 KPI cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">TOTAL DEBT</p><p className="text-xs font-black text-rose-400 mt-0.5">{fmt(selectedUserDetail.total_debt)}</p></div>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">TOTAL PAID</p><p className="text-xs font-black text-emerald-400 mt-0.5">{fmt(selectedUserDetail.total_paid)}</p></div>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">MONTHLY EMI</p><p className="text-xs font-black text-amber-400 mt-0.5">{fmt((selectedUserDetail as any).total_monthly_emi ?? 0)}/mo</p></div>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">CREDIT SCORE</p><p className="text-xs font-black text-blue-400 mt-0.5">{(selectedUserDetail as any).credit_score ?? 750}</p></div>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">RISK SCORE</p><p className="text-xs font-black text-purple-400 mt-0.5">{(selectedUserDetail as any).risk_score ?? 15}/99</p></div>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[8px] text-slate-500 font-bold uppercase">STATUS</p><div className="mt-0.5"><StatusBadge status={selectedUserDetail.is_active ? "Active" : "Suspended"} /></div></div>
+            </div>
+
+            {/* Profile Info Details */}
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs flex flex-wrap justify-between gap-2">
+              <div><span className="text-slate-500 font-bold">Phone:</span> <span className="text-white font-mono">{selectedUserDetail.phone || "Not set"}</span></div>
+              <div><span className="text-slate-500 font-bold">Last Login:</span> <span className="text-white font-mono">{selectedUserDetail.last_login || "Never"}</span></div>
+              <div><span className="text-slate-500 font-bold">Bio/Notes:</span> <span className="text-slate-300">{selectedUserDetail.bio || "—"}</span></div>
             </div>
 
             {/* User Loans List */}
@@ -1324,8 +1353,11 @@ export default function SuperAdminPortal() {
                   {selectedUserDetail.loans.map((l: any) => (
                     <div key={l.id} className="flex justify-between items-center p-3.5 rounded-xl bg-slate-950 border border-slate-800">
                       <div>
-                        <p className="text-xs font-bold text-white">{l.name}</p>
-                        <p className="text-[10px] text-slate-400">{LOAN_TYPE_LABEL[l.loan_type] || l.loan_type} • Lender: {l.lender} • Created: {l.created_at}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-white">{l.name}</p>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">{LOAN_TYPE_LABEL[l.loan_type] || l.loan_type}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1">Lender: <b>{l.lender}</b> • Interest Rate: <b>{l.interest_rate}%</b> • Started: <b>{l.start_date || l.created_at}</b></p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-black text-rose-400">{fmt(l.principal)}</p>
@@ -1347,7 +1379,7 @@ export default function SuperAdminPortal() {
                     <div key={p.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
                       <div>
                         <p className="text-xs font-bold text-white">{p.loan_name}</p>
-                        <p className="text-[10px] text-slate-400">{p.paid_on} • Method: {p.method}</p>
+                        <p className="text-[10px] text-slate-400">{p.paid_on} • Method: <b>{p.method}</b> {p.receipt_hash && <span className="text-purple-400 font-mono"> • Receipt Hash: {p.receipt_hash}</span>}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-black text-emerald-400">{fmt(p.amount)}</p>
@@ -1358,6 +1390,40 @@ export default function SuperAdminPortal() {
                 </div>
               )}
             </div>
+
+            {/* Support Tickets & Audit Trail Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-xs font-black text-slate-300 mb-2">🎧 Support Tickets</h4>
+                {((selectedUserDetail as any).tickets && (selectedUserDetail as any).tickets.length > 0) ? (
+                  <div className="space-y-1.5">
+                    {(selectedUserDetail as any).tickets.map((t: any) => (
+                      <div key={t.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center text-[10px]">
+                        <div><p className="font-bold text-white">{t.subject}</p><p className="text-slate-500">{t.created_at}</p></div>
+                        <StatusBadge status={t.status} />
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="text-xs text-slate-500 italic">No tickets filed</p>}
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black text-slate-300 mb-2">📜 Activity Audit Trail</h4>
+                {((selectedUserDetail as any).audit_logs && (selectedUserDetail as any).audit_logs.length > 0) ? (
+                  <div className="space-y-1.5">
+                    {(selectedUserDetail as any).audit_logs.map((a: any) => (
+                      <div key={a.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] flex justify-between items-center">
+                        <div><p className="font-bold text-rose-400">{a.action}</p><p className="text-slate-500">{a.target || "System"}</p></div>
+                        <span className="text-slate-500 font-mono">{a.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="text-xs text-slate-500 italic">No activity logged</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
           </div>
         </div>
       )}

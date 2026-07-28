@@ -52,6 +52,8 @@ import { ServiceWorkerRegistrar } from "@/components/ui/ServiceWorkerRegistrar";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
+import { ThemeProvider } from "@/contexts/ThemeContext";
+
 export default function RootLayout({
   children,
 }: {
@@ -74,11 +76,13 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#0f172a" />
       </head>
       <body suppressHydrationWarning>
-        <CurrencyProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </CurrencyProvider>
+        <ThemeProvider>
+          <CurrencyProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </CurrencyProvider>
+        </ThemeProvider>
         <ServiceWorkerRegistrar />
         <Analytics mode="auto" />
         <SpeedInsights />
