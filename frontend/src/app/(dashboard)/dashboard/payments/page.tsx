@@ -15,6 +15,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { paymentsService } from "@/services/payments.service";
 import { formatCurrency } from "@/utils/formatters";
 import { SmartAutoPayEMISplitterStudio } from "@/components/payments/SmartAutoPayEMISplitterStudio";
+import { MonadSmartAutoEscrowStudio } from "@/components/payments/MonadSmartAutoEscrowStudio";
 import type { Payment } from "@/types";
 
 export default function PaymentsPage() {
@@ -79,6 +80,9 @@ export default function PaymentsPage() {
     <>
       <Topbar title="Payment History" subtitle={`${totalCount} total payment${totalCount !== 1 ? "s" : ""}`} />
       <main className="page-content space-y-6">
+        {/* Monad Smart Auto-Escrow Repayment Trigger Studio */}
+        <MonadSmartAutoEscrowStudio />
+
         {/* Dynamic Auto-Pay EMI Splitter Studio */}
         <SmartAutoPayEMISplitterStudio />
 
