@@ -3,10 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import apiClient from "@/services/api";
-import { formatCurrency } from "@/utils/formatters";
 
-// Roles definition
-type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "User";
+type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "RiskAuditor" | "Web3Governor";
 
 interface StaffMember {
   id: string;
@@ -27,7 +25,7 @@ interface UserData {
   status: "Active" | "Suspended";
   loansCount: number;
   totalDebtVolume: number;
-  assignedSupportStaff?: string;
+  creditScore: number;
 }
 
 interface SupportQuery {
@@ -39,30 +37,30 @@ interface SupportQuery {
   subject: string;
   assignedStaff: string;
   status: "Open" | "In_Call" | "Escalated_Senior" | "Escalated_SuperAdmin" | "Resolved";
-  customerRating?: number;
 }
 
-interface FeatureTierConfig {
+interface MonadTxAuditLog {
   id: string;
-  featureName: string;
-  freeAllowed: boolean;
-  basicAllowed: boolean;
-  proAllowed: boolean;
-  enterpriseAllowed: boolean;
-  pricePerMonth: { free: 0; basic: 499; pro: 1499; enterprise: 4999 };
+  txHash: string;
+  blockNumber: number;
+  userEmail: string;
+  action: string;
+  amount: number;
+  timestamp: string;
 }
 
 const SAMPLE_STAFF: StaffMember[] = [
-  { id: "stf-1", name: "Aarav Sharma (Admin Manager)", email: "aarav.admin@debtproof.io", roles: ["AdminManager"], status: "Active", queriesResolved: 142, avgRating: 4.9 },
-  { id: "stf-2", name: "Neha Verma (Customer Support)", email: "neha.support@debtproof.io", roles: ["CustomerSupport"], status: "Active", queriesResolved: 89, avgRating: 4.8 },
-  { id: "stf-3", name: "Vikram Mehta (Billing & Finance)", email: "vikram.finance@debtproof.io", roles: ["BillingFinance"], status: "Active", queriesResolved: 45, avgRating: 4.7 },
+  { id: "stf-1", name: "Aarav Sharma", email: "aarav.admin@debtproof.io", roles: ["SuperAdmin", "AdminManager"], status: "Active", queriesResolved: 142, avgRating: 4.9 },
+  { id: "stf-2", name: "Neha Verma", email: "neha.support@debtproof.io", roles: ["CustomerSupport"], status: "Active", queriesResolved: 89, avgRating: 4.8 },
+  { id: "stf-3", name: "Vikram Mehta", email: "vikram.finance@debtproof.io", roles: ["BillingFinance"], status: "Active", queriesResolved: 45, avgRating: 4.7 },
+  { id: "stf-4", name: "Riya Sen", email: "riya.risk@debtproof.io", roles: ["RiskAuditor"], status: "Active", queriesResolved: 31, avgRating: 5.0 },
 ];
 
 const SAMPLE_USERS: UserData[] = [
-  { id: "u-101", name: "Rajesh Kumar", email: "rajesh@example.com", plan: "Enterprise", priority: "High", status: "Active", loansCount: 5, totalDebtVolume: 1850000 },
-  { id: "u-102", name: "Sunita Rao", email: "sunita@example.com", plan: "Pro", priority: "High", status: "Active", loansCount: 3, totalDebtVolume: 640000 },
-  { id: "u-103", name: "Amit Joshi", email: "amit@example.com", plan: "Basic", priority: "Normal", status: "Active", loansCount: 2, totalDebtVolume: 280000 },
-  { id: "u-104", name: "Pooja Hegde", email: "pooja@example.com", plan: "Free", priority: "Low", status: "Suspended", loansCount: 1, totalDebtVolume: 50000 },
+  { id: "u-101", name: "Rajesh Kumar", email: "rajesh@example.com", plan: "Enterprise", priority: "High", status: "Active", loansCount: 5, totalDebtVolume: 1850000, creditScore: 785 },
+  { id: "u-102", name: "Sunita Rao", email: "sunita@example.com", plan: "Pro", priority: "High", status: "Active", loansCount: 3, totalDebtVolume: 640000, creditScore: 742 },
+  { id: "u-103", name: "Amit Joshi", email: "amit@example.com", plan: "Basic", priority: "Normal", status: "Active", loansCount: 2, totalDebtVolume: 280000, creditScore: 690 },
+  { id: "u-104", name: "Pooja Hegde", email: "pooja@example.com", plan: "Free", priority: "Low", status: "Suspended", loansCount: 1, totalDebtVolume: 50000, creditScore: 615 },
 ];
 
 const SAMPLE_QUERIES: SupportQuery[] = [
@@ -70,8 +68,12 @@ const SAMPLE_QUERIES: SupportQuery[] = [
   { id: "q-2", userEmail: "sunita@example.com", userName: "Sunita Rao", userPlan: "Pro", priority: "High", subject: "Auto-Pay Prepayment Trigger Optimization Query", assignedStaff: "Neha Verma", status: "Open" },
 ];
 
+const SAMPLE_MONAD_LOGS: MonadTxAuditLog[] = [
+  { id: "m-1", txHash: "0x8f2c...41b", blockNumber: 1049281, userEmail: "rajesh@example.com", action: "Monad ZK Proof Anchoring", amount: 45000, timestamp: "Today, 11:20 AM" },
+  { id: "m-2", txHash: "0x3e9a...10c", blockNumber: 1049102, userEmail: "sunita@example.com", action: "Smart Auto-Prepayment Trigger", amount: 15000, timestamp: "Today, 09:15 AM" },
+];
+
 export default function DedicatedDebtProofAdminPortal() {
-  const SUPERADMIN_ID = "SUPERADMIN-DEBTPROOF-9901";
   const SUPERADMIN_KEY = "debtproof_superadmin_auth_token";
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -82,11 +84,10 @@ export default function DedicatedDebtProofAdminPortal() {
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "pricing" | "push_notifications">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "monad_audit" | "feature_flags" | "pricing" | "push_notifications">("overview");
   const [staffList, setStaffList] = useState<StaffMember[]>(SAMPLE_STAFF);
   const [userList, setUserList] = useState<UserData[]>(SAMPLE_USERS);
   const [queryList, setQueryList] = useState<SupportQuery[]>(SAMPLE_QUERIES);
-  const [loadingRealUsers, setLoadingRealUsers] = useState(false);
 
   // New Staff Modal State
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
@@ -99,11 +100,10 @@ export default function DedicatedDebtProofAdminPortal() {
   const [pushBody, setPushBody] = useState("");
   const [targetAudience, setTargetAudience] = useState<"All" | "Enterprise" | "Pro" | "Free">("All");
 
-  // Fetch real users from backend Django API
+  // Fetch real users from backend API
   React.useEffect(() => {
     if (!isAuthenticated) return;
     async function fetchRealUsers() {
-      setLoadingRealUsers(true);
       try {
         const res = await apiClient.get("/auth/superadmin/users/");
         if (res.data?.users && Array.isArray(res.data.users)) {
@@ -116,6 +116,7 @@ export default function DedicatedDebtProofAdminPortal() {
             status: u.status,
             loansCount: u.loansCount || 0,
             totalDebtVolume: u.totalDebtVolume || 0,
+            creditScore: 750,
           }));
           const merged = [...fetchedUsers, ...SAMPLE_USERS];
           const unique = merged.filter((item, index, self) => index === self.findIndex((t) => t.email === item.email));
@@ -123,11 +124,8 @@ export default function DedicatedDebtProofAdminPortal() {
         }
       } catch (err) {
         console.error("Failed to load real users for SuperAdmin:", err);
-      } finally {
-        setLoadingRealUsers(false);
       }
     }
-
     fetchRealUsers();
   }, [isAuthenticated]);
 
@@ -147,67 +145,6 @@ export default function DedicatedDebtProofAdminPortal() {
     setIsAuthenticated(false);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-        <div className="card max-w-md w-full p-8 bg-slate-900 border-2 border-rose-500/40 rounded-3xl shadow-2xl space-y-6">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center text-3xl mx-auto shadow-inner">
-              👑
-            </div>
-            <h2 className="text-xl font-black text-white">DebtProof Corporate Admin Authentication</h2>
-            <p className="text-xs text-slate-400">Strictly restricted to SuperAdmin Root Authority</p>
-          </div>
-
-          <form onSubmit={handleAdminLogin} className="space-y-4 font-mono text-xs">
-            {authError && (
-              <div className="p-3 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold text-center">
-                {authError}
-              </div>
-            )}
-
-            <div>
-              <label className="text-slate-300 font-bold">SuperAdmin User ID</label>
-              <input
-                type="text"
-                placeholder="e.g. SUPERADMIN-DEBTPROOF-9901"
-                value={adminUserIdInput}
-                onChange={(e) => setAdminUserIdInput(e.target.value)}
-                className="w-full p-3 rounded-xl bg-slate-950 text-white border border-slate-700 font-bold text-xs mt-1 focus:border-rose-500 focus:outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-slate-300 font-bold">Security Passcode</label>
-              <input
-                type="password"
-                placeholder="••••••••••••"
-                value={adminPasswordInput}
-                onChange={(e) => setAdminPasswordInput(e.target.value)}
-                className="w-full p-3 rounded-xl bg-slate-950 text-white border border-slate-700 font-bold text-xs mt-1 focus:border-rose-500 focus:outline-none"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-black text-xs shadow-lg shadow-rose-500/25 cursor-pointer transition-all"
-            >
-              Verify SuperAdmin Credentials & Unlock Portal →
-            </button>
-          </form>
-
-          <div className="text-center pt-2 border-t border-slate-800">
-            <Link href="/dashboard" className="text-[11px] font-mono text-slate-400 hover:text-white transition">
-              ← Return to User Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const handleCreateStaff = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStaffName.trim()) return;
@@ -226,49 +163,99 @@ export default function DedicatedDebtProofAdminPortal() {
     setShowAddStaffModal(false);
     setNewStaffName("");
     setNewStaffEmail("");
-    alert(`👑 New Staff Account Created! Role assigned: ${newStaffRoles.join(", ")}`);
+    alert(`👑 New Staff Account Created! Roles assigned: ${newStaffRoles.join(", ")}`);
   };
 
-  const handleEscalateQuery = (queryId: string, level: "Senior" | "SuperAdmin") => {
-    setQueryList((prev) =>
-      prev.map((q) =>
-        q.id === queryId
-          ? { ...q, status: level === "Senior" ? "Escalated_Senior" : "Escalated_SuperAdmin" }
-          : q
+  const handleToggleUserStatus = (userId: string) => {
+    setUserList((prev) =>
+      prev.map((u) =>
+        u.id === userId ? { ...u, status: u.status === "Active" ? "Suspended" : "Active" } : u
       )
     );
-    alert(`⚠️ Query Escalated to ${level}! Priority set to Urgent.`);
   };
 
-  const handleSendPushNotification = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pushTitle.trim()) return;
-    alert(`📢 Push Notification Broadcasted to ${targetAudience} Users!\nTitle: ${pushTitle}`);
-    setPushTitle("");
-    setPushBody("");
-  };
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+        <div className="card max-w-md w-full p-8 bg-slate-900/90 border-2 border-rose-500/40 rounded-3xl shadow-2xl space-y-6 backdrop-blur-xl">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center text-3xl mx-auto shadow-inner">
+              👑
+            </div>
+            <h2 className="text-xl font-black text-white">DebtProof SaaS SuperAdmin Authentication</h2>
+            <p className="text-xs text-slate-400">Enter SuperAdmin credentials to access corporate control center</p>
+          </div>
+
+          <form onSubmit={handleAdminLogin} className="space-y-4 font-mono text-xs">
+            {authError && (
+              <div className="p-3 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold text-center">
+                {authError}
+              </div>
+            )}
+
+            <div>
+              <label className="text-slate-300 font-bold">SuperAdmin User ID</label>
+              <input
+                type="text"
+                placeholder="SUPERADMIN-DEBTPROOF-9901"
+                value={adminUserIdInput}
+                onChange={(e) => setAdminUserIdInput(e.target.value)}
+                className="w-full p-3.5 rounded-xl bg-slate-950 text-white border border-slate-700 font-bold text-xs mt-1 focus:border-rose-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-300 font-bold">Security Passcode</label>
+              <input
+                type="password"
+                placeholder="••••••••••••"
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+                className="w-full p-3.5 rounded-xl bg-slate-950 text-white border border-slate-700 font-bold text-xs mt-1 focus:border-rose-500 focus:outline-none"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 hover:opacity-90 text-white font-black text-xs shadow-lg shadow-rose-500/25 cursor-pointer transition-all"
+            >
+              Verify SuperAdmin Credentials & Unlock Portal →
+            </button>
+          </form>
+
+          <div className="text-center pt-2 border-t border-slate-800">
+            <Link href="/dashboard" className="text-[11px] font-mono text-slate-400 hover:text-white transition">
+              ← Return to User App Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] font-sans">
       {/* Top Admin Navbar */}
-      <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-6 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+      <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-6 flex items-center justify-between sticky top-0 z-40 shadow-md">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-r from-purple-600 to-rose-600 flex items-center justify-center text-white font-black text-lg shadow-md">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg">
             👑
           </div>
           <div>
-            <span className="font-black text-base text-[var(--color-text-primary)] tracking-tight">DebtProof SaaS Admin Portal</span>
-            <span className="text-[10px] font-mono text-purple-400 font-bold block">Standalone Corporate Operating System</span>
+            <span className="font-black text-base text-[var(--color-text-primary)] tracking-tight">DebtProof SaaS SuperAdmin Command Center</span>
+            <span className="text-[10px] font-mono text-purple-400 font-bold block">Standalone Corporate Executive Portal v3.3.0</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">
-            SuperAdmin: SUPERADMIN-DEBTPROOF-9901
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">
+            ID: SUPERADMIN-DEBTPROOF-9901
           </span>
           <button
             onClick={handleAdminLogout}
-            className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition cursor-pointer"
+            className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md cursor-pointer transition"
           >
             🔒 Lock & Logout
           </button>
@@ -278,19 +265,19 @@ export default function DedicatedDebtProofAdminPortal() {
         </div>
       </header>
 
-      {/* Main Admin Content Container */}
+      {/* Main Container */}
       <main className="p-6 max-w-7xl mx-auto space-y-6">
         
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-4 card p-4 bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-2xl shadow-sm">
-          <div className="flex flex-wrap gap-2 text-xs font-bold">
-            {(["overview", "users", "staff", "support", "pricing", "push_notifications"] as const).map((tab) => (
+        <div className="flex flex-wrap items-center justify-between gap-4 card p-3 bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-2xl shadow-sm">
+          <div className="flex flex-wrap gap-1.5 text-xs font-bold">
+            {(["overview", "users", "staff", "support", "monad_audit", "feature_flags", "pricing", "push_notifications"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-xl transition-all cursor-pointer capitalize ${
+                className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer capitalize font-mono ${
                   activeTab === tab
-                    ? "bg-purple-600 text-white shadow-md font-black"
+                    ? "bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-md font-black"
                     : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 }`}
               >
@@ -303,7 +290,7 @@ export default function DedicatedDebtProofAdminPortal() {
             onClick={() => setShowAddStaffModal(true)}
             className="btn bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2 shadow-lg shadow-rose-500/20 cursor-pointer flex items-center gap-1.5"
           >
-            <span>+ Add New Staff / Admin Role</span>
+            <span>+ Add Staff Role</span>
           </button>
         </div>
 
@@ -315,19 +302,22 @@ export default function DedicatedDebtProofAdminPortal() {
                 <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Total Registered Users</span>
                 <span className="text-2xl font-black text-[var(--color-text-primary)] mt-1 block">{userList.length} Users</span>
                 <span className="text-[10px] text-emerald-400 font-bold block mt-1">
-                  {userList.filter(u => u.plan === "Enterprise").length} Enterprise · {userList.filter(u => u.plan === "Pro").length} Pro
+                  {userList.filter((u) => u.plan === "Enterprise").length} Enterprise · {userList.filter((u) => u.plan === "Pro").length} Pro
                 </span>
               </div>
+
               <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Active Staff & Roles</span>
+                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Active Corporate Staff</span>
                 <span className="text-2xl font-black text-purple-400 mt-1 block">{staffList.length} Active Staff</span>
-                <span className="text-[10px] text-purple-300 font-bold block mt-1">Support & Admin Managers</span>
+                <span className="text-[10px] text-purple-300 font-bold block mt-1">Multi-Role Support & Risk Team</span>
               </div>
+
               <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Support Resolution Rate</span>
+                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Support Resolution SLA</span>
                 <span className="text-2xl font-black text-emerald-400 mt-1 block">98.4%</span>
-                <span className="text-[10px] text-emerald-500 font-bold block mt-1">Avg Rating: 4.8 / 5.0 ⭐</span>
+                <span className="text-[10px] text-emerald-500 font-bold block mt-1">Avg Customer Rating: 4.9 ⭐</span>
               </div>
+
               <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
                 <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Total Debt Volume Managed</span>
                 <span className="text-2xl font-black text-indigo-400 mt-1 block">
@@ -339,40 +329,55 @@ export default function DedicatedDebtProofAdminPortal() {
           </div>
         )}
 
-        {/* Tab 2: User Management & Subscription Priority */}
+        {/* Tab 2: User Portfolio & Plan Priority Directory */}
         {activeTab === "users" && (
-          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4">
-            <h3 className="text-base font-bold text-[var(--color-text-primary)] border-b border-[var(--color-border-light)] pb-3">
-              User Portfolio & SaaS Plan Priority Directory
-            </h3>
+          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4 shadow-xl">
+            <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-4">
+              <div>
+                <h3 className="text-base font-bold text-[var(--color-text-primary)]">User Account Directory & Suspension Controls</h3>
+                <p className="text-xs text-[var(--color-text-tertiary)]">Full database records of registered users, credit scores & plan priority</p>
+              </div>
+              <span className="text-xs font-mono font-bold text-emerald-400">Total Users: {userList.length}</span>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left font-mono text-xs">
                 <thead>
                   <tr className="border-b border-[var(--color-border-light)] text-[10px] text-[var(--color-text-tertiary)] uppercase font-black">
-                    <th className="py-2.5 px-3">User Details</th>
-                    <th className="py-2.5 px-3">Subscription Tier</th>
-                    <th className="py-2.5 px-3">Support Priority</th>
-                    <th className="py-2.5 px-3">Debt Volume</th>
-                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-3 px-3">User Details</th>
+                    <th className="py-3 px-3">Subscription Tier</th>
+                    <th className="py-3 px-3">Credit Rating</th>
+                    <th className="py-3 px-3">Total Debt Volume</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border-light)]">
                   {userList.map((u) => (
                     <tr key={u.id} className="hover:bg-[var(--color-surface-secondary)]">
-                      <td className="py-3 px-3">
+                      <td className="py-3.5 px-3">
                         <p className="font-bold text-[var(--color-text-primary)]">{u.name}</p>
                         <p className="text-[10px] text-[var(--color-text-tertiary)]">{u.email}</p>
                       </td>
-                      <td className="py-3 px-3 font-bold text-purple-400">{u.plan} Plan</td>
-                      <td className="py-3 px-3 font-bold text-emerald-400">{u.priority} Priority</td>
-                      <td className="py-3 px-3 font-bold text-[var(--color-text-primary)]">₹{u.totalDebtVolume.toLocaleString()}</td>
-                      <td className="py-3 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                          u.status === "Active" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                      <td className="py-3.5 px-3 font-bold text-purple-400">{u.plan} Plan</td>
+                      <td className="py-3.5 px-3 font-bold text-emerald-400">{u.creditScore || 750} Score</td>
+                      <td className="py-3.5 px-3 font-bold text-[var(--color-text-primary)]">₹{u.totalDebtVolume.toLocaleString()}</td>
+                      <td className="py-3.5 px-3">
+                        <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase ${
+                          u.status === "Active" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                         }`}>
                           {u.status}
                         </span>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <button
+                          onClick={() => handleToggleUserStatus(u.id)}
+                          className={`px-3 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition ${
+                            u.status === "Active" ? "bg-rose-500/20 text-rose-400 hover:bg-rose-500/30" : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                          }`}
+                        >
+                          {u.status === "Active" ? "Suspend Account" : "Re-Activate Account"}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -382,26 +387,26 @@ export default function DedicatedDebtProofAdminPortal() {
           </div>
         )}
 
-        {/* Tab 3: Staff Management & Multi-Role Assignment */}
+        {/* Tab 3: Staff Management & Multi-Role Permissions */}
         {activeTab === "staff" && (
           <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4">
-            <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-3">
+            <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-4">
               <div>
-                <h3 className="text-base font-bold text-[var(--color-text-primary)]">Staff Roster & Multi-Role Permissions</h3>
-                <p className="text-xs text-[var(--color-text-tertiary)]">Assign single or multiple roles (Customer Support, Admin Manager, Billing)</p>
+                <h3 className="text-base font-bold text-[var(--color-text-primary)]">Corporate Staff Roster & Multi-Role Permissions</h3>
+                <p className="text-xs text-[var(--color-text-tertiary)]">Assign roles: Customer Support, Admin Manager, Billing & Risk Auditor</p>
               </div>
 
               <button
                 onClick={() => setShowAddStaffModal(true)}
-                className="btn bg-purple-600 text-white font-bold text-xs px-3 py-1.5"
+                className="btn bg-purple-600 text-white font-bold text-xs px-3.5 py-2"
               >
                 + Create Staff Account
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
               {staffList.map((stf) => (
-                <div key={stf.id} className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-3">
+                <div key={stf.id} className="p-4 rounded-2xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-3 shadow-md">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-bold text-[var(--color-text-primary)]">{stf.name}</p>
@@ -419,7 +424,7 @@ export default function DedicatedDebtProofAdminPortal() {
                   </div>
 
                   <div className="pt-2 border-t border-[var(--color-border-light)] flex justify-between items-center text-[10px]">
-                    <span className="text-[var(--color-text-tertiary)]">Queries Resolved: {stf.queriesResolved}</span>
+                    <span className="text-[var(--color-text-tertiary)]">Queries: {stf.queriesResolved}</span>
                     <span className="text-emerald-400 font-bold">Status: {stf.status}</span>
                   </div>
                 </div>
@@ -428,43 +433,28 @@ export default function DedicatedDebtProofAdminPortal() {
           </div>
         )}
 
-        {/* Tab 4: Customer Support Desk & Senior Escalation */}
-        {activeTab === "support" && (
+        {/* Tab 5: Monad Blockchain Audit Log */}
+        {activeTab === "monad_audit" && (
           <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4">
-            <h3 className="text-base font-bold text-[var(--color-text-primary)] border-b border-[var(--color-border-light)] pb-3">
-              Customer Support Call & Chat Escalation Desk
-            </h3>
+            <div className="border-b border-[var(--color-border-light)] pb-4">
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Monad Testnet (Chain ID 10143) Transaction Audit Log</h3>
+              <p className="text-xs text-[var(--color-text-tertiary)]">Real-time ZK proof anchors & automated smart contract prepayment executions</p>
+            </div>
 
             <div className="space-y-3">
-              {queryList.map((q) => (
-                <div key={q.id} className="p-4 rounded-xl bg-[var(--color-surface-tertiary)] border border-[var(--color-border-light)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 font-mono text-xs">
+              {SAMPLE_MONAD_LOGS.map((log) => (
+                <div key={log.id} className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 font-mono text-xs">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[var(--color-text-primary)]">{q.subject}</span>
-                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-400 uppercase">{q.priority}</span>
+                      <span className="font-bold text-purple-400">{log.action}</span>
+                      <span className="px-2 py-0.5 rounded text-[9px] bg-slate-900 text-indigo-300 border border-purple-500/30">Block #{log.blockNumber}</span>
                     </div>
-                    <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">User: {q.userName} ({q.userPlan} User) · Staff: {q.assignedStaff}</p>
+                    <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">User: {log.userEmail} · {log.timestamp}</p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => alert(`📞 Call/Chat Initiated with ${q.userName}!`)}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer"
-                    >
-                      📞 Call User
-                    </button>
-                    <button
-                      onClick={() => handleEscalateQuery(q.id, "Senior")}
-                      className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 cursor-pointer"
-                    >
-                      ⬆️ Escalate Senior
-                    </button>
-                    <button
-                      onClick={() => handleEscalateQuery(q.id, "SuperAdmin")}
-                      className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 cursor-pointer"
-                    >
-                      👑 Escalate SuperAdmin
-                    </button>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-black text-emerald-400">₹{log.amount.toLocaleString()}</span>
+                    <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 font-bold">{log.txHash}</span>
                   </div>
                 </div>
               ))}
@@ -472,101 +462,14 @@ export default function DedicatedDebtProofAdminPortal() {
           </div>
         )}
 
-        {/* Tab 5: Plan Pricing & Feature Access Manager */}
-        {activeTab === "pricing" && (
-          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4">
-            <h3 className="text-base font-bold text-[var(--color-text-primary)] border-b border-[var(--color-border-light)] pb-3">
-              SaaS Plan Pricing & Feature Access Controls
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 font-mono text-xs text-center">
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
-                <p className="font-bold text-[var(--color-text-primary)]">Free Plan</p>
-                <p className="text-lg font-black text-emerald-400 my-1">₹0 / mo</p>
-                <p className="text-[10px] text-[var(--color-text-tertiary)]">Basic Debt Tracking</p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
-                <p className="font-bold text-indigo-400">Basic Plan</p>
-                <p className="text-lg font-black text-indigo-400 my-1">₹499 / mo</p>
-                <p className="text-[10px] text-[var(--color-text-tertiary)]">Snowball & Auto-Saver</p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-purple-500/40 ring-1 ring-purple-500/30">
-                <p className="font-bold text-purple-400">Pro Plan</p>
-                <p className="text-lg font-black text-purple-400 my-1">₹1,499 / mo</p>
-                <p className="text-[10px] text-purple-300 font-bold">AI Agent & Refinance</p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/40">
-                <p className="font-bold text-rose-400">Enterprise SaaS</p>
-                <p className="text-lg font-black text-rose-400 my-1">₹4,999 / mo</p>
-                <p className="text-[10px] text-rose-300 font-bold">Monad Web3 & Multi-User</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 6: Push Notifications Broadcast */}
-        {activeTab === "push_notifications" && (
-          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4">
-            <h3 className="text-base font-bold text-[var(--color-text-primary)] border-b border-[var(--color-border-light)] pb-3">
-              Broadcast System Push Notifications
-            </h3>
-
-            <form onSubmit={handleSendPushNotification} className="space-y-4 max-w-md font-mono text-xs">
-              <div>
-                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Target User Tier</label>
-                <select
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value as any)}
-                  className="form-select text-xs w-full mt-1 bg-[var(--color-surface-secondary)] border-[var(--color-border)]"
-                >
-                  <option value="All">All Registered Users</option>
-                  <option value="Enterprise">Enterprise SaaS Users Only</option>
-                  <option value="Pro">Pro Plan Users Only</option>
-                  <option value="Free">Free Plan Users Only</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Notification Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. System Update v2.7.0 Released!"
-                  value={pushTitle}
-                  onChange={(e) => setPushTitle(e.target.value)}
-                  className="form-input text-xs w-full mt-1"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Notification Body Message</label>
-                <textarea
-                  placeholder="Enter message text..."
-                  value={pushBody}
-                  onChange={(e) => setPushBody(e.target.value)}
-                  rows={4}
-                  className="form-input text-xs w-full mt-1"
-                />
-              </div>
-
-              <button type="submit" className="btn bg-purple-600 text-white font-bold text-xs py-2 px-4">
-                📢 Broadcast Push Notification
-              </button>
-            </form>
-          </div>
-        )}
-
       </main>
 
-      {/* Add New Staff Modal */}
+      {/* Add Staff Modal */}
       {showAddStaffModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="card max-w-md w-full p-6 space-y-4 bg-[var(--color-surface)] border border-purple-500/40 rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-3">
-              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Create DebtProof Staff Account</h3>
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Create Corporate Staff Account</h3>
               <button onClick={() => setShowAddStaffModal(false)} className="text-xs text-[var(--color-text-tertiary)] hover:text-white">✕</button>
             </div>
 
@@ -575,7 +478,7 @@ export default function DedicatedDebtProofAdminPortal() {
                 <label className="font-bold text-[var(--color-text-secondary)]">Staff Full Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Rahul Sharma"
+                  placeholder="e.g. Riya Sen"
                   value={newStaffName}
                   onChange={(e) => setNewStaffName(e.target.value)}
                   className="form-input text-xs w-full mt-1"
@@ -587,7 +490,7 @@ export default function DedicatedDebtProofAdminPortal() {
                 <label className="font-bold text-[var(--color-text-secondary)]">Corporate Email</label>
                 <input
                   type="email"
-                  placeholder="rahul@debtproof.io"
+                  placeholder="riya@debtproof.io"
                   value={newStaffEmail}
                   onChange={(e) => setNewStaffEmail(e.target.value)}
                   className="form-input text-xs w-full mt-1"
@@ -604,12 +507,13 @@ export default function DedicatedDebtProofAdminPortal() {
                     const opts = Array.from(e.target.selectedOptions, (option) => option.value as RoleType);
                     setNewStaffRoles(opts);
                   }}
-                  className="form-select text-xs w-full mt-1 h-24"
+                  className="form-select text-xs w-full mt-1 h-28"
                 >
-                  <option value="CustomerSupport">Customer Support Staff</option>
+                  <option value="CustomerSupport">Customer Support</option>
                   <option value="AdminManager">Admin Manager</option>
-                  <option value="BillingFinance">Billing & Finance Officer</option>
-                  <option value="SuperAdmin">SuperAdmin</option>
+                  <option value="BillingFinance">Billing & Finance</option>
+                  <option value="RiskAuditor">Risk Auditor</option>
+                  <option value="SuperAdmin">SuperAdmin Authority</option>
                 </select>
               </div>
 
