@@ -97,6 +97,9 @@ export default function RedesignedSuperAdminPortal() {
   // Push Notification Broadcast State
   const [pushTitle, setPushTitle] = useState("");
   const [pushBody, setPushBody] = useState("");
+  const [pushImageUrl, setPushImageUrl] = useState("");
+  const [pushActionText, setPushActionText] = useState("");
+  const [pushActionUrl, setPushActionUrl] = useState("");
   const [targetAudience, setTargetAudience] = useState<"All" | "Enterprise" | "Pro" | "Free">("All");
 
   useEffect(() => {
@@ -200,10 +203,20 @@ export default function RedesignedSuperAdminPortal() {
     if (!pushTitle.trim()) return;
 
     const formattedTitle = pushTitle.startsWith("📢") ? pushTitle : `📢 ${pushTitle}`;
+    
+    // Build Rich HTML Body payload if image or button links are attached
+    let richBodyHtml = pushBody || "System announcement broadcasted from SuperAdmin Portal.";
+    if (pushImageUrl.trim()) {
+      richBodyHtml += `<br/><img src="${pushImageUrl.trim()}" alt="Announcement Image" class="my-2 rounded-lg max-h-48 object-cover w-full border border-slate-700" />`;
+    }
+    if (pushActionText.trim() && pushActionUrl.trim()) {
+      richBodyHtml += `<br/><a href="${pushActionUrl.trim()}" target="_blank" rel="noopener noreferrer" class="inline-block mt-2 px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs no-underline shadow-md">${pushActionText.trim()} →</a>`;
+    }
+
     const newNotifObj = {
       id: `notif-superadmin-${Date.now()}`,
       title: formattedTitle,
-      body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+      body: richBodyHtml,
       notif_type: "info",
       is_read: false,
       created_at: new Date().toISOString(),
@@ -212,7 +225,7 @@ export default function RedesignedSuperAdminPortal() {
     try {
       await apiClient.post("/notifications/broadcast/", {
         title: formattedTitle,
-        body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+        body: richBodyHtml,
         target_audience: targetAudience,
       });
     } catch {
@@ -222,7 +235,7 @@ export default function RedesignedSuperAdminPortal() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: formattedTitle,
-            body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
+            body: richBodyHtml,
             target_audience: targetAudience,
           }),
         });
@@ -856,15 +869,60 @@ export default function RedesignedSuperAdminPortal() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Message Body</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-300">Message Body (Supports HTML & Formatting)</label>
+                    <div className="flex gap-1.5 text-[10px]">
+                      <button type="button" onClick={() => setPushBody(prev => prev + "<b>Bold Text</b>")} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white font-bold">B</button>
+                      <button type="button" onClick={() => setPushBody(prev => prev + "<i>Italic Text</i>")} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white italic">I</button>
+                      <button type="button" onClick={() => setPushBody(prev => prev + "<u>Underline</u>")} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white underline">U</button>
+                      <button type="button" onClick={() => setPushBody(prev => prev + '<a href="https://debtproof.io" target="_blank" class="text-rose-400 underline">Link</a>')} className="px-2 py-0.5 rounded bg-slate-800 text-rose-400 hover:underline">🔗 Link</button>
+                    </div>
+                  </div>
                   <textarea
-                    placeholder="Enter broadcast message details..."
+                    placeholder="Enter message details... (HTML supported: <b>, <i>, <u>, <a>)"
                     value={pushBody}
                     onChange={(e) => setPushBody(e.target.value)}
                     rows={4}
-                    className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
+                    className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none font-mono"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300">Image URL (Optional Attachment)</label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/banner.png"
+                      value={pushImageUrl}
+                      onChange={(e) => setPushImageUrl(e.target.value)}
+                      className="w-full mt-1.5 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300">Action Button Text</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. View Offer"
+                      value={pushActionText}
+                      onChange={(e) => setPushActionText(e.target.value)}
+                      className="w-full mt-1.5 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {pushActionText.trim() && (
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300">Action Button Link URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://debtproof.io/offers"
+                      value={pushActionUrl}
+                      onChange={(e) => setPushActionUrl(e.target.value)}
+                      className="w-full mt-1.5 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                )}
 
                 <button
                   type="submit"

@@ -85,7 +85,8 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
       const unique = combined.filter((item, index, self) => index === self.findIndex((t) => t.id === item.id || t.title === item.title));
 
       setNotifications(unique);
-      setUnreadCount(count + localBroadcasts.filter(n => !n.is_read).length);
+      const actualUnread = unique.filter((n) => !n.is_read).length;
+      setUnreadCount(actualUnread);
     } catch {
       // Silent fail — don't break UI if notification API is unavailable
     }
