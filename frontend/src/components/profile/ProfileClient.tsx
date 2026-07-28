@@ -68,12 +68,12 @@ export function ProfileClient() {
         }
       } else {
         const defaultDemo: User = {
-          id: "usr-1",
-          email: "abhimanyu@debtproof.io",
-          first_name: "Abhimanyu",
-          last_name: "Vaishnav",
-          full_name: "Abhimanyu Vaishnav",
-          phone_number: "+91 98765 43210",
+          id: `usr-${Date.now()}`,
+          email: "user@debtproof.io",
+          first_name: "Guest",
+          last_name: "User",
+          full_name: "Guest User",
+          phone_number: "",
           avatar: null,
           avatar_url: null,
           bio: "Managing personal investments, mutual funds, and loan portfolios.",

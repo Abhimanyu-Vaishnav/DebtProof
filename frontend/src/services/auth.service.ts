@@ -86,14 +86,16 @@ export const authService = {
       tokenStorage.set(data.access, data.refresh);
       return data;
     } catch (err: any) {
-      // If endpoint fails or API returns error, use fallback local demo session
-      const existing = getLocalDemoUser();
-      const user: User = existing || {
-        id: "usr-1",
-        email: credentials.email || "abhimanyu@debtproof.io",
-        first_name: "Abhimanyu",
-        last_name: "Vaishnav",
-        full_name: "Abhimanyu Vaishnav",
+      // If endpoint fails or API returns error, use fallback local demo session dynamically based on input email
+      const nameFromEmail = credentials.email ? credentials.email.split("@")[0] : "User";
+      const capitalizedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+      
+      const user: User = {
+        id: `usr-${Date.now()}`,
+        email: credentials.email || "user@debtproof.io",
+        first_name: capitalizedName,
+        last_name: "",
+        full_name: capitalizedName,
         phone_number: "+91 98765 43210",
         avatar: null,
         avatar_url: null,
@@ -145,11 +147,11 @@ export const authService = {
 
       const defaultUser: User = {
         id: `usr-${Date.now()}`,
-        email: "abhi@gmail.com",
-        first_name: "Abhimanyu",
-        last_name: "Vaishnav",
-        full_name: "Abhimanyu Vaishnav",
-        phone_number: "+91 98765 43210",
+        email: "user@debtproof.io",
+        first_name: "Guest",
+        last_name: "User",
+        full_name: "Guest User",
+        phone_number: "",
         avatar: null,
         avatar_url: null,
         bio: "Managing personal investments, mutual funds, and loan portfolios.",
