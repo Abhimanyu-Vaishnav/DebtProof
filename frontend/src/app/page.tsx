@@ -221,8 +221,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PROBLEM & SOLUTION SHOWCASE ── */}
-      <section className="py-20 px-4 bg-slate-950/60 border-y border-slate-900">
+      {/* ── PROBLEM & HOW IT WORKS SHOWCASE ── */}
+      <section id="how-it-works" className="py-20 px-4 bg-slate-950/60 border-y border-slate-900">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30 text-xs font-bold uppercase tracking-wider">
@@ -248,7 +248,7 @@ export default function LandingPage() {
             </ul>
           </div>
 
-          <div className="p-8 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 space-y-6 shadow-2xl relative">
+          <div id="security" className="p-8 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 space-y-6 shadow-2xl relative">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
               🛡️ THE DEBTPROOF SOLUTION
             </div>
@@ -266,7 +266,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CORE FEATURES SHOWCASE GRID ── */}
-      <section className="py-24 px-4 max-w-6xl mx-auto space-y-16">
+      <section id="features" className="py-24 px-4 max-w-6xl mx-auto space-y-16">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <span className="text-xs font-black uppercase tracking-widest text-rose-400">POWERFUL FINTECH & WEB3 FEATURES</span>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">Everything You Need To Master Your Debt</h2>
