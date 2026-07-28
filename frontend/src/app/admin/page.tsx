@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import apiClient from "@/services/api";
 
@@ -26,6 +26,7 @@ interface UserData {
   loansCount: number;
   totalDebtVolume: number;
   creditScore: number;
+  joinedDate?: string;
 }
 
 interface SupportQuery {
@@ -73,7 +74,7 @@ const SAMPLE_MONAD_LOGS: MonadTxAuditLog[] = [
   { id: "m-2", txHash: "0x3e9a...10c", blockNumber: 1049102, userEmail: "sunita@example.com", action: "Smart Auto-Prepayment Trigger", amount: 15000, timestamp: "Today, 09:15 AM" },
 ];
 
-export default function DedicatedDebtProofAdminPortal() {
+export default function RedesignedSuperAdminPortal() {
   const SUPERADMIN_KEY = "debtproof_superadmin_auth_token";
 
   const [isMounted, setIsMounted] = useState(false);
@@ -98,7 +99,7 @@ export default function DedicatedDebtProofAdminPortal() {
   const [pushBody, setPushBody] = useState("");
   const [targetAudience, setTargetAudience] = useState<"All" | "Enterprise" | "Pro" | "Free">("All");
 
-  React.useEffect(() => {
+  useEffect(() => {
     setIsMounted(true);
     if (typeof window !== "undefined" && localStorage.getItem(SUPERADMIN_KEY) === "granted") {
       setIsAuthenticated(true);
@@ -106,7 +107,7 @@ export default function DedicatedDebtProofAdminPortal() {
   }, []);
 
   // Fetch real users directly from Django database API
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isAuthenticated) return;
     async function fetchRealUsers() {
       try {
@@ -122,13 +123,14 @@ export default function DedicatedDebtProofAdminPortal() {
             loansCount: u.loansCount || 0,
             totalDebtVolume: u.totalDebtVolume || 0,
             creditScore: 750,
+            joinedDate: u.joinedDate,
           }));
           if (fetchedUsers.length > 0) {
             setUserList(fetchedUsers);
           }
         }
       } catch (err: any) {
-        console.warn("SuperAdmin Portal database fetch error, keeping resilient view.");
+        console.warn("SuperAdmin Portal database fetch fallback mode.");
       }
     }
     fetchRealUsers();
@@ -168,7 +170,6 @@ export default function DedicatedDebtProofAdminPortal() {
     setShowAddStaffModal(false);
     setNewStaffName("");
     setNewStaffEmail("");
-    alert(`👑 New Staff Account Created! Roles assigned: ${newStaffRoles.join(", ")}`);
   };
 
   const handleSendPushNotification = async (e: React.FormEvent) => {
@@ -186,22 +187,18 @@ export default function DedicatedDebtProofAdminPortal() {
     };
 
     try {
-      // POST broadcast to Django Database so all users receive push notification on reload/login
       await apiClient.post("/notifications/broadcast/", {
         title: formattedTitle,
         body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
         target_audience: targetAudience,
       });
-    } catch {
-      // Graceful fallback to client broadcast
-    }
+    } catch {}
 
     if (typeof window !== "undefined") {
       const existingRaw = localStorage.getItem("debtproof_local_broadcasts");
       const existing = existingRaw ? JSON.parse(existingRaw) : [];
       localStorage.setItem("debtproof_local_broadcasts", JSON.stringify([newNotifObj, ...existing]));
 
-      // BroadcastChannel API — syncs across all open tabs/windows instantly
       try {
         const bc = new BroadcastChannel("debtproof_notifications_channel");
         bc.postMessage({ type: "ADD_NOTIFICATION", notif: newNotifObj });
@@ -209,39 +206,20 @@ export default function DedicatedDebtProofAdminPortal() {
       } catch {}
     }
 
-    // Dispatch global real-time notification custom event & toast
-    window.dispatchEvent(
-      new CustomEvent("debtproof_add_notification", {
-        detail: newNotifObj,
-      })
-    );
+    window.dispatchEvent(new CustomEvent("debtproof_add_notification", { detail: newNotifObj }));
     window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));
-    window.dispatchEvent(
-      new CustomEvent("debtproof-toast", {
-        detail: {
-          message: `📢 Broadcast Sent: ${pushTitle}`,
-          type: "success",
-        },
-      })
-    );
+    window.dispatchEvent(new CustomEvent("debtproof-toast", { detail: { message: `📢 Broadcast Sent: ${pushTitle}`, type: "success" } }));
 
-    // Trigger Browser Native Desktop Push Popup immediately
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "granted") {
         try {
-          new Notification(`📢 DebtProof: ${pushTitle}`, {
-            body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
-            icon: "/favicon.ico",
-          });
+          new Notification(`📢 DebtProof: ${pushTitle}`, { body: pushBody || "System announcement broadcasted from SuperAdmin Portal.", icon: "/favicon.ico" });
         } catch {}
       } else {
         Notification.requestPermission().then((permission) => {
           if (permission === "granted") {
             try {
-              new Notification(`📢 DebtProof: ${pushTitle}`, {
-                body: pushBody || "System announcement broadcasted from SuperAdmin Portal.",
-                icon: "/favicon.ico",
-              });
+              new Notification(`📢 DebtProof: ${pushTitle}`, { body: pushBody || "System announcement broadcasted from SuperAdmin Portal.", icon: "/favicon.ico" });
             } catch {}
           }
         });
@@ -254,9 +232,7 @@ export default function DedicatedDebtProofAdminPortal() {
 
   const handleToggleUserStatus = (userId: string) => {
     setUserList((prev) =>
-      prev.map((u) =>
-        u.id === userId ? { ...u, status: u.status === "Active" ? "Suspended" : "Active" } : u
-      )
+      prev.map((u) => (u.id === userId ? { ...u, status: u.status === "Active" ? "Suspended" : "Active" } : u))
     );
   };
 
@@ -265,57 +241,57 @@ export default function DedicatedDebtProofAdminPortal() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-        <div className="card max-w-md w-full p-8 bg-slate-900/90 border-2 border-rose-500/40 rounded-3xl shadow-2xl space-y-6 backdrop-blur-xl">
+        <div className="max-w-md w-full p-8 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/20 to-purple-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center text-3xl mx-auto shadow-inner">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center text-2xl mx-auto">
               👑
             </div>
-            <h2 className="text-xl font-black text-white">DebtProof SaaS SuperAdmin Authentication</h2>
-            <p className="text-xs text-slate-400">Enter SuperAdmin credentials to access corporate control center</p>
+            <h2 className="text-xl font-bold text-white">SuperAdmin Control Center</h2>
+            <p className="text-xs text-slate-400">Enter corporate executive security credentials</p>
           </div>
 
-          <form onSubmit={handleAdminLogin} className="space-y-4 font-mono text-xs">
-            {authError && (
-              <div className="p-3 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold text-center">
-                {authError}
-              </div>
-            )}
+          {authError && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium text-center">
+              {authError}
+            </div>
+          )}
 
+          <form onSubmit={handleAdminLogin} className="space-y-4">
             <div>
-              <label className="text-slate-300 font-bold">SuperAdmin User ID</label>
+              <label className="text-xs font-semibold text-slate-300">SuperAdmin User ID</label>
               <input
                 type="text"
                 placeholder="SUPERADMIN-DEBTPROOF-9901"
                 value={adminUserIdInput}
                 onChange={(e) => setAdminUserIdInput(e.target.value)}
-                className="w-full p-3.5 rounded-xl bg-slate-950 text-white border border-slate-700 font-bold text-xs mt-1 focus:border-rose-500 focus:outline-none"
+                className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs font-mono focus:border-rose-500 focus:outline-none"
                 required
               />
             </div>
 
             <div>
-              <label className="text-slate-300 font-bold">Security Passcode</label>
+              <label className="text-xs font-semibold text-slate-300">Security Passcode</label>
               <input
                 type="password"
                 placeholder="••••••••••••"
                 value={adminPasswordInput}
                 onChange={(e) => setAdminPasswordInput(e.target.value)}
-                className="w-full p-3.5 rounded-xl bg-slate-950 text-white border border-slate-700 font-bold text-xs mt-1 focus:border-rose-500 focus:outline-none"
+                className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs font-mono focus:border-rose-500 focus:outline-none"
                 required
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 hover:opacity-90 text-white font-black text-xs shadow-lg shadow-rose-500/25 cursor-pointer transition-all"
+              className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg transition cursor-pointer"
             >
-              Verify SuperAdmin Credentials & Unlock Portal →
+              Verify Credentials & Unlock Portal →
             </button>
           </form>
 
           <div className="text-center pt-2 border-t border-slate-800">
-            <Link href="/dashboard" className="text-[11px] font-mono text-slate-400 hover:text-white transition">
-              ← Return to User App Dashboard
+            <Link href="/dashboard" className="text-xs text-slate-400 hover:text-white transition">
+              ← Return to Main Application
             </Link>
           </div>
         </div>
@@ -323,466 +299,587 @@ export default function DedicatedDebtProofAdminPortal() {
     );
   }
 
+  const NAV_ITEMS = [
+    { id: "overview", label: "Dashboard Overview", icon: "📊" },
+    { id: "users", label: "User Directory", icon: "👥" },
+    { id: "staff", label: "Staff & Team Roles", icon: "🛡️" },
+    { id: "support", label: "Customer Support SLA", icon: "💬" },
+    { id: "monad_audit", label: "Monad On-Chain Audit", icon: "📜" },
+    { id: "risk_engine", label: "Liquidation & Risk Engine", icon: "⚡" },
+    { id: "web3_gas", label: "Web3 Gas Escrow Tank", icon: "⛽" },
+    { id: "payment_gateways", label: "Payment Gateway Monitor", icon: "💳" },
+    { id: "security_audit", label: "System Security Audit", icon: "🔒" },
+    { id: "push_notifications", label: "Broadcast Push Alerts", icon: "📢" },
+  ] as const;
+
   return (
-    <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] font-sans">
-      {/* Top Admin Navbar */}
-      <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-6 flex items-center justify-between sticky top-0 z-40 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
+      
+      {/* ── Modern Sleek Left Sidebar ──────────────────────────────────────── */}
+      <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+        
+        {/* Sidebar Header */}
+        <div className="p-5 border-b border-slate-800 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-lg shadow-lg">
             👑
           </div>
           <div>
-            <span className="font-black text-base text-[var(--color-text-primary)] tracking-tight">DebtProof SaaS SuperAdmin Command Center</span>
-            <span className="text-[10px] font-mono text-purple-400 font-bold block">Standalone Corporate Executive Portal v3.3.0</span>
+            <h1 className="font-bold text-sm text-white tracking-tight">DebtProof Admin</h1>
+            <span className="text-[10px] font-mono text-rose-400 block font-semibold">Corporate Portal v4.0</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30">
-            ID: SUPERADMIN-DEBTPROOF-9901
-          </span>
-          <button
-            onClick={handleAdminLogout}
-            className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md cursor-pointer transition"
-          >
-            🔒 Lock & Logout
-          </button>
-          <Link href="/dashboard" className="text-xs font-bold text-[var(--color-text-tertiary)] hover:text-white transition">
-            Exit to App →
-          </Link>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="p-6 max-w-7xl mx-auto space-y-6">
-        
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-4 card p-3 bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-2xl shadow-sm">
-          <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-            {(["overview", "users", "staff", "support", "monad_audit", "risk_engine", "web3_gas", "payment_gateways", "security_audit", "push_notifications"] as const).map((tab) => (
+        {/* Sidebar Navigation */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {NAV_ITEMS.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer capitalize font-mono ${
-                  activeTab === tab
-                    ? "bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-md font-black"
-                    : "bg-[var(--color-surface-secondary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/20 font-bold"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
                 }`}
               >
-                {tab.replace("_", " ")}
+                <span className="text-base">{item.icon}</span>
+                <span>{item.label}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </nav>
 
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-slate-800 space-y-2">
+          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
+            <span className="truncate">SUPERADMIN-DEBTPROOF</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          </div>
           <button
-            onClick={() => setShowAddStaffModal(true)}
-            className="btn bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2 shadow-lg shadow-rose-500/20 cursor-pointer flex items-center gap-1.5"
+            onClick={handleAdminLogout}
+            className="w-full py-2 rounded-xl bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 font-semibold text-xs transition cursor-pointer"
           >
-            <span>+ Add Staff Role</span>
+            🔒 Lock Portal & Logout
           </button>
+          <Link href="/dashboard" className="block text-center text-[11px] text-slate-500 hover:text-slate-300 pt-1">
+            Exit to Dashboard →
+          </Link>
         </div>
+      </aside>
 
-        {/* Tab 1: System Overview */}
-        {activeTab === "overview" && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
-              <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Total Registered Users</span>
-                <span className="text-2xl font-black text-[var(--color-text-primary)] mt-1 block">{userList.length} Users</span>
-                <span className="text-[10px] text-emerald-400 font-bold block mt-1">
-                  {userList.filter((u) => u.plan === "Enterprise").length} Enterprise · {userList.filter((u) => u.plan === "Pro").length} Pro
-                </span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Active Corporate Staff</span>
-                <span className="text-2xl font-black text-purple-400 mt-1 block">{staffList.length} Active Staff</span>
-                <span className="text-[10px] text-purple-300 font-bold block mt-1">Multi-Role Support & Risk Team</span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Support Resolution SLA</span>
-                <span className="text-2xl font-black text-emerald-400 mt-1 block">98.4%</span>
-                <span className="text-[10px] text-emerald-500 font-bold block mt-1">Avg Customer Rating: 4.9 ⭐</span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border-light)] text-center shadow-md">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Total Debt Volume Managed</span>
-                <span className="text-2xl font-black text-indigo-400 mt-1 block">
-                  ₹{userList.reduce((sum, u) => sum + (u.totalDebtVolume || 0), 0).toLocaleString()}
-                </span>
-                <span className="text-[10px] text-indigo-300 font-bold block mt-1">Monad ZK Verified</span>
-              </div>
-            </div>
+      {/* ── Main Content Body ───────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0">
+        
+        {/* Top Minimal Action Header */}
+        <header className="h-16 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-30">
+          <div>
+            <h2 className="text-sm font-bold text-white capitalize">
+              {activeTab.replace("_", " ")} Overview
+            </h2>
+            <p className="text-[11px] text-slate-400">DebtProof Corporate Enterprise Control Panel</p>
           </div>
-        )}
 
-        {/* Tab 2: User Portfolio & Plan Priority Directory */}
-        {activeTab === "users" && (
-          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4 shadow-xl">
-            <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-4">
-              <div>
-                <h3 className="text-base font-bold text-[var(--color-text-primary)]">User Account Directory & Suspension Controls</h3>
-                <p className="text-xs text-[var(--color-text-tertiary)]">Full database records of registered users, credit scores & plan priority</p>
-              </div>
-              <span className="text-xs font-mono font-bold text-emerald-400">Total Users: {userList.length}</span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left font-mono text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--color-border-light)] text-[10px] text-[var(--color-text-tertiary)] uppercase font-black">
-                    <th className="py-3 px-3">User Details</th>
-                    <th className="py-3 px-3">Subscription Tier</th>
-                    <th className="py-3 px-3">Credit Rating</th>
-                    <th className="py-3 px-3">Total Debt Volume</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border-light)]">
-                  {userList.map((u) => (
-                    <tr key={u.id} className="hover:bg-[var(--color-surface-secondary)]">
-                      <td className="py-3.5 px-3">
-                        <p className="font-bold text-[var(--color-text-primary)]">{u.name}</p>
-                        <p className="text-[10px] text-[var(--color-text-tertiary)]">{u.email}</p>
-                      </td>
-                      <td className="py-3.5 px-3 font-bold text-purple-400">{u.plan} Plan</td>
-                      <td className="py-3.5 px-3 font-bold text-emerald-400">{u.creditScore || 750} Score</td>
-                      <td className="py-3.5 px-3 font-bold text-[var(--color-text-primary)]">₹{u.totalDebtVolume.toLocaleString()}</td>
-                      <td className="py-3.5 px-3">
-                        <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase ${
-                          u.status === "Active" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                        }`}>
-                          {u.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-3">
-                        <button
-                          onClick={() => handleToggleUserStatus(u.id)}
-                          className={`px-3 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition ${
-                            u.status === "Active" ? "bg-rose-500/20 text-rose-400 hover:bg-rose-500/30" : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                          }`}
-                        >
-                          {u.status === "Active" ? "Suspend Account" : "Re-Activate Account"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAddStaffModal(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
+            >
+              <span>+ Add Corporate Staff</span>
+            </button>
           </div>
-        )}
+        </header>
 
-        {/* Tab 3: Staff Management & Multi-Role Permissions */}
-        {activeTab === "staff" && (
-          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4">
-            <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-4">
-              <div>
-                <h3 className="text-base font-bold text-[var(--color-text-primary)]">Corporate Staff Roster & Multi-Role Permissions</h3>
-                <p className="text-xs text-[var(--color-text-tertiary)]">Assign roles: Customer Support, Admin Manager, Billing & Risk Auditor</p>
+        {/* Dynamic Workspace Panel */}
+        <main className="p-8 flex-1 overflow-y-auto space-y-6">
+
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              
+              {/* Top Dynamic Stat Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold">
+                    <span>Total Database Users</span>
+                    <span className="text-rose-400">👥</span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{userList.length} Accounts</div>
+                  <div className="text-[11px] text-slate-400">
+                    <span className="text-emerald-400 font-bold">{userList.filter(u => u.plan === "Enterprise").length} Enterprise</span> · {userList.filter(u => u.plan === "Pro").length} Pro
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold">
+                    <span>Corporate Staff</span>
+                    <span className="text-purple-400">🛡️</span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{staffList.length} Active Staff</div>
+                  <div className="text-[11px] text-purple-300">Multi-Role Governance</div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold">
+                    <span>Customer SLA Rating</span>
+                    <span className="text-emerald-400">⭐</span>
+                  </div>
+                  <div className="text-2xl font-bold text-emerald-400">98.4% SLA</div>
+                  <div className="text-[11px] text-slate-400">4.9 Avg Resolution Score</div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
+                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold">
+                    <span>Total Debt Volume</span>
+                    <span className="text-indigo-400">💰</span>
+                  </div>
+                  <div className="text-2xl font-bold text-indigo-400">
+                    ₹{userList.reduce((sum, u) => sum + (u.totalDebtVolume || 0), 0).toLocaleString()}
+                  </div>
+                  <div className="text-[11px] text-slate-400">Monad ZK Verified</div>
+                </div>
               </div>
 
-              <button
-                onClick={() => setShowAddStaffModal(true)}
-                className="btn bg-purple-600 text-white font-bold text-xs px-3.5 py-2"
-              >
-                + Create Staff Account
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
-              {staffList.map((stf) => (
-                <div key={stf.id} className="p-4 rounded-2xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-3 shadow-md">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-[var(--color-text-primary)]">{stf.name}</p>
-                      <p className="text-[10px] text-[var(--color-text-tertiary)]">{stf.email}</p>
-                    </div>
-                    <span className="text-xs text-amber-400 font-bold">⭐ {stf.avgRating}</span>
+              {/* Quick Actions & Recent Accounts */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Users Directory Overview */}
+                <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h3 className="font-bold text-sm text-white">Recent Database Registered Accounts</h3>
+                    <button onClick={() => setActiveTab("users")} className="text-xs text-rose-400 hover:underline">View All →</button>
                   </div>
 
-                  <div className="flex flex-wrap gap-1">
-                    {stf.roles.map((r) => (
-                      <span key={r} className="px-2 py-0.5 rounded text-[9px] bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
-                        {r}
-                      </span>
+                  <div className="space-y-3">
+                    {userList.slice(0, 5).map((u) => (
+                      <div key={u.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-xs text-white">{u.name} ({u.email})</p>
+                          <p className="text-[11px] text-slate-400">{u.loansCount} Loans · ₹{u.totalDebtVolume.toLocaleString()} Debt Volume</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
+                            u.plan === "Enterprise" ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" :
+                            u.plan === "Pro" ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" :
+                            "bg-slate-800 text-slate-300"
+                          }`}>{u.plan}</span>
+                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
+                            u.status === "Active" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                          }`}>{u.status}</span>
+                        </div>
+                      </div>
                     ))}
                   </div>
-
-                  <div className="pt-2 border-t border-[var(--color-border-light)] flex justify-between items-center text-[10px]">
-                    <span className="text-[var(--color-text-tertiary)]">Queries: {stf.queriesResolved}</span>
-                    <span className="text-emerald-400 font-bold">Status: {stf.status}</span>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Tab 5: Monad Blockchain Audit Log */}
-        {activeTab === "monad_audit" && (
-          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4">
-            <div className="border-b border-[var(--color-border-light)] pb-4">
-              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Monad Testnet (Chain ID 10143) Transaction Audit Log</h3>
-              <p className="text-xs text-[var(--color-text-tertiary)]">Real-time ZK proof anchors & automated smart contract prepayment executions</p>
-            </div>
-
-            <div className="space-y-3">
-              {SAMPLE_MONAD_LOGS.map((log) => (
-                <div key={log.id} className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 font-mono text-xs">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-purple-400">{log.action}</span>
-                      <span className="px-2 py-0.5 rounded text-[9px] bg-slate-900 text-indigo-300 border border-purple-500/30">Block #{log.blockNumber}</span>
+                {/* System Status Panel */}
+                <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+                  <h3 className="font-bold text-sm text-white border-b border-slate-800 pb-3">System Health Summary</h3>
+                  <div className="space-y-3 text-xs">
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-300">Monad ZK Relayer</span>
+                      <span className="text-emerald-400 font-bold">100% Operational</span>
                     </div>
-                    <p className="text-[10px] text-[var(--color-text-tertiary)] mt-1">User: {log.userEmail} · {log.timestamp}</p>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-300">UPI Autopay Gateway</span>
+                      <span className="text-emerald-400 font-bold">99.8% Success</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                      <span className="text-slate-300">Monad Gas Tank</span>
+                      <span className="text-purple-400 font-bold">1,250 MON Reserve</span>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-black text-emerald-400">₹{log.amount.toLocaleString()}</span>
-                    <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 font-bold">{log.txHash}</span>
-                  </div>
                 </div>
-              ))}
+
+              </div>
+
             </div>
-          </div>
-        )}
-        {/* Tab 6: Global Risk & Liquidation Engine */}
-        {activeTab === "risk_engine" && (
-          <div className="card p-6 border border-rose-500/30 bg-[var(--color-surface)] space-y-5 rounded-2xl shadow-xl">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[var(--color-border-light)] pb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">🛡️</span>
+          )}
+
+          {/* TAB 2: USERS DIRECTORY */}
+          {activeTab === "users" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
                 <div>
-                  <h3 className="text-base font-black text-[var(--color-text-primary)]">
-                    Global Risk & Liquidation Engine
-                  </h3>
-                  <p className="text-xs text-[var(--color-text-tertiary)]">
-                    Monitors platform-wide debt delinquency, automatic penalty triggers & liquidation reserves.
-                  </p>
+                  <h3 className="font-bold text-sm text-white">Registered Users & Subscription Directory</h3>
+                  <p className="text-xs text-slate-400">Actual database records, credit ratings & account management controls</p>
                 </div>
+                <span className="text-xs font-mono text-emerald-400 font-bold">Total: {userList.length} Users</span>
               </div>
 
-              <button
-                onClick={() => alert("⚡ Global System Risk Assessment & Overdue Sweep Executed!")}
-                className="btn bg-rose-600 hover:bg-rose-500 text-white font-black text-xs px-4 py-2 shadow-lg shadow-rose-500/20 cursor-pointer"
-              >
-                ⚡ Trigger Platform Risk Sweep
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-1">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Overall Non-Performing Asset (NPA) Rate</span>
-                <span className="text-2xl font-black text-emerald-400">0.42%</span>
-                <span className="text-[10px] text-emerald-500 font-bold block">Low Default Risk</span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-1">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Overdue Debts Under Monitoring</span>
-                <span className="text-2xl font-black text-rose-400">₹1,20,000</span>
-                <span className="text-[10px] text-rose-300 font-bold block">2 Accounts Default Alert</span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-1">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Monad Liquidation Escrow Pool</span>
-                <span className="text-2xl font-black text-purple-400">450 MON</span>
-                <span className="text-[10px] text-purple-300 font-bold block">Collateral Anchored</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 7: Monad Web3 Gas & Escrow Pool Manager */}
-        {activeTab === "web3_gas" && (
-          <div className="card p-6 border border-purple-500/30 bg-[var(--color-surface)] space-y-4 font-mono text-xs">
-            <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-4">
-              <div>
-                <h3 className="text-base font-bold text-[var(--color-text-primary)]">Monad Testnet Gas Reserve & Relayer Escrow Pool</h3>
-                <p className="text-[10px] text-[var(--color-text-tertiary)]">Monitors gas tank reserves for automated ZK proof on-chain anchoring</p>
-              </div>
-              <button onClick={() => alert("⛽ Gas Tank Refilled with +100 MON!")} className="btn bg-purple-600 text-white font-bold text-xs px-3 py-1.5 cursor-pointer">
-                ⛽ Refill Gas Reserve
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Gas Tank Balance</span>
-                <span className="text-2xl font-black text-purple-400">1,250 MON</span>
-                <span className="text-[10px] text-emerald-400 font-bold block">Optimal Gas Level</span>
-              </div>
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Avg Gas Price per ZK Proof</span>
-                <span className="text-2xl font-black text-indigo-400">0.0024 MON</span>
-                <span className="text-[10px] text-indigo-300 font-bold block">Monad EVM Speed: 10,000 TPS</span>
-              </div>
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
-                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Relayer Contract Status</span>
-                <span className="text-2xl font-black text-emerald-400">Active 🟢</span>
-                <span className="text-[10px] text-emerald-500 font-bold block">Chain ID: 10143</span>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-[10px] text-slate-400 uppercase font-bold">
+                      <th className="py-3 px-3">User & Email</th>
+                      <th className="py-3 px-3">Plan</th>
+                      <th className="py-3 px-3">Active Loans</th>
+                      <th className="py-3 px-3">Debt Volume</th>
+                      <th className="py-3 px-3">Status</th>
+                      <th className="py-3 px-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {userList.map((u) => (
+                      <tr key={u.id} className="hover:bg-slate-950/40">
+                        <td className="py-3 px-3">
+                          <p className="font-semibold text-white">{u.name}</p>
+                          <p className="text-[11px] text-slate-400">{u.email}</p>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            u.plan === "Enterprise" ? "bg-purple-500/20 text-purple-300" :
+                            u.plan === "Pro" ? "bg-indigo-500/20 text-indigo-300" : "bg-slate-800 text-slate-300"
+                          }`}>{u.plan}</span>
+                        </td>
+                        <td className="py-3 px-3 font-mono">{u.loansCount} Loans</td>
+                        <td className="py-3 px-3 font-mono font-bold text-indigo-300">₹{u.totalDebtVolume.toLocaleString()}</td>
+                        <td className="py-3 px-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            u.status === "Active" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                          }`}>{u.status}</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <button
+                            onClick={() => handleToggleUserStatus(u.id)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-200 transition cursor-pointer"
+                          >
+                            {u.status === "Active" ? "Suspend" : "Activate"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Tab 8: Payment Processor & Gateway Health */}
-        {activeTab === "payment_gateways" && (
-          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4 font-mono text-xs">
-            <div className="border-b border-[var(--color-border-light)] pb-4">
-              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Payment Gateway & Bank Processor Health Monitor</h3>
-              <p className="text-[10px] text-[var(--color-text-tertiary)]">Real-time status of Razorpay, Stripe, UPI Autopay & Bank Webhooks</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
+          {/* TAB 3: STAFF ROLES */}
+          {activeTab === "staff" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
                 <div>
-                  <p className="font-bold text-[var(--color-text-primary)]">💳 Razorpay UPI Autopay Gateway</p>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)]">Success Rate: 99.8% · Latency: 120ms</p>
+                  <h3 className="font-bold text-sm text-white">Corporate Staff Directory & Multi-Role Management</h3>
+                  <p className="text-xs text-slate-400">Manage internal admin roles, support agents, risk auditors & governance permissions</p>
                 </div>
-                <span className="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">OPERATIONAL 🟢</span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-[var(--color-text-primary)]">🌐 Stripe Credit Card Settlement API</p>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)]">Success Rate: 99.9% · Global Settlements</p>
-                </div>
-                <span className="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">OPERATIONAL 🟢</span>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-[var(--color-text-primary)]">📜 Monad Testnet Web3 Escrow Gateway</p>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)]">Success Rate: 100% · EVM Smart Contract</p>
-                </div>
-                <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 font-bold">OPERATIONAL 🟢</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 9: Security Compliance & Audit Log */}
-        {activeTab === "security_audit" && (
-          <div className="card p-6 border border-rose-500/30 bg-[var(--color-surface)] space-y-4 font-mono text-xs">
-            <div className="border-b border-[var(--color-border-light)] pb-4">
-              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Security Compliance & System Audit Trail</h3>
-              <p className="text-[10px] text-[var(--color-text-tertiary)]">Log of SuperAdmin actions, IP addresses, and security violation alerts</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-3.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-emerald-400">✓ SuperAdmin Authenticated</p>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)]">ID: SUPERADMIN-DEBTPROOF-9901 · IP: 127.0.0.1 · Just Now</p>
-                </div>
-                <span className="text-[10px] text-slate-400 font-bold">SHA-256 Verified</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
-                <div>
-                  <p className="font-bold text-purple-400">✓ Feature Flag Updated</p>
-                  <p className="text-[10px] text-[var(--color-text-tertiary)] font-mono">Autonomous Prepayment Agent set to Active · Today 11:45 AM</p>
-                </div>
-                <span className="text-[10px] text-slate-400 font-bold">Audit Pass</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 10: Broadcast Push Notifications */}
-        {activeTab === "push_notifications" && (
-          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4 font-mono text-xs">
-            <div className="border-b border-[var(--color-border-light)] pb-4">
-              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Broadcast Real-Time System Push Notifications</h3>
-              <p className="text-[10px] text-[var(--color-text-tertiary)]">Send push notifications to all users or specific plan tiers (Enterprise, Pro, Free)</p>
-            </div>
-
-            <form onSubmit={handleSendPushNotification} className="space-y-4 max-w-md">
-              <div>
-                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Target User Audience</label>
-                <select
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value as any)}
-                  className="form-select text-xs w-full mt-1 bg-[var(--color-surface-secondary)] border-[var(--color-border)]"
+                <button
+                  onClick={() => setShowAddStaffModal(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs shadow cursor-pointer"
                 >
-                  <option value="All">All Registered Users</option>
-                  <option value="Enterprise">Enterprise SaaS Users Only</option>
-                  <option value="Pro">Pro Plan Users Only</option>
-                  <option value="Free">Free Plan Users Only</option>
-                </select>
+                  + Create New Staff Account
+                </button>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Notification Title *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. System Upgrade v3.7.0 Live!"
-                  value={pushTitle}
-                  onChange={(e) => setPushTitle(e.target.value)}
-                  className="form-input text-xs w-full mt-1"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {staffList.map((stf) => (
+                  <div key={stf.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold text-sm text-white">{stf.name}</h4>
+                        <p className="text-xs text-slate-400">{stf.email}</p>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">Active</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {stf.roles.map((r) => (
+                        <span key={r} className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold">
+                          {r}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-2.5">
+                      <span>Queries Resolved: {stf.queriesResolved}</span>
+                      <span>Rating: {stf.avgRating} ⭐</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: CUSTOMER SUPPORT SLA */}
+          {activeTab === "support" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="font-bold text-sm text-white">Customer Support Ticket Management & Escalation Engine</h3>
+                <p className="text-xs text-slate-400">Priority support queues for Enterprise & Pro users with senior escalation routes</p>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-[var(--color-text-secondary)]">Message Body</label>
-                <textarea
-                  placeholder="Enter broadcast message details..."
-                  value={pushBody}
-                  onChange={(e) => setPushBody(e.target.value)}
-                  rows={4}
-                  className="form-input text-xs w-full mt-1"
-                />
+              <div className="space-y-3">
+                {queryList.map((q) => (
+                  <div key={q.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-white">{q.subject}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400">{q.priority}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1">From: {q.userName} ({q.userEmail}) · Tier: {q.userPlan}</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-slate-400">Assigned: {q.assignedStaff}</span>
+                      <button onClick={() => alert(`Escalated ticket ${q.id} to SuperAdmin!`)} className="px-3 py-1 rounded bg-slate-800 hover:bg-rose-600 text-white font-semibold transition cursor-pointer">
+                        Escalate to SuperAdmin
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: MONAD ON-CHAIN AUDIT */}
+          {activeTab === "monad_audit" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 font-mono text-xs">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="font-bold text-sm text-white">Monad Testnet (Chain ID 10143) Transaction Audit Log</h3>
+                <p className="text-xs text-slate-400">Real-time ZK proof anchors & automated smart contract prepayment executions</p>
               </div>
 
-              <button type="submit" className="btn bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs py-2.5 px-5 shadow-lg cursor-pointer">
-                📢 Broadcast Push Notification Now
-              </button>
-            </form>
-          </div>
-        )}
+              <div className="space-y-3">
+                {SAMPLE_MONAD_LOGS.map((log) => (
+                  <div key={log.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-purple-400">{log.action} <span className="text-slate-500">Block #{log.blockNumber}</span></p>
+                      <p className="text-slate-400 text-[11px] mt-0.5">User: {log.userEmail} · {log.timestamp}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-emerald-400">₹{log.amount.toLocaleString()}</span>
+                      <span className="px-2.5 py-1 rounded bg-slate-900 text-purple-300 border border-slate-800 font-mono text-[11px]">{log.txHash}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-      </main>
+          {/* TAB 6: RISK ENGINE */}
+          {activeTab === "risk_engine" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                <div>
+                  <h3 className="font-bold text-sm text-white">Global Risk & Liquidation Escrow Engine</h3>
+                  <p className="text-xs text-slate-400">Monad collateral monitoring & automated non-performing asset sweeps</p>
+                </div>
+                <button onClick={() => alert("⚡ Global System Risk Assessment & Overdue Sweep Executed!")} className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow cursor-pointer">
+                  ⚡ Trigger Risk Sweep
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-xs text-slate-400 uppercase font-bold block">NPA Default Rate</span>
+                  <span className="text-2xl font-bold text-emerald-400 mt-1 block">0.42%</span>
+                  <span className="text-[10px] text-emerald-500 font-bold block">Low System Risk</span>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-xs text-slate-400 uppercase font-bold block">Overdue Debts Under Watch</span>
+                  <span className="text-2xl font-bold text-rose-400 mt-1 block">₹1,20,000</span>
+                  <span className="text-[10px] text-rose-400 font-bold block">2 Default Alerts</span>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-xs text-slate-400 uppercase font-bold block">Monad Liquidation Escrow</span>
+                  <span className="text-2xl font-bold text-purple-400 mt-1 block">450 MON</span>
+                  <span className="text-[10px] text-purple-300 font-bold block">Collateral Anchored</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7: WEB3 GAS TANK */}
+          {activeTab === "web3_gas" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+                <div>
+                  <h3 className="font-bold text-sm text-white">Monad Testnet Gas Reserve & Relayer Pool</h3>
+                  <p className="text-xs text-slate-400">Gas tank balance monitoring for automated ZK proof on-chain anchoring</p>
+                </div>
+                <button onClick={() => alert("⛽ Gas Tank Refilled with +100 MON!")} className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer">
+                  ⛽ Refill Gas Reserve
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-xs text-slate-400 uppercase font-bold block">Gas Tank Balance</span>
+                  <span className="text-2xl font-bold text-purple-400 mt-1 block">1,250 MON</span>
+                  <span className="text-[10px] text-emerald-400 font-bold block">Optimal Gas Level</span>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-xs text-slate-400 uppercase font-bold block">Avg Gas / ZK Proof</span>
+                  <span className="text-2xl font-bold text-indigo-400 mt-1 block">0.0024 MON</span>
+                  <span className="text-[10px] text-indigo-300 font-bold block">Monad EVM Speed</span>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <span className="text-xs text-slate-400 uppercase font-bold block">Relayer Contract</span>
+                  <span className="text-2xl font-bold text-emerald-400 mt-1 block">Active 🟢</span>
+                  <span className="text-[10px] text-emerald-400 font-bold block">Chain ID: 10143</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: PAYMENT GATEWAY MONITOR */}
+          {activeTab === "payment_gateways" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="font-bold text-sm text-white">Payment Gateway & Bank Processor Health</h3>
+                <p className="text-xs text-slate-400">Real-time status of Razorpay, Stripe, UPI Autopay & Bank Webhooks</p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-xs text-white">💳 Razorpay UPI Autopay Gateway</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Success Rate: 99.8% · Latency: 120ms</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">OPERATIONAL 🟢</span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-xs text-white">🌐 Stripe Credit Card Settlement API</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Success Rate: 99.9% · Global Settlements</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">OPERATIONAL 🟢</span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-xs text-white">📜 Monad Testnet Web3 Escrow Gateway</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Success Rate: 100% · EVM Smart Contract</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300">OPERATIONAL 🟢</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 9: SECURITY AUDIT */}
+          {activeTab === "security_audit" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="font-bold text-sm text-white">Security Compliance & System Audit Trail</h3>
+                <p className="text-xs text-slate-400">Log of SuperAdmin actions, IP addresses, and security violation alerts</p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-xs text-emerald-400">✓ SuperAdmin Authenticated</p>
+                    <p className="text-[11px] text-slate-400">ID: SUPERADMIN-DEBTPROOF-9901 · IP: 127.0.0.1 · Just Now</p>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">SHA-256 Verified</span>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-xs text-purple-400">✓ Feature Flag Updated</p>
+                    <p className="text-[11px] text-slate-400">Autonomous Prepayment Agent set to Active · Today 11:45 AM</p>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">Audit Pass</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 10: BROADCAST PUSH NOTIFICATIONS */}
+          {activeTab === "push_notifications" && (
+            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="font-bold text-sm text-white">Broadcast Real-Time System Push Notifications</h3>
+                <p className="text-xs text-slate-400">Send push notifications to all users or specific plan tiers (Enterprise, Pro, Free)</p>
+              </div>
+
+              <form onSubmit={handleSendPushNotification} className="space-y-4 max-w-md">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Target User Audience</label>
+                  <select
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value as any)}
+                    className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs font-mono focus:border-rose-500 focus:outline-none"
+                  >
+                    <option value="All">All Registered Users</option>
+                    <option value="Enterprise">Enterprise SaaS Users Only</option>
+                    <option value="Pro">Pro Plan Users Only</option>
+                    <option value="Free">Free Plan Users Only</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Notification Title *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. System Upgrade v4.0 Live!"
+                    value={pushTitle}
+                    onChange={(e) => setPushTitle(e.target.value)}
+                    className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300">Message Body</label>
+                  <textarea
+                    placeholder="Enter broadcast message details..."
+                    value={pushBody}
+                    onChange={(e) => setPushBody(e.target.value)}
+                    rows={4}
+                    className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg transition cursor-pointer"
+                >
+                  📢 Broadcast Push Notification Now
+                </button>
+              </form>
+            </div>
+          )}
+
+        </main>
+      </div>
 
       {/* Add Staff Modal */}
       {showAddStaffModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="card max-w-md w-full p-6 space-y-4 bg-[var(--color-surface)] border border-purple-500/40 rounded-2xl shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[var(--color-border-light)] pb-3">
-              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Create Corporate Staff Account</h3>
-              <button onClick={() => setShowAddStaffModal(false)} className="text-xs text-[var(--color-text-tertiary)] hover:text-white">✕</button>
+          <div className="max-w-md w-full p-6 space-y-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white">Create Corporate Staff Account</h3>
+              <button onClick={() => setShowAddStaffModal(false)} className="text-xs text-slate-400 hover:text-white">✕</button>
             </div>
 
-            <form onSubmit={handleCreateStaff} className="space-y-3 font-mono text-xs">
+            <form onSubmit={handleCreateStaff} className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-[var(--color-text-secondary)]">Staff Full Name</label>
+                <label className="font-semibold text-slate-300">Staff Full Name</label>
                 <input
                   type="text"
                   placeholder="e.g. Riya Sen"
                   value={newStaffName}
                   onChange={(e) => setNewStaffName(e.target.value)}
-                  className="form-input text-xs w-full mt-1"
+                  className="w-full mt-1 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="font-bold text-[var(--color-text-secondary)]">Corporate Email</label>
+                <label className="font-semibold text-slate-300">Corporate Email</label>
                 <input
                   type="email"
                   placeholder="riya@debtproof.io"
                   value={newStaffEmail}
                   onChange={(e) => setNewStaffEmail(e.target.value)}
-                  className="form-input text-xs w-full mt-1"
+                  className="w-full mt-1 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="font-bold text-[var(--color-text-secondary)]">Assign Roles (Multi-Role Support)</label>
+                <label className="font-semibold text-slate-300">Assign Roles (Multi-Role Support)</label>
                 <select
                   multiple
                   value={newStaffRoles}
@@ -790,7 +887,7 @@ export default function DedicatedDebtProofAdminPortal() {
                     const opts = Array.from(e.target.selectedOptions, (option) => option.value as RoleType);
                     setNewStaffRoles(opts);
                   }}
-                  className="form-select text-xs w-full mt-1 h-28"
+                  className="w-full mt-1 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs h-28 focus:border-rose-500 focus:outline-none"
                 >
                   <option value="CustomerSupport">Customer Support</option>
                   <option value="AdminManager">Admin Manager</option>
@@ -801,13 +898,14 @@ export default function DedicatedDebtProofAdminPortal() {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 btn bg-rose-600 text-white font-bold text-xs py-2">Create Staff Account</button>
-                <button type="button" onClick={() => setShowAddStaffModal(false)} className="btn btn-secondary text-xs">Cancel</button>
+                <button type="submit" className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition cursor-pointer">Create Staff Account</button>
+                <button type="button" onClick={() => setShowAddStaffModal(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs transition cursor-pointer">Cancel</button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }
