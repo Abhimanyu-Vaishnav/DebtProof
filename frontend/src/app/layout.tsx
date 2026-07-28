@@ -73,7 +73,7 @@ export default function RootLayout({
         <meta name="application-name" content="DebtProof" />
         <meta name="msapplication-TileColor" content="#0f172a" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <CurrencyProvider>
           <ToastProvider>
             {children}
