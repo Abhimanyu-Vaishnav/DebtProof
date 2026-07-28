@@ -22,9 +22,18 @@ export const notificationsService = {
       if (data?.results && Array.isArray(data.results)) {
         return data;
       }
-    } catch {
-      // API Offline / fallback
-    }
+    } catch {}
+
+    try {
+      const rawRes = await fetch("http://localhost:8000/api/v1/notifications/");
+      const data = await rawRes.json();
+      if (Array.isArray(data)) {
+        return { count: data.length, next: null, previous: null, results: data };
+      }
+      if (data?.results && Array.isArray(data.results)) {
+        return data;
+      }
+    } catch {}
 
     const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
     const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
@@ -37,12 +46,18 @@ export const notificationsService = {
   getUnreadCount: async (): Promise<number> => {
     try {
       const { data } = await apiClient.get<{ count: number }>("/notifications/unread-count/");
-      return data?.count ?? 0;
-    } catch {
-      const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
-      const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
-      return localBroadcasts.filter(n => !n.is_read).length;
-    }
+      if (typeof data?.count === "number") return data.count;
+    } catch {}
+
+    try {
+      const rawRes = await fetch("http://localhost:8000/api/v1/notifications/unread-count/");
+      const data = await rawRes.json();
+      if (typeof data?.count === "number") return data.count;
+    } catch {}
+
+    const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
+    const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
+    return localBroadcasts.filter(n => !n.is_read).length;
   },
 
   /**
