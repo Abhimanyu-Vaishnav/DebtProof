@@ -127,8 +127,13 @@ export default function DedicatedDebtProofAdminPortal() {
           const unique = merged.filter((item, index, self) => index === self.findIndex((t) => t.email === item.email));
           setUserList(unique);
         }
-      } catch (err) {
-        console.error("Failed to load real users for SuperAdmin:", err);
+      } catch (err: any) {
+        // Gracefully handle network offline or backend connection resets silently
+        if (err?.code === "ERR_NETWORK" || err?.message === "Network Error") {
+          console.warn("SuperAdmin Portal running in resilient fallback mode (Backend Offline or Resetting).");
+        } else {
+          console.error("Failed to load real users for SuperAdmin:", err);
+        }
       }
     }
     fetchRealUsers();
