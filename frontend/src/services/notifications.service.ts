@@ -11,33 +11,35 @@ export const notificationsService = {
    * Pass unread_only=true to fetch only unread.
    */
   getNotifications: async (unreadOnly = false): Promise<PaginatedResponse<Notification>> => {
+    let rawList: Notification[] = [];
     try {
       const { data } = await apiClient.get<any>(
         "/notifications/",
         { params: unreadOnly ? { unread_only: "true" } : {} }
       );
-      if (Array.isArray(data)) {
-        return { count: data.length, next: null, previous: null, results: data };
-      }
-      if (data?.results && Array.isArray(data.results)) {
-        return data;
-      }
+      if (Array.isArray(data)) rawList = data;
+      else if (data?.results && Array.isArray(data.results)) rawList = data.results;
     } catch {}
 
-    try {
-      const rawRes = await fetch("http://localhost:8000/api/v1/notifications/");
-      const data = await rawRes.json();
-      if (Array.isArray(data)) {
-        return { count: data.length, next: null, previous: null, results: data };
-      }
-      if (data?.results && Array.isArray(data.results)) {
-        return data;
-      }
-    } catch {}
+    if (rawList.length === 0) {
+      try {
+        const rawRes = await fetch("http://localhost:8000/api/v1/notifications/");
+        const data = await rawRes.json();
+        if (Array.isArray(data)) rawList = data;
+        else if (data?.results && Array.isArray(data.results)) rawList = data.results;
+      } catch {}
+    }
 
     const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
     const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
-    return { count: localBroadcasts.length, next: null, previous: null, results: localBroadcasts };
+    const combined = [...localBroadcasts, ...rawList];
+    const unique = combined.filter((item, index, self) => index === self.findIndex((t) => t.id === item.id || t.title === item.title));
+
+    const readIdsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_read_notif_ids") : null;
+    const readIds: string[] = readIdsRaw ? JSON.parse(readIdsRaw) : [];
+
+    const finalResults = unique.map((n) => (readIds.includes(n.id) ? { ...n, is_read: true } : n));
+    return { count: finalResults.length, next: null, previous: null, results: finalResults };
   },
 
   /**
@@ -66,9 +68,19 @@ export const notificationsService = {
   markRead: async (id: string): Promise<void> => {
     try {
       await apiClient.post(`/notifications/${id}/read/`);
-    } catch {}
+    } catch {
+      try {
+        await fetch(`http://localhost:8000/api/v1/notifications/${id}/read/`, { method: "POST" });
+      } catch {}
+    }
 
     if (typeof window !== "undefined") {
+      const readIdsRaw = localStorage.getItem("debtproof_read_notif_ids");
+      const readIds: string[] = readIdsRaw ? JSON.parse(readIdsRaw) : [];
+      if (!readIds.includes(id)) {
+        localStorage.setItem("debtproof_read_notif_ids", JSON.stringify([...readIds, id]));
+      }
+
       const localBroadcastsRaw = localStorage.getItem("debtproof_local_broadcasts");
       if (localBroadcastsRaw) {
         const localBroadcasts: Notification[] = JSON.parse(localBroadcastsRaw);
@@ -84,7 +96,11 @@ export const notificationsService = {
   markAllRead: async (): Promise<void> => {
     try {
       await apiClient.post("/notifications/read-all/");
-    } catch {}
+    } catch {
+      try {
+        await fetch("http://localhost:8000/api/v1/notifications/read-all/", { method: "POST" });
+      } catch {}
+    }
 
     if (typeof window !== "undefined") {
       const localBroadcastsRaw = localStorage.getItem("debtproof_local_broadcasts");
@@ -92,6 +108,8 @@ export const notificationsService = {
         const localBroadcasts: Notification[] = JSON.parse(localBroadcastsRaw);
         const updated = localBroadcasts.map(n => ({ ...n, is_read: true }));
         localStorage.setItem("debtproof_local_broadcasts", JSON.stringify(updated));
+        const allIds = updated.map(n => n.id);
+        localStorage.setItem("debtproof_read_notif_ids", JSON.stringify(allIds));
       }
     }
   },

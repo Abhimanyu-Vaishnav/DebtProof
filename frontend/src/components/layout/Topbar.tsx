@@ -106,7 +106,16 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
         setNotifications((prev) => [custom.detail, ...prev]);
         setUnreadCount((prev) => prev + 1);
 
-        // Native Web Push Notification Popup if permission granted
+        // Trigger Toast Popup & Native Web Push Notification
+        window.dispatchEvent(
+          new CustomEvent("debtproof-toast", {
+            detail: {
+              message: custom.detail.title || "New notification received!",
+              type: "info",
+            },
+          })
+        );
+
         if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
           try {
             new Notification(custom.detail.title || "DebtProof Alert", {
@@ -136,6 +145,16 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
           const newNotif = event.data.notif as Notification;
           setNotifications((prev) => [newNotif, ...prev]);
           setUnreadCount((prev) => prev + 1);
+
+          // Trigger Toast Popup & Native Web Push
+          window.dispatchEvent(
+            new CustomEvent("debtproof-toast", {
+              detail: {
+                message: newNotif.title || "New notification received!",
+                type: "info",
+              },
+            })
+          );
 
           // Trigger native Web Push Popup
           if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
