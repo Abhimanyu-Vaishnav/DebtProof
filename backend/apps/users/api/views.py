@@ -155,6 +155,7 @@ class SuperAdminUserListView(APIView):
                 "totalDebtVolume": float(total_vol),
                 "isSuperuser": u.is_superuser,
                 "isStaff": u.is_staff,
+                "lastLogin": u.last_login.strftime("%Y-%m-%d %H:%M") if u.last_login else None,
             })
 
         # Calculate actual system-wide database aggregates
@@ -171,5 +172,138 @@ class SuperAdminUserListView(APIView):
         }
 
         return Response({"success": True, "count": len(results), "users": results, "stats": stats})
+
+
+class SuperAdminStatsView(APIView):
+    """
+    GET /api/v1/auth/superadmin/stats/
+    Returns platform-wide aggregate metrics for the SuperAdmin dashboard overview.
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        from apps.loans.models import Loan
+        from apps.payments.models import Payment
+        from django.db.models import Sum, Count
+        from django.utils import timezone
+        from datetime import timedelta
+
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        suspended_users = User.objects.filter(is_active=False).count()
+
+        total_loans = Loan.objects.count()
+        active_loans = Loan.objects.filter(status="active").count()
+        closed_loans = Loan.objects.filter(status="closed").count()
+        overdue_loans = Loan.objects.filter(status="defaulted").count()
+        total_debt_volume = Loan.objects.aggregate(t=Sum("principal_amount"))["t"] or 0
+        total_outstanding = Loan.objects.filter(status="active").aggregate(t=Sum("outstanding_amount"))["t"] or 0
+
+        total_payments = Payment.objects.count()
+        total_paid = Payment.objects.filter(status="confirmed").aggregate(t=Sum("amount"))["t"] or 0
+        failed_payments = Payment.objects.filter(status="failed").count()
+
+        # Loan type breakdown
+        loan_types = list(
+            Loan.objects.values("loan_type").annotate(count=Count("id")).order_by("-count")
+        )
+
+        # Monthly signups for last 12 months
+        now = timezone.now()
+        monthly_signups = []
+        for i in range(11, -1, -1):
+            month_start = (now.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
+            month_end = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+            count = User.objects.filter(created_at__gte=month_start, created_at__lt=month_end).count()
+            monthly_signups.append({
+                "month": month_start.strftime("%b %Y"),
+                "count": count,
+            })
+
+        # Recent 5 users
+        recent_users = []
+        for u in User.objects.order_by("-created_at")[:5]:
+            recent_users.append({
+                "name": f"{u.first_name} {u.last_name}".strip() or u.email.split("@")[0].capitalize(),
+                "email": u.email,
+                "joined": u.created_at.strftime("%Y-%m-%d"),
+            })
+
+        return Response({
+            "total_users": total_users,
+            "active_users": active_users,
+            "suspended_users": suspended_users,
+            "total_loans": total_loans,
+            "active_loans": active_loans,
+            "closed_loans": closed_loans,
+            "overdue_loans": overdue_loans,
+            "total_debt_volume": float(total_debt_volume),
+            "total_outstanding": float(total_outstanding),
+            "total_payments": total_payments,
+            "total_paid": float(total_paid),
+            "failed_payments": failed_payments,
+            "loan_type_breakdown": loan_types,
+            "monthly_signups": monthly_signups,
+            "recent_users": recent_users,
+        })
+
+
+class SuperAdminLoansView(APIView):
+    """
+    GET /api/v1/auth/superadmin/loans/
+    Returns all loans across all users for SuperAdmin Loan Management tab.
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        from apps.loans.models import Loan
+        loans = Loan.objects.select_related("user").order_by("-created_at")[:200]
+        results = []
+        for loan in loans:
+            results.append({
+                "id": str(loan.id),
+                "name": loan.name,
+                "loan_type": loan.loan_type,
+                "status": loan.status,
+                "user_name": f"{loan.user.first_name} {loan.user.last_name}".strip() or loan.user.email.split("@")[0].capitalize(),
+                "user_email": loan.user.email,
+                "lender": loan.lender_name,
+                "principal": float(loan.principal_amount),
+                "outstanding": float(loan.outstanding_amount) if hasattr(loan, "outstanding_amount") else 0,
+                "interest_rate": float(loan.interest_rate) if loan.interest_rate else 0,
+                "monthly_emi": float(loan.monthly_emi) if loan.monthly_emi else 0,
+                "created_at": loan.created_at.strftime("%Y-%m-%d"),
+            })
+        return Response({"success": True, "count": len(results), "loans": results})
+
+
+class SuperAdminPaymentsView(APIView):
+    """
+    GET /api/v1/auth/superadmin/payments/
+    Returns all payment transactions across all users for SuperAdmin Payment Monitor.
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        from apps.payments.models import Payment
+        payments = Payment.objects.select_related("loan__user").order_by("-created_at")[:200]
+        results = []
+        for p in payments:
+            results.append({
+                "id": str(p.id),
+                "amount": float(p.amount),
+                "status": p.status,
+                "payment_method": p.payment_method if hasattr(p, "payment_method") else "—",
+                "loan_name": p.loan.name,
+                "user_name": f"{p.loan.user.first_name} {p.loan.user.last_name}".strip() or p.loan.user.email.split("@")[0].capitalize(),
+                "user_email": p.loan.user.email,
+                "paid_on": p.created_at.strftime("%Y-%m-%d"),
+                "notes": p.notes if hasattr(p, "notes") else "",
+            })
+        return Response({"success": True, "count": len(results), "payments": results})
+
 
 

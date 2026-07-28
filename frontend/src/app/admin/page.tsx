@@ -1,55 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import apiClient from "@/services/api";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "RiskAuditor" | "Web3Governor";
+type TabId = "overview" | "users" | "loans" | "push" | "staff" | "support" | "risk" | "monad" | "payments" | "security" | "analytics" | "settings";
 
-interface StaffMember {
-  id: string;
-  name: string;
-  email: string;
-  roles: RoleType[];
-  status: "Active" | "Inactive";
-  queriesResolved: number;
-  avgRating: number;
-}
+interface StaffMember { id: string; name: string; email: string; roles: RoleType[]; status: "Active" | "Inactive"; queriesResolved: number; avgRating: number; }
+interface UserData { id: string; name: string; email: string; plan: string; status: string; loansCount: number; totalDebtVolume: number; joinedDate?: string; lastLogin?: string | null; isSuperuser?: boolean; }
+interface LoanData { id: string; name: string; loan_type: string; status: string; user_name: string; user_email: string; lender: string; principal: number; outstanding: number; interest_rate: number; monthly_emi: number; created_at: string; }
+interface PaymentData { id: string; amount: number; status: string; payment_method: string; loan_name: string; user_name: string; user_email: string; paid_on: string; }
+interface PlatformStats { total_users: number; active_users: number; suspended_users: number; total_loans: number; active_loans: number; closed_loans: number; overdue_loans: number; total_debt_volume: number; total_outstanding: number; total_payments: number; total_paid: number; failed_payments: number; loan_type_breakdown: {loan_type: string; count: number}[]; monthly_signups: {month: string; count: number}[]; recent_users: {name: string; email: string; joined: string}[]; }
 
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  plan: "Free" | "Basic" | "Pro" | "Enterprise";
-  priority: "High" | "Normal" | "Low";
-  status: "Active" | "Suspended";
-  loansCount: number;
-  totalDebtVolume: number;
-  creditScore: number;
-  joinedDate?: string;
-}
-
-interface SupportQuery {
-  id: string;
-  userEmail: string;
-  userName: string;
-  userPlan: "Free" | "Basic" | "Pro" | "Enterprise";
-  priority: "Urgent" | "High" | "Normal";
-  subject: string;
-  assignedStaff: string;
-  status: "Open" | "In_Call" | "Escalated_Senior" | "Escalated_SuperAdmin" | "Resolved";
-}
-
-interface MonadTxAuditLog {
-  id: string;
-  txHash: string;
-  blockNumber: number;
-  userEmail: string;
-  action: string;
-  amount: number;
-  timestamp: string;
-}
-
+// ─── Sample Static Data ───────────────────────────────────────────────────────
 const SAMPLE_STAFF: StaffMember[] = [
   { id: "stf-1", name: "Aarav Sharma", email: "aarav.admin@debtproof.io", roles: ["SuperAdmin", "AdminManager"], status: "Active", queriesResolved: 142, avgRating: 4.9 },
   { id: "stf-2", name: "Neha Verma", email: "neha.support@debtproof.io", roles: ["CustomerSupport"], status: "Active", queriesResolved: 89, avgRating: 4.8 },
@@ -57,50 +22,145 @@ const SAMPLE_STAFF: StaffMember[] = [
   { id: "stf-4", name: "Riya Sen", email: "riya.risk@debtproof.io", roles: ["RiskAuditor"], status: "Active", queriesResolved: 31, avgRating: 5.0 },
 ];
 
-const SAMPLE_USERS: UserData[] = [
-  { id: "u-101", name: "Rajesh Kumar", email: "rajesh@example.com", plan: "Enterprise", priority: "High", status: "Active", loansCount: 5, totalDebtVolume: 1850000, creditScore: 785 },
-  { id: "u-102", name: "Sunita Rao", email: "sunita@example.com", plan: "Pro", priority: "High", status: "Active", loansCount: 3, totalDebtVolume: 640000, creditScore: 742 },
-  { id: "u-103", name: "Amit Joshi", email: "amit@example.com", plan: "Basic", priority: "Normal", status: "Active", loansCount: 2, totalDebtVolume: 280000, creditScore: 690 },
-  { id: "u-104", name: "Pooja Hegde", email: "pooja@example.com", plan: "Free", priority: "Low", status: "Suspended", loansCount: 1, totalDebtVolume: 50000, creditScore: 615 },
-];
-
-const SAMPLE_QUERIES: SupportQuery[] = [
+const SUPPORT_QUERIES = [
   { id: "q-1", userEmail: "rajesh@example.com", userName: "Rajesh Kumar", userPlan: "Enterprise", priority: "Urgent", subject: "Monad ZK Proof Verification Delayed on Testnet", assignedStaff: "Neha Verma", status: "In_Call" },
   { id: "q-2", userEmail: "sunita@example.com", userName: "Sunita Rao", userPlan: "Pro", priority: "High", subject: "Auto-Pay Prepayment Trigger Optimization Query", assignedStaff: "Neha Verma", status: "Open" },
+  { id: "q-3", userEmail: "amit@example.com", userName: "Amit Joshi", userPlan: "Basic", priority: "Normal", subject: "Credit Score Calculation discrepancy", assignedStaff: "Vikram Mehta", status: "Resolved" },
 ];
 
-const SAMPLE_MONAD_LOGS: MonadTxAuditLog[] = [
-  { id: "m-1", txHash: "0x8f2c...41b", blockNumber: 1049281, userEmail: "rajesh@example.com", action: "Monad ZK Proof Anchoring", amount: 45000, timestamp: "Today, 11:20 AM" },
-  { id: "m-2", txHash: "0x3e9a...10c", blockNumber: 1049102, userEmail: "sunita@example.com", action: "Smart Auto-Prepayment Trigger", amount: 15000, timestamp: "Today, 09:15 AM" },
+const MONAD_LOGS = [
+  { id: "m-1", txHash: "0x8f2c...41b", blockNumber: 1049281, userEmail: "rajesh@example.com", action: "Monad ZK Proof Anchoring", amount: 45000, timestamp: "Today, 11:20 AM", status: "Confirmed" },
+  { id: "m-2", txHash: "0x3e9a...10c", blockNumber: 1049102, userEmail: "sunita@example.com", action: "Smart Auto-Prepayment Trigger", amount: 15000, timestamp: "Today, 09:15 AM", status: "Confirmed" },
+  { id: "m-3", txHash: "0x7d1f...88a", blockNumber: 1048901, userEmail: "amit@example.com", action: "Debt Proof Generation", amount: 280000, timestamp: "Yesterday, 4:32 PM", status: "Pending" },
 ];
 
-export default function RedesignedSuperAdminPortal() {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const fmt = (n: number) => n >= 10000000 ? `₹${(n/10000000).toFixed(1)}Cr` : n >= 100000 ? `₹${(n/100000).toFixed(1)}L` : n >= 1000 ? `₹${(n/1000).toFixed(0)}K` : `₹${n.toLocaleString()}`;
+const LOAN_TYPE_LABEL: Record<string, string> = { home: "🏠 Home", personal: "👤 Personal", vehicle: "🚗 Vehicle", education: "🎓 Education", business: "💼 Business", credit_card: "💳 Credit Card", other: "📦 Other" };
+const STATUS_BADGE: Record<string, string> = { active: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", closed: "bg-slate-500/15 text-slate-400 border-slate-500/30", defaulted: "bg-red-500/15 text-red-400 border-red-500/30", on_hold: "bg-amber-500/15 text-amber-400 border-amber-500/30", confirmed: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", pending: "bg-amber-500/15 text-amber-400 border-amber-500/30", failed: "bg-red-500/15 text-red-400 border-red-500/30", Active: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", Suspended: "bg-red-500/15 text-red-400 border-red-500/30" };
+
+async function superAdminFetch(path: string) {
+  try { const { data } = await apiClient.get(path); return data; } catch {
+    try { const r = await fetch(`http://localhost:8000/api/v1${path}`); return await r.json(); } catch { return null; }
+  }
+}
+
+// ─── Mini Bar Chart ───────────────────────────────────────────────────────────
+function MiniBarChart({ data, color = "#f43f5e" }: { data: { label: string; value: number }[]; color?: string }) {
+  const max = Math.max(...data.map(d => d.value), 1);
+  return (
+    <div className="flex items-end gap-1 h-20">
+      {data.map((d, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+          <div className="w-full rounded-sm transition-all duration-500" style={{ height: `${(d.value / max) * 64}px`, backgroundColor: color, opacity: 0.7 + (i / data.length) * 0.3 }} />
+          {data.length <= 7 && <span className="text-[8px] text-slate-500 font-medium truncate w-full text-center">{d.label}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
+function KpiCard({ icon, label, value, sub, color = "rose" }: { icon: string; label: string; value: string | number; sub?: string; color?: string }) {
+  const colors: Record<string, string> = { rose: "from-rose-500/20 to-rose-600/5 border-rose-500/20", emerald: "from-emerald-500/20 to-emerald-600/5 border-emerald-500/20", blue: "from-blue-500/20 to-blue-600/5 border-blue-500/20", amber: "from-amber-500/20 to-amber-600/5 border-amber-500/20", purple: "from-purple-500/20 to-purple-600/5 border-purple-500/20" };
+  return (
+    <div className={`p-4 rounded-2xl border bg-gradient-to-br ${colors[color]} backdrop-blur-sm`}>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+          <p className="text-2xl font-black text-white mt-1">{value}</p>
+          {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
+        </div>
+        <span className="text-2xl">{icon}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+function SectionHeader({ icon, title, sub, action }: { icon: string; title: string; sub?: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{icon}</span>
+        <div>
+          <h2 className="text-base font-black text-white">{title}</h2>
+          {sub && <p className="text-[11px] text-slate-400">{sub}</p>}
+        </div>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// ─── Data Table ───────────────────────────────────────────────────────────────
+function DataTable({ columns, rows }: { columns: string[]; rows: (string | React.ReactNode)[][] }) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-slate-800">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="bg-slate-900 border-b border-slate-800">
+            {columns.map((c, i) => <th key={i} className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">{c}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-slate-500 text-xs">No data available</td></tr>
+          ) : rows.map((row, i) => (
+            <tr key={i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+              {row.map((cell, j) => <td key={j} className="px-4 py-3 text-slate-300">{cell}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${STATUS_BADGE[status] || "bg-slate-500/15 text-slate-400 border-slate-500/30"}`}>{status}</span>;
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function SuperAdminPortal() {
   const SUPERADMIN_KEY = "debtproof_superadmin_auth_token";
 
   const [isMounted, setIsMounted] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminUserIdInput, setAdminUserIdInput] = useState("");
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "monad_audit" | "risk_engine" | "web3_gas" | "payment_gateways" | "security_audit" | "push_notifications">("overview");
-  const [staffList, setStaffList] = useState<StaffMember[]>(SAMPLE_STAFF);
+  // Data state
+  const [stats, setStats] = useState<PlatformStats | null>(null);
   const [userList, setUserList] = useState<UserData[]>([]);
-  const [queryList, setQueryList] = useState<SupportQuery[]>(SAMPLE_QUERIES);
+  const [loanList, setLoanList] = useState<LoanData[]>([]);
+  const [paymentList, setPaymentList] = useState<PaymentData[]>([]);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [userFilter, setUserFilter] = useState("all");
+  const [loanFilter, setLoanFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
 
-  // New Staff Modal State
-  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
-  const [newStaffName, setNewStaffName] = useState("");
-  const [newStaffEmail, setNewStaffEmail] = useState("");
-  const [newStaffRoles, setNewStaffRoles] = useState<RoleType[]>(["CustomerSupport"]);
-
-  // Push Notification Broadcast State
+  // Push notification state
   const [pushTitle, setPushTitle] = useState("");
   const [pushBody, setPushBody] = useState("");
   const [pushImageUrl, setPushImageUrl] = useState("");
   const [pushActionText, setPushActionText] = useState("");
   const [pushActionUrl, setPushActionUrl] = useState("");
   const [targetAudience, setTargetAudience] = useState<"All" | "Enterprise" | "Pro" | "Free">("All");
+
+  // Staff state
+  const [staffList, setStaffList] = useState<StaffMember[]>(SAMPLE_STAFF);
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  const [newStaffName, setNewStaffName] = useState("");
+  const [newStaffEmail, setNewStaffEmail] = useState("");
+  const [newStaffRoles, setNewStaffRoles] = useState<RoleType[]>(["CustomerSupport"]);
+
+  // Settings state
+  const [featureFlags, setFeatureFlags] = useState({ emiAlerts: true, blockchainAudit: true, aiInsights: true, creditScore: true, darkMode: true, maintenanceMode: false });
 
   useEffect(() => {
     setIsMounted(true);
@@ -109,58 +169,27 @@ export default function RedesignedSuperAdminPortal() {
     }
   }, []);
 
-  // Fetch real users directly from Django database API
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    async function fetchRealUsers() {
-      try {
-        const res = await apiClient.get("/auth/superadmin/users/");
-        const usersArray = res.data?.users;
-        if (usersArray && Array.isArray(usersArray) && usersArray.length > 0) {
-          const fetchedUsers = usersArray.map((u: any) => ({
-            id: u.id,
-            name: u.name,
-            email: u.email,
-            plan: u.plan,
-            priority: u.priority,
-            status: u.status,
-            loansCount: u.loansCount || 0,
-            totalDebtVolume: u.totalDebtVolume || 0,
-            creditScore: 750,
-            joinedDate: u.joinedDate,
-          }));
-          setUserList(fetchedUsers);
-          return;
-        }
-      } catch (err: any) {
-        console.warn("Axios fetch failed, attempting direct fetch fallback...");
-      }
-
-      // Direct native fetch fallback to Django port 8000
-      try {
-        const rawRes = await fetch("http://localhost:8000/api/v1/auth/superadmin/users/");
-        const data = await rawRes.json();
-        if (data?.users && Array.isArray(data.users)) {
-          const fetchedUsers = data.users.map((u: any) => ({
-            id: u.id,
-            name: u.name,
-            email: u.email,
-            plan: u.plan,
-            priority: u.priority,
-            status: u.status,
-            loansCount: u.loansCount || 0,
-            totalDebtVolume: u.totalDebtVolume || 0,
-            creditScore: 750,
-            joinedDate: u.joinedDate,
-          }));
-          setUserList(fetchedUsers);
-        }
-      } catch (e) {
-        console.error("Failed to load database users for SuperAdmin:", e);
-      }
+  const fetchAllData = useCallback(async () => {
+    setLoadingStats(true);
+    try {
+      const [statsData, usersData, loansData, paymentsData] = await Promise.allSettled([
+        superAdminFetch("/auth/superadmin/stats/"),
+        superAdminFetch("/auth/superadmin/users/"),
+        superAdminFetch("/auth/superadmin/loans/"),
+        superAdminFetch("/auth/superadmin/payments/"),
+      ]);
+      if (statsData.status === "fulfilled" && statsData.value) setStats(statsData.value);
+      if (usersData.status === "fulfilled" && usersData.value?.users) setUserList(usersData.value.users);
+      if (loansData.status === "fulfilled" && loansData.value?.loans) setLoanList(loansData.value.loans);
+      if (paymentsData.status === "fulfilled" && paymentsData.value?.payments) setPaymentList(paymentsData.value.payments);
+    } finally {
+      setLoadingStats(false);
     }
-    fetchRealUsers();
-  }, [isAuthenticated]);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) fetchAllData();
+  }, [isAuthenticated, fetchAllData]);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,832 +202,690 @@ export default function RedesignedSuperAdminPortal() {
     }
   };
 
-  const handleAdminLogout = () => {
-    localStorage.removeItem(SUPERADMIN_KEY);
-    setIsAuthenticated(false);
-  };
-
-  const handleCreateStaff = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newStaffName.trim()) return;
-
-    const newStaff: StaffMember = {
-      id: `stf-${Date.now()}`,
-      name: newStaffName,
-      email: newStaffEmail,
-      roles: newStaffRoles,
-      status: "Active",
-      queriesResolved: 0,
-      avgRating: 5.0,
-    };
-
-    setStaffList([...staffList, newStaff]);
-    setShowAddStaffModal(false);
-    setNewStaffName("");
-    setNewStaffEmail("");
-  };
-
   const handleSendPushNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pushTitle.trim()) return;
-
     const formattedTitle = pushTitle.startsWith("📢") ? pushTitle : `📢 ${pushTitle}`;
-    
-    // Build Rich HTML Body payload if image or button links are attached
     let richBodyHtml = pushBody || "System announcement broadcasted from SuperAdmin Portal.";
-    if (pushImageUrl.trim()) {
-      richBodyHtml += `<br/><img src="${pushImageUrl.trim()}" alt="Announcement Image" class="my-2 rounded-lg max-h-48 object-cover w-full border border-slate-700" />`;
+    if (pushImageUrl.trim()) richBodyHtml += `<br/><img src="${pushImageUrl.trim()}" alt="Announcement Image" class="my-2 rounded-lg max-h-48 object-cover w-full border border-slate-700" />`;
+    if (pushActionText.trim() && pushActionUrl.trim()) richBodyHtml += `<br/><a href="${pushActionUrl.trim()}" target="_blank" rel="noopener noreferrer" class="inline-block mt-2 px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs no-underline shadow-md">${pushActionText.trim()} →</a>`;
+    const newNotifObj = { id: `notif-superadmin-${Date.now()}`, title: formattedTitle, body: richBodyHtml, notif_type: "info", is_read: false, created_at: new Date().toISOString() };
+    try { await apiClient.post("/notifications/broadcast/", { title: formattedTitle, body: richBodyHtml, target_audience: targetAudience }); } catch {
+      try { await fetch("http://localhost:8000/api/v1/notifications/broadcast/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: formattedTitle, body: richBodyHtml, target_audience: targetAudience }) }); } catch {}
     }
-    if (pushActionText.trim() && pushActionUrl.trim()) {
-      richBodyHtml += `<br/><a href="${pushActionUrl.trim()}" target="_blank" rel="noopener noreferrer" class="inline-block mt-2 px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs no-underline shadow-md">${pushActionText.trim()} →</a>`;
-    }
-
-    const newNotifObj = {
-      id: `notif-superadmin-${Date.now()}`,
-      title: formattedTitle,
-      body: richBodyHtml,
-      notif_type: "info",
-      is_read: false,
-      created_at: new Date().toISOString(),
-    };
-
-    try {
-      await apiClient.post("/notifications/broadcast/", {
-        title: formattedTitle,
-        body: richBodyHtml,
-        target_audience: targetAudience,
-      });
-    } catch {
-      try {
-        await fetch("http://localhost:8000/api/v1/notifications/broadcast/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: formattedTitle,
-            body: richBodyHtml,
-            target_audience: targetAudience,
-          }),
-        });
-      } catch {}
-    }
-
     if (typeof window !== "undefined") {
-      const existingRaw = localStorage.getItem("debtproof_local_broadcasts");
-      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      const existing = JSON.parse(localStorage.getItem("debtproof_local_broadcasts") || "[]");
       localStorage.setItem("debtproof_local_broadcasts", JSON.stringify([newNotifObj, ...existing]));
-
-      try {
-        const bc = new BroadcastChannel("debtproof_notifications_channel");
-        bc.postMessage({ type: "ADD_NOTIFICATION", notif: newNotifObj });
-        bc.close();
-      } catch {}
+      try { const bc = new BroadcastChannel("debtproof_notifications_channel"); bc.postMessage({ type: "ADD_NOTIFICATION", notif: newNotifObj }); bc.close(); } catch {}
     }
-
     window.dispatchEvent(new CustomEvent("debtproof_add_notification", { detail: newNotifObj }));
     window.dispatchEvent(new CustomEvent("debtproof_refresh_notifications"));
     window.dispatchEvent(new CustomEvent("debtproof-toast", { detail: { message: `📢 Broadcast Sent: ${pushTitle}`, type: "success" } }));
-
-    if (typeof window !== "undefined" && "Notification" in window) {
-      if (Notification.permission === "granted") {
-        try {
-          new Notification(`📢 DebtProof: ${pushTitle}`, { body: pushBody || "System announcement broadcasted from SuperAdmin Portal.", icon: "/favicon.ico" });
-        } catch {}
-      } else {
-        Notification.requestPermission().then((permission) => {
-          if (permission === "granted") {
-            try {
-              new Notification(`📢 DebtProof: ${pushTitle}`, { body: pushBody || "System announcement broadcasted from SuperAdmin Portal.", icon: "/favicon.ico" });
-            } catch {}
-          }
-        });
-      }
-    }
-
-    setPushTitle("");
-    setPushBody("");
-  };
-
-  const handleToggleUserStatus = (userId: string) => {
-    setUserList((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, status: u.status === "Active" ? "Suspended" : "Active" } : u))
-    );
+    setPushTitle(""); setPushBody(""); setPushImageUrl(""); setPushActionText(""); setPushActionUrl("");
   };
 
   if (!isMounted) return null;
 
+  // ── Login Gate ──────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full p-8 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-6">
+      <div className="min-h-screen bg-[#080c14] text-white flex items-center justify-center p-4" style={{ backgroundImage: "radial-gradient(ellipse at 50% 0%, rgba(244,63,94,0.08) 0%, transparent 60%)" }}>
+        <div className="max-w-sm w-full p-8 bg-slate-900/80 border border-slate-800 rounded-3xl shadow-2xl backdrop-blur-sm space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center text-2xl mx-auto">
-              👑
-            </div>
-            <h2 className="text-xl font-bold text-white">SuperAdmin Control Center</h2>
-            <p className="text-xs text-slate-400">Enter corporate executive security credentials</p>
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/20 to-rose-700/10 border border-rose-500/20 flex items-center justify-center text-3xl mx-auto shadow-[0_0_30px_rgba(244,63,94,0.15)]">👑</div>
+            <h1 className="text-xl font-black text-white">SuperAdmin Control Center</h1>
+            <p className="text-xs text-slate-400">DebtProof Enterprise Security Gate</p>
           </div>
-
-          {authError && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium text-center">
-              {authError}
-            </div>
-          )}
-
+          {authError && <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium text-center">{authError}</div>}
           <form onSubmit={handleAdminLogin} className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-300">SuperAdmin User ID</label>
-              <input
-                type="text"
-                placeholder="SUPERADMIN-DEBTPROOF-9901"
-                value={adminUserIdInput}
-                onChange={(e) => setAdminUserIdInput(e.target.value)}
-                className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs font-mono focus:border-rose-500 focus:outline-none"
-                required
-              />
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">SuperAdmin User ID</label>
+              <input type="text" placeholder="SUPERADMIN-DEBTPROOF-9901" value={adminUserIdInput} onChange={(e) => setAdminUserIdInput(e.target.value)} className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs font-mono focus:border-rose-500 focus:outline-none transition" required />
             </div>
-
             <div>
-              <label className="text-xs font-semibold text-slate-300">Security Passcode</label>
-              <input
-                type="password"
-                placeholder="••••••••••••"
-                value={adminPasswordInput}
-                onChange={(e) => setAdminPasswordInput(e.target.value)}
-                className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs font-mono focus:border-rose-500 focus:outline-none"
-                required
-              />
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Security Passcode</label>
+              <input type="password" placeholder="••••••••••••" value={adminPasswordInput} onChange={(e) => setAdminPasswordInput(e.target.value)} className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs font-mono focus:border-rose-500 focus:outline-none transition" required />
             </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg transition cursor-pointer"
-            >
-              Verify Credentials & Unlock Portal →
+            <button type="submit" className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-black text-xs shadow-lg hover:from-rose-500 hover:to-rose-400 transition cursor-pointer">
+              Verify & Unlock Portal →
             </button>
           </form>
-
           <div className="text-center pt-2 border-t border-slate-800">
-            <Link href="/dashboard" className="text-xs text-slate-400 hover:text-white transition">
-              ← Return to Main Application
-            </Link>
+            <Link href="/dashboard" className="text-xs text-slate-500 hover:text-white transition">← Return to Application</Link>
           </div>
         </div>
       </div>
     );
   }
 
-  const NAV_ITEMS = [
-    { id: "overview", label: "Dashboard Overview", icon: "📊" },
-    { id: "users", label: "User Directory", icon: "👥" },
-    { id: "staff", label: "Staff & Team Roles", icon: "🛡️" },
-    { id: "support", label: "Customer Support SLA", icon: "💬" },
-    { id: "monad_audit", label: "Monad On-Chain Audit", icon: "📜" },
-    { id: "risk_engine", label: "Liquidation & Risk Engine", icon: "⚡" },
-    { id: "web3_gas", label: "Web3 Gas Escrow Tank", icon: "⛽" },
-    { id: "payment_gateways", label: "Payment Gateway Monitor", icon: "💳" },
-    { id: "security_audit", label: "System Security Audit", icon: "🔒" },
-    { id: "push_notifications", label: "Broadcast Push Alerts", icon: "📢" },
-  ] as const;
+  // ── Nav Items ───────────────────────────────────────────────────────────────
+  const NAV: { id: TabId; icon: string; label: string }[] = [
+    { id: "overview", icon: "📊", label: "Overview" },
+    { id: "users", icon: "👥", label: "Users" },
+    { id: "loans", icon: "💰", label: "Loans" },
+    { id: "push", icon: "📣", label: "Broadcast" },
+    { id: "staff", icon: "👔", label: "Staff" },
+    { id: "support", icon: "🎧", label: "Support SLA" },
+    { id: "risk", icon: "⚠️", label: "Risk Engine" },
+    { id: "monad", icon: "🔗", label: "Monad Audit" },
+    { id: "payments", icon: "💳", label: "Payments" },
+    { id: "security", icon: "🔐", label: "Security" },
+    { id: "analytics", icon: "📈", label: "Analytics" },
+    { id: "settings", icon: "⚙️", label: "Settings" },
+  ];
 
+  // ── Filtered Data ───────────────────────────────────────────────────────────
+  const filteredUsers = userList.filter(u => {
+    const matchSearch = !userSearch || u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase());
+    const matchFilter = userFilter === "all" || u.status === userFilter || u.plan === userFilter;
+    return matchSearch && matchFilter;
+  });
+  const filteredLoans = loanFilter === "all" ? loanList : loanList.filter(l => l.status === loanFilter || l.loan_type === loanFilter);
+  const filteredPayments = paymentFilter === "all" ? paymentList : paymentList.filter(p => p.status === paymentFilter);
+
+  // High risk users (multiple loans or high outstanding)
+  const riskUsers = userList.filter(u => u.loansCount >= 2 || u.totalDebtVolume > 1000000);
+  const overdueLoans = loanList.filter(l => l.status === "defaulted");
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
-      
-      {/* ── Modern Sleek Left Sidebar ──────────────────────────────────────── */}
-      <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
-        
-        {/* Sidebar Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-lg shadow-lg">
-            👑
-          </div>
-          <div>
-            <h1 className="font-bold text-sm text-white tracking-tight">DebtProof Admin</h1>
-            <span className="text-[10px] font-mono text-rose-400 block font-semibold">Corporate Portal v4.0</span>
+    <div className="min-h-screen bg-[#080c14] text-white flex" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* ── Sidebar ── */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-56 bg-slate-900/95 border-r border-slate-800 flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:relative lg:block`}>
+        <div className="p-4 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center text-sm font-black">👑</div>
+            <div>
+              <p className="text-xs font-black text-white">SuperAdmin</p>
+              <p className="text-[9px] text-rose-400 font-bold">CONTROL CENTER</p>
+            </div>
           </div>
         </div>
-
-        {/* Sidebar Navigation */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/20 font-bold"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
-                }`}
-              >
-                <span className="text-base">{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          {NAV.map(n => (
+            <button key={n.id} onClick={() => { setActiveTab(n.id); setSidebarOpen(false); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left ${activeTab === n.id ? "bg-rose-500/15 text-rose-400 border border-rose-500/20" : "text-slate-400 hover:text-white hover:bg-slate-800/50"}`}>
+              <span className="text-base w-5 text-center">{n.icon}</span>
+              <span>{n.label}</span>
+            </button>
+          ))}
         </nav>
-
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-800 space-y-2">
-          <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
-            <span className="truncate">SUPERADMIN-DEBTPROOF</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          </div>
-          <button
-            onClick={handleAdminLogout}
-            className="w-full py-2 rounded-xl bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 font-semibold text-xs transition cursor-pointer"
-          >
-            🔒 Lock Portal & Logout
-          </button>
-          <Link href="/dashboard" className="block text-center text-[11px] text-slate-500 hover:text-slate-300 pt-1">
-            Exit to Dashboard →
+        <div className="p-3 border-t border-slate-800 space-y-2">
+          <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-slate-800/50 transition">
+            <span>←</span><span>Back to App</span>
           </Link>
+          <button onClick={() => { localStorage.removeItem(SUPERADMIN_KEY); setIsAuthenticated(false); }} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition cursor-pointer">
+            <span>🚪</span><span>Logout</span>
+          </button>
         </div>
       </aside>
 
-      {/* ── Main Content Body ───────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
-        
-        {/* Top Minimal Action Header */}
-        <header className="h-16 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-30">
-          <div>
-            <h2 className="text-sm font-bold text-white capitalize">
-              {activeTab.replace("_", " ")} Overview
-            </h2>
-            <p className="text-[11px] text-slate-400">DebtProof Corporate Enterprise Control Panel</p>
-          </div>
+      {/* Backdrop */}
+      {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
+      {/* ── Main ── */}
+      <main className="flex-1 min-w-0 overflow-auto">
+        {/* Topbar */}
+        <div className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowAddStaffModal(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition cursor-pointer flex items-center gap-1.5"
-            >
-              <span>+ Add Corporate Staff</span>
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition cursor-pointer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
+            <div>
+              <h1 className="text-sm font-black text-white">{NAV.find(n => n.id === activeTab)?.icon} {NAV.find(n => n.id === activeTab)?.label}</h1>
+              <p className="text-[10px] text-slate-500">DebtProof SuperAdmin Portal</p>
+            </div>
           </div>
-        </header>
-
-        {/* Dynamic Workspace Panel */}
-        <main className="p-8 flex-1 overflow-y-auto space-y-6">
-
-          {/* TAB 1: OVERVIEW */}
-          {activeTab === "overview" && (
-            <div className="space-y-6">
-              
-              {/* Top Dynamic Stat Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold">
-                    <span>Total Database Users</span>
-                    <span className="text-rose-400">👥</span>
-                  </div>
-                  <div className="text-2xl font-bold text-white">{userList.length} Accounts</div>
-                  <div className="text-[11px] text-slate-400">
-                    <span className="text-emerald-400 font-bold">{userList.filter(u => u.plan === "Enterprise").length} Enterprise</span> · {userList.filter(u => u.plan === "Pro").length} Pro
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold">
-                    <span>Corporate Staff</span>
-                    <span className="text-purple-400">🛡️</span>
-                  </div>
-                  <div className="text-2xl font-bold text-white">{staffList.length} Active Staff</div>
-                  <div className="text-[11px] text-purple-300">Multi-Role Governance</div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold">
-                    <span>Customer SLA Rating</span>
-                    <span className="text-emerald-400">⭐</span>
-                  </div>
-                  <div className="text-2xl font-bold text-emerald-400">98.4% SLA</div>
-                  <div className="text-[11px] text-slate-400">4.9 Avg Resolution Score</div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                  <div className="flex justify-between items-center text-xs text-slate-400 font-semibold">
-                    <span>Total Debt Volume</span>
-                    <span className="text-indigo-400">💰</span>
-                  </div>
-                  <div className="text-2xl font-bold text-indigo-400">
-                    ₹{userList.reduce((sum, u) => sum + (u.totalDebtVolume || 0), 0).toLocaleString()}
-                  </div>
-                  <div className="text-[11px] text-slate-400">Monad ZK Verified</div>
-                </div>
-              </div>
-
-              {/* Quick Actions & Recent Accounts */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Users Directory Overview */}
-                <div className="lg:col-span-2 p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-                  <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <h3 className="font-bold text-sm text-white">Recent Database Registered Accounts</h3>
-                    <button onClick={() => setActiveTab("users")} className="text-xs text-rose-400 hover:underline">View All →</button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {userList.slice(0, 5).map((u) => (
-                      <div key={u.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-xs text-white">{u.name} ({u.email})</p>
-                          <p className="text-[11px] text-slate-400">{u.loansCount} Loans · ₹{u.totalDebtVolume.toLocaleString()} Debt Volume</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
-                            u.plan === "Enterprise" ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" :
-                            u.plan === "Pro" ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" :
-                            "bg-slate-800 text-slate-300"
-                          }`}>{u.plan}</span>
-                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
-                            u.status === "Active" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
-                          }`}>{u.status}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* System Status Panel */}
-                <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-                  <h3 className="font-bold text-sm text-white border-b border-slate-800 pb-3">System Health Summary</h3>
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-300">Monad ZK Relayer</span>
-                      <span className="text-emerald-400 font-bold">100% Operational</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-300">UPI Autopay Gateway</span>
-                      <span className="text-emerald-400 font-bold">99.8% Success</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
-                      <span className="text-slate-300">Monad Gas Tank</span>
-                      <span className="text-purple-400 font-bold">1,250 MON Reserve</span>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-          )}
-
-          {/* TAB 2: USERS DIRECTORY */}
-          {activeTab === "users" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                <div>
-                  <h3 className="font-bold text-sm text-white">Registered Users & Subscription Directory</h3>
-                  <p className="text-xs text-slate-400">Actual database records, credit ratings & account management controls</p>
-                </div>
-                <span className="text-xs font-mono text-emerald-400 font-bold">Total: {userList.length} Users</span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-800 text-[10px] text-slate-400 uppercase font-bold">
-                      <th className="py-3 px-3">User & Email</th>
-                      <th className="py-3 px-3">Plan</th>
-                      <th className="py-3 px-3">Active Loans</th>
-                      <th className="py-3 px-3">Debt Volume</th>
-                      <th className="py-3 px-3">Status</th>
-                      <th className="py-3 px-3">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {userList.map((u) => (
-                      <tr key={u.id} className="hover:bg-slate-950/40">
-                        <td className="py-3 px-3">
-                          <p className="font-semibold text-white">{u.name}</p>
-                          <p className="text-[11px] text-slate-400">{u.email}</p>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            u.plan === "Enterprise" ? "bg-purple-500/20 text-purple-300" :
-                            u.plan === "Pro" ? "bg-indigo-500/20 text-indigo-300" : "bg-slate-800 text-slate-300"
-                          }`}>{u.plan}</span>
-                        </td>
-                        <td className="py-3 px-3 font-mono">{u.loansCount} Loans</td>
-                        <td className="py-3 px-3 font-mono font-bold text-indigo-300">₹{u.totalDebtVolume.toLocaleString()}</td>
-                        <td className="py-3 px-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            u.status === "Active" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
-                          }`}>{u.status}</span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <button
-                            onClick={() => handleToggleUserStatus(u.id)}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-200 transition cursor-pointer"
-                          >
-                            {u.status === "Active" ? "Suspend" : "Activate"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: STAFF ROLES */}
-          {activeTab === "staff" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                <div>
-                  <h3 className="font-bold text-sm text-white">Corporate Staff Directory & Multi-Role Management</h3>
-                  <p className="text-xs text-slate-400">Manage internal admin roles, support agents, risk auditors & governance permissions</p>
-                </div>
-                <button
-                  onClick={() => setShowAddStaffModal(true)}
-                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs shadow cursor-pointer"
-                >
-                  + Create New Staff Account
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {staffList.map((stf) => (
-                  <div key={stf.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-bold text-sm text-white">{stf.name}</h4>
-                        <p className="text-xs text-slate-400">{stf.email}</p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">Active</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {stf.roles.map((r) => (
-                        <span key={r} className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold">
-                          {r}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-2.5">
-                      <span>Queries Resolved: {stf.queriesResolved}</span>
-                      <span>Rating: {stf.avgRating} ⭐</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: CUSTOMER SUPPORT SLA */}
-          {activeTab === "support" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="border-b border-slate-800 pb-4">
-                <h3 className="font-bold text-sm text-white">Customer Support Ticket Management & Escalation Engine</h3>
-                <p className="text-xs text-slate-400">Priority support queues for Enterprise & Pro users with senior escalation routes</p>
-              </div>
-
-              <div className="space-y-3">
-                {queryList.map((q) => (
-                  <div key={q.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-white">{q.subject}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400">{q.priority}</span>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1">From: {q.userName} ({q.userEmail}) · Tier: {q.userPlan}</p>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="text-slate-400">Assigned: {q.assignedStaff}</span>
-                      <button onClick={() => alert(`Escalated ticket ${q.id} to SuperAdmin!`)} className="px-3 py-1 rounded bg-slate-800 hover:bg-rose-600 text-white font-semibold transition cursor-pointer">
-                        Escalate to SuperAdmin
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: MONAD ON-CHAIN AUDIT */}
-          {activeTab === "monad_audit" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 font-mono text-xs">
-              <div className="border-b border-slate-800 pb-4">
-                <h3 className="font-bold text-sm text-white">Monad Testnet (Chain ID 10143) Transaction Audit Log</h3>
-                <p className="text-xs text-slate-400">Real-time ZK proof anchors & automated smart contract prepayment executions</p>
-              </div>
-
-              <div className="space-y-3">
-                {SAMPLE_MONAD_LOGS.map((log) => (
-                  <div key={log.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-purple-400">{log.action} <span className="text-slate-500">Block #{log.blockNumber}</span></p>
-                      <p className="text-slate-400 text-[11px] mt-0.5">User: {log.userEmail} · {log.timestamp}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-emerald-400">₹{log.amount.toLocaleString()}</span>
-                      <span className="px-2.5 py-1 rounded bg-slate-900 text-purple-300 border border-slate-800 font-mono text-[11px]">{log.txHash}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 6: RISK ENGINE */}
-          {activeTab === "risk_engine" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                <div>
-                  <h3 className="font-bold text-sm text-white">Global Risk & Liquidation Escrow Engine</h3>
-                  <p className="text-xs text-slate-400">Monad collateral monitoring & automated non-performing asset sweeps</p>
-                </div>
-                <button onClick={() => alert("⚡ Global System Risk Assessment & Overdue Sweep Executed!")} className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow cursor-pointer">
-                  ⚡ Trigger Risk Sweep
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-xs text-slate-400 uppercase font-bold block">NPA Default Rate</span>
-                  <span className="text-2xl font-bold text-emerald-400 mt-1 block">0.42%</span>
-                  <span className="text-[10px] text-emerald-500 font-bold block">Low System Risk</span>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-xs text-slate-400 uppercase font-bold block">Overdue Debts Under Watch</span>
-                  <span className="text-2xl font-bold text-rose-400 mt-1 block">₹1,20,000</span>
-                  <span className="text-[10px] text-rose-400 font-bold block">2 Default Alerts</span>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-xs text-slate-400 uppercase font-bold block">Monad Liquidation Escrow</span>
-                  <span className="text-2xl font-bold text-purple-400 mt-1 block">450 MON</span>
-                  <span className="text-[10px] text-purple-300 font-bold block">Collateral Anchored</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 7: WEB3 GAS TANK */}
-          {activeTab === "web3_gas" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-                <div>
-                  <h3 className="font-bold text-sm text-white">Monad Testnet Gas Reserve & Relayer Pool</h3>
-                  <p className="text-xs text-slate-400">Gas tank balance monitoring for automated ZK proof on-chain anchoring</p>
-                </div>
-                <button onClick={() => alert("⛽ Gas Tank Refilled with +100 MON!")} className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer">
-                  ⛽ Refill Gas Reserve
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-xs text-slate-400 uppercase font-bold block">Gas Tank Balance</span>
-                  <span className="text-2xl font-bold text-purple-400 mt-1 block">1,250 MON</span>
-                  <span className="text-[10px] text-emerald-400 font-bold block">Optimal Gas Level</span>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-xs text-slate-400 uppercase font-bold block">Avg Gas / ZK Proof</span>
-                  <span className="text-2xl font-bold text-indigo-400 mt-1 block">0.0024 MON</span>
-                  <span className="text-[10px] text-indigo-300 font-bold block">Monad EVM Speed</span>
-                </div>
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
-                  <span className="text-xs text-slate-400 uppercase font-bold block">Relayer Contract</span>
-                  <span className="text-2xl font-bold text-emerald-400 mt-1 block">Active 🟢</span>
-                  <span className="text-[10px] text-emerald-400 font-bold block">Chain ID: 10143</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 8: PAYMENT GATEWAY MONITOR */}
-          {activeTab === "payment_gateways" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="border-b border-slate-800 pb-4">
-                <h3 className="font-bold text-sm text-white">Payment Gateway & Bank Processor Health</h3>
-                <p className="text-xs text-slate-400">Real-time status of Razorpay, Stripe, UPI Autopay & Bank Webhooks</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-xs text-white">💳 Razorpay UPI Autopay Gateway</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Success Rate: 99.8% · Latency: 120ms</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">OPERATIONAL 🟢</span>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-xs text-white">🌐 Stripe Credit Card Settlement API</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Success Rate: 99.9% · Global Settlements</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">OPERATIONAL 🟢</span>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-xs text-white">📜 Monad Testnet Web3 Escrow Gateway</p>
-                    <p className="text-xs text-slate-400 mt-0.5">Success Rate: 100% · EVM Smart Contract</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300">OPERATIONAL 🟢</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 9: SECURITY AUDIT */}
-          {activeTab === "security_audit" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="border-b border-slate-800 pb-4">
-                <h3 className="font-bold text-sm text-white">Security Compliance & System Audit Trail</h3>
-                <p className="text-xs text-slate-400">Log of SuperAdmin actions, IP addresses, and security violation alerts</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-xs text-emerald-400">✓ SuperAdmin Authenticated</p>
-                    <p className="text-[11px] text-slate-400">ID: SUPERADMIN-DEBTPROOF-9901 · IP: 127.0.0.1 · Just Now</p>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-mono">SHA-256 Verified</span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-xs text-purple-400">✓ Feature Flag Updated</p>
-                    <p className="text-[11px] text-slate-400">Autonomous Prepayment Agent set to Active · Today 11:45 AM</p>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-mono">Audit Pass</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 10: BROADCAST PUSH NOTIFICATIONS */}
-          {activeTab === "push_notifications" && (
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="border-b border-slate-800 pb-4">
-                <h3 className="font-bold text-sm text-white">Broadcast Real-Time System Push Notifications</h3>
-                <p className="text-xs text-slate-400">Send push notifications to all users or specific plan tiers (Enterprise, Pro, Free)</p>
-              </div>
-
-              <form onSubmit={handleSendPushNotification} className="space-y-4 max-w-md">
-                <div>
-                  <label className="text-xs font-semibold text-slate-300">Target User Audience</label>
-                  <select
-                    value={targetAudience}
-                    onChange={(e) => setTargetAudience(e.target.value as any)}
-                    className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs font-mono focus:border-rose-500 focus:outline-none"
-                  >
-                    <option value="All">All Registered Users</option>
-                    <option value="Enterprise">Enterprise SaaS Users Only</option>
-                    <option value="Pro">Pro Plan Users Only</option>
-                    <option value="Free">Free Plan Users Only</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-300">Notification Title *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. System Upgrade v4.0 Live!"
-                    value={pushTitle}
-                    onChange={(e) => setPushTitle(e.target.value)}
-                    className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-300">Message Body (Supports HTML & Formatting)</label>
-                    <div className="flex gap-1.5 text-[10px]">
-                      <button type="button" onClick={() => setPushBody(prev => prev + "<b>Bold Text</b>")} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white font-bold">B</button>
-                      <button type="button" onClick={() => setPushBody(prev => prev + "<i>Italic Text</i>")} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white italic">I</button>
-                      <button type="button" onClick={() => setPushBody(prev => prev + "<u>Underline</u>")} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white underline">U</button>
-                      <button type="button" onClick={() => setPushBody(prev => prev + '<a href="https://debtproof.io" target="_blank" class="text-rose-400 underline">Link</a>')} className="px-2 py-0.5 rounded bg-slate-800 text-rose-400 hover:underline">🔗 Link</button>
-                    </div>
-                  </div>
-                  <textarea
-                    placeholder="Enter message details... (HTML supported: <b>, <i>, <u>, <a>)"
-                    value={pushBody}
-                    onChange={(e) => setPushBody(e.target.value)}
-                    rows={4}
-                    className="w-full mt-1.5 p-3 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none font-mono"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold text-slate-300">Image URL (Optional Attachment)</label>
-                    <input
-                      type="url"
-                      placeholder="https://example.com/banner.png"
-                      value={pushImageUrl}
-                      onChange={(e) => setPushImageUrl(e.target.value)}
-                      className="w-full mt-1.5 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-semibold text-slate-300">Action Button Text</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. View Offer"
-                      value={pushActionText}
-                      onChange={(e) => setPushActionText(e.target.value)}
-                      className="w-full mt-1.5 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {pushActionText.trim() && (
-                  <div>
-                    <label className="text-xs font-semibold text-slate-300">Action Button Link URL</label>
-                    <input
-                      type="url"
-                      placeholder="https://debtproof.io/offers"
-                      value={pushActionUrl}
-                      onChange={(e) => setPushActionUrl(e.target.value)}
-                      className="w-full mt-1.5 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
-                    />
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg transition cursor-pointer"
-                >
-                  📢 Broadcast Push Notification Now
-                </button>
-              </form>
-            </div>
-          )}
-
-        </main>
-      </div>
-
-      {/* Add Staff Modal */}
-      {showAddStaffModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="max-w-md w-full p-6 space-y-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white">Create Corporate Staff Account</h3>
-              <button onClick={() => setShowAddStaffModal(false)} className="text-xs text-slate-400 hover:text-white">✕</button>
-            </div>
-
-            <form onSubmit={handleCreateStaff} className="space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-slate-300">Staff Full Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Riya Sen"
-                  value={newStaffName}
-                  onChange={(e) => setNewStaffName(e.target.value)}
-                  className="w-full mt-1 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-300">Corporate Email</label>
-                <input
-                  type="email"
-                  placeholder="riya@debtproof.io"
-                  value={newStaffEmail}
-                  onChange={(e) => setNewStaffEmail(e.target.value)}
-                  className="w-full mt-1 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs focus:border-rose-500 focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-300">Assign Roles (Multi-Role Support)</label>
-                <select
-                  multiple
-                  value={newStaffRoles}
-                  onChange={(e) => {
-                    const opts = Array.from(e.target.selectedOptions, (option) => option.value as RoleType);
-                    setNewStaffRoles(opts);
-                  }}
-                  className="w-full mt-1 p-2.5 rounded-xl bg-slate-950 text-white border border-slate-800 text-xs h-28 focus:border-rose-500 focus:outline-none"
-                >
-                  <option value="CustomerSupport">Customer Support</option>
-                  <option value="AdminManager">Admin Manager</option>
-                  <option value="BillingFinance">Billing & Finance</option>
-                  <option value="RiskAuditor">Risk Auditor</option>
-                  <option value="SuperAdmin">SuperAdmin Authority</option>
-                </select>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition cursor-pointer">Create Staff Account</button>
-                <button type="button" onClick={() => setShowAddStaffModal(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-semibold text-xs transition cursor-pointer">Cancel</button>
-              </div>
-            </form>
+          <div className="flex items-center gap-2">
+            {loadingStats && <div className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />}
+            <button onClick={fetchAllData} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition cursor-pointer">⟳ Refresh</button>
+            <div className="px-2.5 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[10px] font-black">SUPERADMIN</div>
           </div>
         </div>
-      )}
 
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+
+          {/* ══════════ TAB 1: OVERVIEW ══════════ */}
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <KpiCard icon="👥" label="Total Users" value={stats?.total_users ?? userList.length} sub={`${stats?.active_users ?? "—"} active`} color="blue" />
+                <KpiCard icon="💰" label="Active Loans" value={stats?.active_loans ?? "—"} sub={`${stats?.overdue_loans ?? 0} overdue`} color="rose" />
+                <KpiCard icon="📉" label="Total Debt" value={stats ? fmt(stats.total_debt_volume) : "—"} sub={`${stats ? fmt(stats.total_outstanding) : "—"} outstanding`} color="amber" />
+                <KpiCard icon="✅" label="Total Paid" value={stats ? fmt(stats.total_paid) : "—"} sub={`${stats?.total_payments ?? "—"} payments`} color="emerald" />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Monthly Signups Chart */}
+                <div className="lg:col-span-2 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <h3 className="text-xs font-black text-slate-300 mb-3">📈 Monthly Signups (12 months)</h3>
+                  {stats?.monthly_signups ? (
+                    <MiniBarChart data={stats.monthly_signups.map(m => ({ label: m.month.split(" ")[0], value: m.count }))} color="#3b82f6" />
+                  ) : <div className="h-20 flex items-center justify-center text-slate-600 text-xs">Loading chart...</div>}
+                </div>
+
+                {/* Loan Type Breakdown */}
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <h3 className="text-xs font-black text-slate-300 mb-3">🗂️ Loan Types</h3>
+                  <div className="space-y-2">
+                    {(stats?.loan_type_breakdown && stats.loan_type_breakdown.length > 0) ? stats.loan_type_breakdown.slice(0, 5).map(lt => {
+                      const total = stats.loan_type_breakdown.reduce((s, x) => s + x.count, 0);
+                      const pct = total > 0 ? Math.round((lt.count / total) * 100) : 0;
+                      return (
+                        <div key={lt.loan_type}>
+                          <div className="flex justify-between items-center mb-0.5">
+                            <span className="text-[10px] text-slate-400">{LOAN_TYPE_LABEL[lt.loan_type] || lt.loan_type}</span>
+                            <span className="text-[10px] font-bold text-white">{lt.count} ({pct}%)</span>
+                          </div>
+                          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-rose-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    }) : <p className="text-xs text-slate-500">No loan data yet</p>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Platform Health */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "Suspended Users", value: stats?.suspended_users ?? 0, icon: "🚫", c: "rose" },
+                  { label: "Closed Loans", value: stats?.closed_loans ?? 0, icon: "✅", c: "emerald" },
+                  { label: "Failed Payments", value: stats?.failed_payments ?? 0, icon: "❌", c: "amber" },
+                  { label: "Staff Members", value: staffList.length, icon: "👔", c: "purple" },
+                ].map((k, i) => <KpiCard key={i} icon={k.icon} label={k.label} value={k.value} color={k.c as any} />)}
+              </div>
+
+              {/* Recent Signups */}
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                <h3 className="text-xs font-black text-slate-300 mb-3">🆕 Recent Signups</h3>
+                <div className="space-y-2">
+                  {(stats?.recent_users ?? userList.slice(0, 5)).map((u, i) => (
+                    <div key={i} className="flex items-center justify-between gap-3 py-2 border-b border-slate-800/50 last:border-0">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-black">
+                          {(u as any).name?.charAt(0)?.toUpperCase() ?? "?"}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white">{(u as any).name}</p>
+                          <p className="text-[10px] text-slate-400">{(u as any).email}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-500 shrink-0">{(u as any).joined ?? (u as any).joinedDate ?? "—"}</span>
+                    </div>
+                  ))}
+                  {(stats?.recent_users ?? userList).length === 0 && <p className="text-xs text-slate-500 text-center py-4">No users yet</p>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ TAB 2: USER DIRECTORY ══════════ */}
+          {activeTab === "users" && (
+            <div className="space-y-4">
+              <SectionHeader icon="👥" title="User Directory" sub={`${userList.length} registered users`} />
+              <div className="flex flex-wrap gap-2">
+                <input value={userSearch} onChange={e => setUserSearch(e.target.value)} placeholder="Search name or email..." className="flex-1 min-w-[180px] px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none" />
+                {["all", "Active", "Suspended", "Free", "Pro", "Enterprise"].map(f => (
+                  <button key={f} onClick={() => setUserFilter(f)} className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${userFilter === f ? "bg-rose-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>{f === "all" ? "All" : f}</button>
+                ))}
+              </div>
+              <DataTable
+                columns={["User", "Email", "Plan", "Loans", "Total Debt", "Joined", "Status", "Actions"]}
+                rows={filteredUsers.map(u => [
+                  <div key={u.id} className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[9px] font-black shrink-0">{u.name?.charAt(0)?.toUpperCase()}</div><span className="font-bold text-white text-xs">{u.name}</span>{u.isSuperuser && <span className="text-[8px] px-1 py-0.5 bg-rose-500/20 text-rose-400 rounded-full font-bold">SUPER</span>}</div>,
+                  <span key="e" className="text-slate-400">{u.email}</span>,
+                  <span key="p" className="font-bold">{u.plan || "Free"}</span>,
+                  <span key="l">{u.loansCount}</span>,
+                  <span key="d" className="font-bold text-rose-400">{fmt(u.totalDebtVolume)}</span>,
+                  <span key="j" className="text-slate-400">{u.joinedDate || "—"}</span>,
+                  <StatusBadge key="s" status={u.status} />,
+                  <div key="a" className="flex gap-1">
+                    <button className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 text-[10px] font-bold hover:bg-amber-500/20 transition cursor-pointer">Suspend</button>
+                    <button className="px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-400 text-[10px] font-bold hover:bg-blue-500/20 transition cursor-pointer">View</button>
+                  </div>
+                ])}
+              />
+            </div>
+          )}
+
+          {/* ══════════ TAB 3: LOAN MANAGEMENT ══════════ */}
+          {activeTab === "loans" && (
+            <div className="space-y-4">
+              <SectionHeader icon="💰" title="Loan Management" sub={`${loanList.length} total loans across all users`} />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
+                <KpiCard icon="📋" label="Total Loans" value={loanList.length} color="blue" />
+                <KpiCard icon="✅" label="Active" value={loanList.filter(l => l.status === "active").length} color="emerald" />
+                <KpiCard icon="🔴" label="Overdue" value={loanList.filter(l => l.status === "defaulted").length} color="rose" />
+                <KpiCard icon="🏁" label="Closed" value={loanList.filter(l => l.status === "closed").length} color="purple" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {["all", "active", "defaulted", "closed", "on_hold", "home", "personal", "vehicle", "education", "business"].map(f => (
+                  <button key={f} onClick={() => setLoanFilter(f)} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${loanFilter === f ? "bg-rose-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>{LOAN_TYPE_LABEL[f]?.split(" ")[1] || f.charAt(0).toUpperCase() + f.slice(1)}</button>
+                ))}
+              </div>
+              <DataTable
+                columns={["Loan Name", "User", "Type", "Principal", "EMI/mo", "Interest", "Status", "Date"]}
+                rows={filteredLoans.map(l => [
+                  <span key="n" className="font-bold text-white">{l.name}</span>,
+                  <div key="u"><p className="font-bold text-xs">{l.user_name}</p><p className="text-[10px] text-slate-400">{l.user_email}</p></div>,
+                  <span key="t">{LOAN_TYPE_LABEL[l.loan_type] || l.loan_type}</span>,
+                  <span key="p" className="font-bold text-rose-400">{fmt(l.principal)}</span>,
+                  <span key="e">{fmt(l.monthly_emi)}</span>,
+                  <span key="i">{l.interest_rate}%</span>,
+                  <StatusBadge key="s" status={l.status} />,
+                  <span key="d" className="text-slate-400">{l.created_at}</span>,
+                ])}
+              />
+            </div>
+          )}
+
+          {/* ══════════ TAB 4: PUSH NOTIFICATIONS ══════════ */}
+          {activeTab === "push" && (
+            <div className="max-w-2xl space-y-6">
+              <SectionHeader icon="📣" title="Broadcast Notifications" sub="Send announcements to all or targeted users" />
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+                <form onSubmit={handleSendPushNotification} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notification Title *</label>
+                      <input value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="e.g. EMI Reminder: July" required className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Message Body (HTML supported)</label>
+                      <textarea value={pushBody} onChange={e => setPushBody(e.target.value)} rows={4} placeholder="Type your message here... <b>Bold</b>, <i>italic</i> supported" className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none resize-none" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Image URL (optional)</label>
+                      <input value={pushImageUrl} onChange={e => setPushImageUrl(e.target.value)} placeholder="https://..." className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CTA Button Text</label>
+                      <input value={pushActionText} onChange={e => setPushActionText(e.target.value)} placeholder="Learn More" className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CTA URL</label>
+                      <input value={pushActionUrl} onChange={e => setPushActionUrl(e.target.value)} placeholder="https://..." className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Audience</label>
+                    <div className="flex gap-2 mt-1.5 flex-wrap">
+                      {(["All", "Enterprise", "Pro", "Free"] as const).map(a => (
+                        <button key={a} type="button" onClick={() => setTargetAudience(a)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${targetAudience === a ? "bg-rose-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>{a === "All" ? "🌍 All Users" : a === "Enterprise" ? "⭐ Enterprise" : a === "Pro" ? "💎 Pro" : "🆓 Free"}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <button type="submit" disabled={!pushTitle.trim()} className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-black text-xs shadow-lg hover:from-rose-500 hover:to-rose-400 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer">
+                    📢 Broadcast Notification
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ TAB 5: STAFF & TEAM ══════════ */}
+          {activeTab === "staff" && (
+            <div className="space-y-4">
+              <SectionHeader icon="👔" title="Staff & Team Roles" sub={`${staffList.length} team members`}
+                action={<button onClick={() => setShowAddStaffModal(true)} className="px-3 py-2 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-400 transition cursor-pointer">+ Add Member</button>} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {staffList.map(s => (
+                  <div key={s.id} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-sm font-black shrink-0">{s.name.charAt(0)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-black text-white">{s.name}</p>
+                        <StatusBadge status={s.status} />
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{s.email}</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {s.roles.map(r => <span key={r} className="text-[9px] px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20">{r}</span>)}
+                      </div>
+                      <div className="flex gap-4 mt-2 text-[10px] text-slate-400">
+                        <span>✅ {s.queriesResolved} resolved</span>
+                        <span>⭐ {s.avgRating.toFixed(1)} rating</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {showAddStaffModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-sm space-y-4">
+                    <h3 className="text-sm font-black text-white">Add Staff Member</h3>
+                    <input placeholder="Full Name" value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
+                    <input placeholder="Email" value={newStaffEmail} onChange={e => setNewStaffEmail(e.target.value)} className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
+                    <div className="flex gap-2 flex-wrap">
+                      {(["SuperAdmin", "AdminManager", "CustomerSupport", "BillingFinance", "RiskAuditor", "Web3Governor"] as RoleType[]).map(r => (
+                        <button key={r} type="button" onClick={() => setNewStaffRoles(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r])} className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${newStaffRoles.includes(r) ? "bg-rose-500 text-white" : "bg-slate-800 text-slate-400"}`}>{r}</button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => { if (!newStaffName.trim()) return; setStaffList(p => [...p, { id: `stf-${Date.now()}`, name: newStaffName, email: newStaffEmail, roles: newStaffRoles, status: "Active", queriesResolved: 0, avgRating: 5.0 }]); setShowAddStaffModal(false); setNewStaffName(""); setNewStaffEmail(""); }} className="flex-1 py-2 rounded-xl bg-rose-500 text-white text-xs font-black hover:bg-rose-400 transition cursor-pointer">Add</button>
+                      <button onClick={() => setShowAddStaffModal(false)} className="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold transition cursor-pointer">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ══════════ TAB 6: SUPPORT SLA ══════════ */}
+          {activeTab === "support" && (
+            <div className="space-y-4">
+              <SectionHeader icon="🎧" title="Customer Support SLA" sub={`${SUPPORT_QUERIES.filter(q => q.status !== "Resolved").length} open tickets`} />
+              <div className="grid grid-cols-3 gap-3 mb-2">
+                <KpiCard icon="🔴" label="Urgent" value={SUPPORT_QUERIES.filter(q => q.priority === "Urgent").length} color="rose" />
+                <KpiCard icon="🟡" label="High" value={SUPPORT_QUERIES.filter(q => q.priority === "High").length} color="amber" />
+                <KpiCard icon="✅" label="Resolved" value={SUPPORT_QUERIES.filter(q => q.status === "Resolved").length} color="emerald" />
+              </div>
+              <DataTable
+                columns={["User", "Plan", "Priority", "Subject", "Assigned To", "Status"]}
+                rows={SUPPORT_QUERIES.map(q => [
+                  <div key="u"><p className="font-bold text-xs text-white">{q.userName}</p><p className="text-[10px] text-slate-400">{q.userEmail}</p></div>,
+                  <span key="p" className="text-[10px] font-bold">{q.userPlan}</span>,
+                  <span key="pr" className={`text-[10px] font-black ${q.priority === "Urgent" ? "text-red-400" : q.priority === "High" ? "text-amber-400" : "text-slate-400"}`}>{q.priority}</span>,
+                  <span key="s" className="text-xs">{q.subject}</span>,
+                  <span key="a" className="text-[10px] text-blue-400">{q.assignedStaff}</span>,
+                  <StatusBadge key="st" status={q.status} />,
+                ])}
+              />
+            </div>
+          )}
+
+          {/* ══════════ TAB 7: RISK ENGINE ══════════ */}
+          {activeTab === "risk" && (
+            <div className="space-y-4">
+              <SectionHeader icon="⚠️" title="Risk Engine" sub="High-risk users and defaulted loans flagged by the system" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-2">
+                <KpiCard icon="🚨" label="High Risk Users" value={riskUsers.length} color="rose" />
+                <KpiCard icon="💀" label="Defaulted Loans" value={overdueLoans.length} color="amber" />
+                <KpiCard icon="📊" label="Avg Risk Score" value={riskUsers.length > 0 ? Math.round(riskUsers.reduce((s, u) => s + u.loansCount * 10 + (u.totalDebtVolume > 1000000 ? 30 : 0), 0) / riskUsers.length) : 0} color="purple" />
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900 border border-red-500/20">
+                <h3 className="text-xs font-black text-red-400 mb-3">🚨 High Risk Users</h3>
+                {riskUsers.length === 0 ? <p className="text-xs text-slate-500 text-center py-4">No high-risk users detected</p> : (
+                  <div className="space-y-2">
+                    {riskUsers.map(u => {
+                      const riskScore = u.loansCount * 15 + (u.totalDebtVolume > 5000000 ? 40 : u.totalDebtVolume > 1000000 ? 20 : 0);
+                      return (
+                        <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700">
+                          <div className="w-8 h-8 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-xs font-black text-red-400">{u.name.charAt(0)}</div>
+                          <div className="flex-1">
+                            <p className="text-xs font-bold text-white">{u.name}</p>
+                            <p className="text-[10px] text-slate-400">{u.email} • {u.loansCount} loans • {fmt(u.totalDebtVolume)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-black text-red-400">{Math.min(riskScore, 99)}/99</p>
+                            <p className="text-[9px] text-slate-500">Risk Score</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900 border border-amber-500/20">
+                <h3 className="text-xs font-black text-amber-400 mb-3">⚡ Defaulted/Overdue Loans</h3>
+                {overdueLoans.length === 0 ? <p className="text-xs text-slate-500 text-center py-4">No defaulted loans 🎉</p> : (
+                  <DataTable
+                    columns={["Loan", "User", "Principal", "EMI", "Status"]}
+                    rows={overdueLoans.map(l => [
+                      <span key="n" className="font-bold text-white">{l.name}</span>,
+                      <div key="u"><p className="text-xs font-bold">{l.user_name}</p><p className="text-[10px] text-slate-400">{l.user_email}</p></div>,
+                      <span key="p" className="text-rose-400 font-bold">{fmt(l.principal)}</span>,
+                      <span key="e">{fmt(l.monthly_emi)}</span>,
+                      <StatusBadge key="s" status={l.status} />,
+                    ])}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ TAB 8: MONAD AUDIT ══════════ */}
+          {activeTab === "monad" && (
+            <div className="space-y-4">
+              <SectionHeader icon="🔗" title="Monad On-Chain Audit" sub="Blockchain proof anchoring and ZK verification logs" />
+              <div className="grid grid-cols-3 gap-3">
+                <KpiCard icon="⛓️" label="Anchored Proofs" value={MONAD_LOGS.filter(l => l.status === "Confirmed").length} color="purple" />
+                <KpiCard icon="⏳" label="Pending" value={MONAD_LOGS.filter(l => l.status === "Pending").length} color="amber" />
+                <KpiCard icon="🛡️" label="Network" value="Monad Testnet" color="blue" />
+              </div>
+              <DataTable
+                columns={["Tx Hash", "Block", "User", "Action", "Amount", "Time", "Status"]}
+                rows={MONAD_LOGS.map(l => [
+                  <span key="h" className="font-mono text-[10px] text-purple-400">{l.txHash}</span>,
+                  <span key="b" className="font-mono text-[10px]">#{l.blockNumber.toLocaleString()}</span>,
+                  <span key="u" className="text-[10px] text-slate-400">{l.userEmail}</span>,
+                  <span key="a" className="text-[10px]">{l.action}</span>,
+                  <span key="am" className="text-rose-400 font-bold">{fmt(l.amount)}</span>,
+                  <span key="t" className="text-[10px] text-slate-400">{l.timestamp}</span>,
+                  <StatusBadge key="s" status={l.status} />,
+                ])}
+              />
+            </div>
+          )}
+
+          {/* ══════════ TAB 9: PAYMENT GATEWAY ══════════ */}
+          {activeTab === "payments" && (
+            <div className="space-y-4">
+              <SectionHeader icon="💳" title="Payment Gateway Monitor" sub={`${paymentList.length} total transactions`} />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <KpiCard icon="✅" label="Confirmed" value={paymentList.filter(p => p.status === "confirmed").length} color="emerald" />
+                <KpiCard icon="⏳" label="Pending" value={paymentList.filter(p => p.status === "pending").length} color="amber" />
+                <KpiCard icon="❌" label="Failed" value={paymentList.filter(p => p.status === "failed").length} color="rose" />
+                <KpiCard icon="💰" label="Total Paid" value={paymentList.filter(p => p.status === "confirmed").length > 0 ? fmt(paymentList.filter(p => p.status === "confirmed").reduce((s, p) => s + p.amount, 0)) : "₹0"} color="blue" />
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {["all", "confirmed", "pending", "failed", "refunded"].map(f => (
+                  <button key={f} onClick={() => setPaymentFilter(f)} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${paymentFilter === f ? "bg-rose-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>{f.charAt(0).toUpperCase() + f.slice(1)}</button>
+                ))}
+              </div>
+              <DataTable
+                columns={["User", "Loan", "Amount", "Method", "Date", "Status"]}
+                rows={filteredPayments.map(p => [
+                  <div key="u"><p className="font-bold text-xs text-white">{p.user_name}</p><p className="text-[10px] text-slate-400">{p.user_email}</p></div>,
+                  <span key="l" className="text-[10px]">{p.loan_name}</span>,
+                  <span key="a" className="font-black text-emerald-400">{fmt(p.amount)}</span>,
+                  <span key="m" className="text-[10px] text-slate-400">{p.payment_method}</span>,
+                  <span key="d" className="text-[10px] text-slate-400">{p.paid_on}</span>,
+                  <StatusBadge key="s" status={p.status} />,
+                ])}
+              />
+            </div>
+          )}
+
+          {/* ══════════ TAB 10: SECURITY AUDIT ══════════ */}
+          {activeTab === "security" && (
+            <div className="space-y-4">
+              <SectionHeader icon="🔐" title="Security Audit" sub="User account security status and login activity" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <KpiCard icon="🟢" label="Active Accounts" value={userList.filter(u => u.status === "Active").length} color="emerald" />
+                <KpiCard icon="🚫" label="Suspended" value={userList.filter(u => u.status === "Suspended").length} color="rose" />
+                <KpiCard icon="👑" label="Superusers" value={userList.filter(u => u.isSuperuser).length} color="purple" />
+                <KpiCard icon="🔑" label="Staff Members" value={staffList.length} color="blue" />
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                <h3 className="text-xs font-black text-slate-300 mb-3">📋 User Login Activity</h3>
+                <DataTable
+                  columns={["User", "Email", "Last Login", "Account Type", "Status"]}
+                  rows={userList.map(u => [
+                    <div key="n" className="flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[9px] font-black">{u.name.charAt(0)}</div><span className="font-bold text-xs">{u.name}</span></div>,
+                    <span key="e" className="text-[10px] text-slate-400">{u.email}</span>,
+                    <span key="l" className={`text-[10px] ${u.lastLogin ? "text-emerald-400" : "text-slate-500"}`}>{u.lastLogin || "Never logged in"}</span>,
+                    <span key="t" className="text-[10px]">{u.isSuperuser ? "👑 Superuser" : "👤 Regular"}</span>,
+                    <StatusBadge key="s" status={u.status} />,
+                  ])}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
+                  <h3 className="text-xs font-black text-emerald-400 mb-2">🛡️ Security Recommendations</h3>
+                  <ul className="space-y-1.5">
+                    {["Enable 2FA for all staff accounts", "Rotate SuperAdmin credentials quarterly", "Review suspended accounts monthly", "Audit superuser access permissions"].map((r, i) => (
+                      <li key={i} className="flex items-center gap-2 text-[11px] text-slate-300"><span className="text-emerald-400">✓</span>{r}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+                  <h3 className="text-xs font-black text-slate-300 mb-2">📊 Account Distribution</h3>
+                  <div className="space-y-2">
+                    {[
+                      { label: "Active Users", value: userList.filter(u => u.status === "Active").length, total: userList.length, color: "#10b981" },
+                      { label: "Suspended Users", value: userList.filter(u => u.status === "Suspended").length, total: userList.length, color: "#f43f5e" },
+                      { label: "Superusers", value: userList.filter(u => u.isSuperuser).length, total: userList.length, color: "#a855f7" },
+                    ].map((item, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between text-[10px] mb-0.5"><span className="text-slate-400">{item.label}</span><span className="font-bold text-white">{item.value}/{item.total}</span></div>
+                        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${item.total > 0 ? (item.value / item.total) * 100 : 0}%`, backgroundColor: item.color }} /></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ TAB 11: ANALYTICS ══════════ */}
+          {activeTab === "analytics" && (
+            <div className="space-y-6">
+              <SectionHeader icon="📈" title="Analytics & Reports" sub="Platform growth and financial trends" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <KpiCard icon="📅" label="Total Signups" value={stats?.total_users ?? userList.length} color="blue" />
+                <KpiCard icon="💰" label="Total Debt Volume" value={stats ? fmt(stats.total_debt_volume) : "—"} color="rose" />
+                <KpiCard icon="✅" label="Total Paid Out" value={stats ? fmt(stats.total_paid) : "—"} color="emerald" />
+                <KpiCard icon="📉" label="Outstanding" value={stats ? fmt(stats.total_outstanding) : "—"} color="amber" />
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                <h3 className="text-xs font-black text-slate-300 mb-4">📊 Monthly User Signups (12 months)</h3>
+                {stats?.monthly_signups && stats.monthly_signups.length > 0 ? (
+                  <>
+                    <MiniBarChart data={stats.monthly_signups.map(m => ({ label: m.month.split(" ")[0], value: m.count }))} color="#3b82f6" />
+                    <div className="flex justify-between mt-2 overflow-x-auto">
+                      {stats.monthly_signups.map((m, i) => <span key={i} className="text-[8px] text-slate-500 shrink-0 px-1">{m.month.split(" ")[0]}</span>)}
+                    </div>
+                  </>
+                ) : <div className="h-20 flex items-center justify-center text-slate-600 text-xs">No signup data available</div>}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                  <h3 className="text-xs font-black text-slate-300 mb-4">🗂️ Loan Portfolio Breakdown</h3>
+                  {stats?.loan_type_breakdown && stats.loan_type_breakdown.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {stats.loan_type_breakdown.map(lt => {
+                        const total = stats.loan_type_breakdown.reduce((s, x) => s + x.count, 0);
+                        const pct = total > 0 ? Math.round((lt.count / total) * 100) : 0;
+                        const colors = ["#f43f5e", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4"];
+                        const ci = stats.loan_type_breakdown.indexOf(lt);
+                        return (
+                          <div key={lt.loan_type}>
+                            <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300">{LOAN_TYPE_LABEL[lt.loan_type] || lt.loan_type}</span><span className="font-black text-white">{lt.count} ({pct}%)</span></div>
+                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: colors[ci % colors.length] }} /></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : <p className="text-xs text-slate-500 text-center py-4">No loans in database yet</p>}
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                  <h3 className="text-xs font-black text-slate-300 mb-4">💳 Payment Success Rate</h3>
+                  {paymentList.length > 0 ? (() => {
+                    const confirmed = paymentList.filter(p => p.status === "confirmed").length;
+                    const failed = paymentList.filter(p => p.status === "failed").length;
+                    const pending = paymentList.filter(p => p.status === "pending").length;
+                    const total = paymentList.length;
+                    return (
+                      <div className="space-y-2.5">
+                        {[{ label: "Confirmed", value: confirmed, color: "#10b981" }, { label: "Pending", value: pending, color: "#f59e0b" }, { label: "Failed", value: failed, color: "#f43f5e" }].map(item => (
+                          <div key={item.label}>
+                            <div className="flex justify-between text-[10px] mb-1"><span className="text-slate-300">{item.label}</span><span className="font-black text-white">{item.value} ({total > 0 ? Math.round((item.value / total) * 100) : 0}%)</span></div>
+                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${total > 0 ? (item.value / total) * 100 : 0}%`, backgroundColor: item.color }} /></div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })() : <p className="text-xs text-slate-500 text-center py-4">No payment data yet</p>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ TAB 12: SETTINGS ══════════ */}
+          {activeTab === "settings" && (
+            <div className="space-y-6 max-w-2xl">
+              <SectionHeader icon="⚙️" title="Platform Settings" sub="Feature flags, maintenance mode and admin credentials" />
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h3 className="text-xs font-black text-slate-300">🚦 Feature Flags</h3>
+                {Object.entries(featureFlags).map(([key, val]) => {
+                  const labels: Record<string, { label: string; desc: string; icon: string }> = {
+                    emiAlerts: { label: "EMI Alerts", desc: "Automated EMI reminder notifications", icon: "📅" },
+                    blockchainAudit: { label: "Blockchain Audit", desc: "Monad on-chain proof anchoring", icon: "🔗" },
+                    aiInsights: { label: "AI Insights", desc: "AI-powered loan recommendations", icon: "🤖" },
+                    creditScore: { label: "Credit Score", desc: "User credit score calculations", icon: "📊" },
+                    darkMode: { label: "Dark Mode", desc: "Dark theme for all users by default", icon: "🌙" },
+                    maintenanceMode: { label: "Maintenance Mode", desc: "⚠️ Disables app for all users", icon: "🔧" },
+                  };
+                  const meta = labels[key];
+                  return (
+                    <div key={key} className={`flex items-center justify-between gap-3 p-3 rounded-xl ${key === "maintenanceMode" && val ? "bg-red-500/10 border border-red-500/30" : "bg-slate-800/40 border border-slate-700/30"}`}>
+                      <div className="flex items-center gap-2.5">
+                        <span>{meta.icon}</span>
+                        <div>
+                          <p className="text-xs font-bold text-white">{meta.label}</p>
+                          <p className="text-[10px] text-slate-400">{meta.desc}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setFeatureFlags(p => ({ ...p, [key]: !p[key as keyof typeof p] }))}
+                        className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer shrink-0 ${val ? (key === "maintenanceMode" ? "bg-red-500" : "bg-rose-500") : "bg-slate-700"}`}>
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${val ? "translate-x-5" : "translate-x-0.5"}`} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <h3 className="text-xs font-black text-slate-300">🔑 SuperAdmin Credentials</h3>
+                <div className="space-y-2">
+                  {[{ label: "SuperAdmin ID", value: "SUPERADMIN-DEBTPROOF-9901" }, { label: "Access Level", value: "FULL — All Permissions" }, { label: "Session Storage", value: "Browser LocalStorage" }].map(item => (
+                    <div key={item.label} className="flex justify-between items-center py-2 border-b border-slate-800 last:border-0">
+                      <span className="text-[10px] text-slate-400">{item.label}</span>
+                      <span className="text-[10px] font-mono font-bold text-white">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => { localStorage.removeItem(SUPERADMIN_KEY); setIsAuthenticated(false); }} className="w-full py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition cursor-pointer">
+                  🚪 Logout SuperAdmin Session
+                </button>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                <h3 className="text-xs font-black text-slate-300 mb-3">🔗 Quick API Endpoints</h3>
+                <div className="space-y-1.5">
+                  {["/auth/superadmin/stats/", "/auth/superadmin/users/", "/auth/superadmin/loans/", "/auth/superadmin/payments/", "/notifications/broadcast/"].map(ep => (
+                    <div key={ep} className="flex items-center gap-2 p-2 rounded-lg bg-slate-950 border border-slate-800">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold shrink-0">GET</span>
+                      <code className="text-[10px] text-slate-300 font-mono">{ep}</code>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </main>
     </div>
   );
 }
