@@ -302,8 +302,456 @@ class SuperAdminPaymentsView(APIView):
                 "user_email": p.loan.user.email,
                 "paid_on": p.created_at.strftime("%Y-%m-%d"),
                 "notes": p.notes if hasattr(p, "notes") else "",
+                "payment_date": p.payment_date.strftime("%Y-%m-%d") if hasattr(p, "payment_date") and p.payment_date else p.created_at.strftime("%Y-%m-%d"),
+                "reference": p.reference_number if hasattr(p, "reference_number") else "",
             })
         return Response({"success": True, "count": len(results), "payments": results})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  STAFF MANAGEMENT
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SuperAdminStaffView(APIView):
+    """
+    GET  /api/v1/auth/superadmin/staff/     → list all staff
+    POST /api/v1/auth/superadmin/staff/     → promote user to staff
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request) -> Response:
+        from apps.users.models import StaffProfile
+        profiles = StaffProfile.objects.select_related("user").order_by("-created_at")
+        results = []
+        for p in profiles:
+            u = p.user
+            results.append({
+                "id": str(p.id),
+                "user_id": str(u.id),
+                "name": f"{u.first_name} {u.last_name}".strip() or u.email.split("@")[0].capitalize(),
+                "email": u.email,
+                "role": p.role,
+                "department": p.department,
+                "queries_resolved": p.queries_resolved,
+                "avg_rating": float(p.avg_rating),
+                "is_active": p.is_active,
+                "notes": p.notes,
+                "joined": u.created_at.strftime("%Y-%m-%d"),
+            })
+        return Response({"success": True, "count": len(results), "staff": results})
+
+    def post(self, request: Request) -> Response:
+        from apps.users.models import StaffProfile
+        user_email = request.data.get("email", "").strip()
+        role = request.data.get("role", "CustomerSupport")
+        department = request.data.get("department", "Support")
+        notes = request.data.get("notes", "")
+
+        try:
+            user = User.objects.get(email=user_email)
+        except User.DoesNotExist:
+            return Response({"error": f"No user with email '{user_email}' found. User must register first."}, status=status.HTTP_404_NOT_FOUND)
+
+        profile, created = StaffProfile.objects.get_or_create(
+            user=user,
+            defaults={"role": role, "department": department, "notes": notes}
+        )
+        if not created:
+            profile.role = role
+            profile.department = department
+            profile.is_active = True
+            profile.notes = notes
+            profile.save()
+
+        # Also mark Django user as staff
+        user.is_staff = True
+        user.save(update_fields=["is_staff"])
+
+        return Response({
+            "success": True,
+            "message": f"{'Created' if created else 'Updated'} staff profile for {user.email}",
+            "id": str(profile.id),
+        })
+
+
+class SuperAdminStaffDetailView(APIView):
+    """
+    PATCH  /api/v1/auth/superadmin/staff/<id>/  → update role/status
+    DELETE /api/v1/auth/superadmin/staff/<id>/  → remove staff (keeps user account)
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def patch(self, request: Request, pk: str) -> Response:
+        from apps.users.models import StaffProfile
+        try:
+            profile = StaffProfile.objects.select_related("user").get(id=pk)
+        except StaffProfile.DoesNotExist:
+            return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if "role" in request.data:
+            profile.role = request.data["role"]
+        if "department" in request.data:
+            profile.department = request.data["department"]
+        if "is_active" in request.data:
+            profile.is_active = request.data["is_active"]
+        if "notes" in request.data:
+            profile.notes = request.data["notes"]
+        profile.save()
+        return Response({"success": True, "message": "Staff profile updated"})
+
+    def delete(self, request: Request, pk: str) -> Response:
+        from apps.users.models import StaffProfile
+        try:
+            profile = StaffProfile.objects.select_related("user").get(id=pk)
+        except StaffProfile.DoesNotExist:
+            return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+        # Revoke staff flag on User
+        profile.user.is_staff = False
+        profile.user.save(update_fields=["is_staff"])
+        profile.delete()
+        return Response({"success": True, "message": "Staff profile removed"})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  SUPPORT TICKETS
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SuperAdminTicketsView(APIView):
+    """
+    GET  /api/v1/auth/superadmin/tickets/  → list all tickets
+    POST /api/v1/auth/superadmin/tickets/  → create ticket (admin files on behalf of user)
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def _serialize(self, t):
+        return {
+            "id": str(t.id),
+            "user_name": (f"{t.user.first_name} {t.user.last_name}".strip() or t.user.email.split("@")[0].capitalize()) if t.user else "Unknown",
+            "user_email": t.user.email if t.user else "—",
+            "subject": t.subject,
+            "message": t.message,
+            "priority": t.priority,
+            "status": t.status,
+            "assigned_to": t.assigned_to.user.email if t.assigned_to else None,
+            "assigned_name": (f"{t.assigned_to.user.first_name} {t.assigned_to.user.last_name}".strip() or t.assigned_to.user.email) if t.assigned_to else "Unassigned",
+            "resolution_notes": t.resolution_notes,
+            "resolved_at": t.resolved_at.strftime("%Y-%m-%d %H:%M") if t.resolved_at else None,
+            "filed_by_admin": t.filed_by_admin,
+            "created_at": t.created_at.strftime("%Y-%m-%d %H:%M"),
+        }
+
+    def get(self, request: Request) -> Response:
+        from apps.users.models import SupportTicket
+        tickets = SupportTicket.objects.select_related("user", "assigned_to__user").order_by("-created_at")
+        return Response({"success": True, "count": tickets.count(), "tickets": [self._serialize(t) for t in tickets]})
+
+    def post(self, request: Request) -> Response:
+        from apps.users.models import SupportTicket
+        user_email = request.data.get("user_email", "").strip()
+        subject = request.data.get("subject", "").strip()
+        message = request.data.get("message", "").strip()
+        priority = request.data.get("priority", "normal")
+
+        if not subject:
+            return Response({"error": "Subject is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = None
+        if user_email:
+            try:
+                user = User.objects.get(email=user_email)
+            except User.DoesNotExist:
+                pass
+
+        ticket = SupportTicket.objects.create(
+            user=user, subject=subject, message=message,
+            priority=priority, filed_by_admin=True,
+        )
+        return Response({"success": True, "message": "Ticket created", "id": str(ticket.id), "ticket": self._serialize(ticket)})
+
+
+class SuperAdminTicketActionView(APIView):
+    """
+    POST /api/v1/auth/superadmin/tickets/<id>/assign/   → assign to staff
+    POST /api/v1/auth/superadmin/tickets/<id>/resolve/  → resolve
+    POST /api/v1/auth/superadmin/tickets/<id>/close/    → close
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def post(self, request: Request, pk: str, action: str) -> Response:
+        from apps.users.models import SupportTicket, StaffProfile
+        from django.utils import timezone
+        try:
+            ticket = SupportTicket.objects.select_related("user", "assigned_to__user").get(id=pk)
+        except SupportTicket.DoesNotExist:
+            return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if action == "assign":
+            staff_id = request.data.get("staff_id", "")
+            try:
+                staff = StaffProfile.objects.get(id=staff_id)
+                ticket.assigned_to = staff
+                ticket.status = "in_progress"
+                ticket.save()
+                staff.queries_resolved = getattr(staff, "queries_resolved", 0)
+                return Response({"success": True, "message": f"Ticket assigned to {staff.user.email}"})
+            except StaffProfile.DoesNotExist:
+                return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        elif action == "resolve":
+            ticket.status = "resolved"
+            ticket.resolution_notes = request.data.get("notes", "Resolved by SuperAdmin")
+            ticket.resolved_at = timezone.now()
+            ticket.save()
+            # Increment queries_resolved on assigned staff
+            if ticket.assigned_to:
+                ticket.assigned_to.queries_resolved += 1
+                ticket.assigned_to.save(update_fields=["queries_resolved"])
+            return Response({"success": True, "message": "Ticket resolved"})
+
+        elif action == "close":
+            ticket.status = "closed"
+            ticket.save()
+            return Response({"success": True, "message": "Ticket closed"})
+
+        return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  USER ACTIONS: SUSPEND / ACTIVATE
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SuperAdminUserActionView(APIView):
+    """
+    POST /api/v1/auth/superadmin/users/<id>/suspend/   → deactivate user
+    POST /api/v1/auth/superadmin/users/<id>/activate/  → reactivate user
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def post(self, request: Request, pk: str, action: str) -> Response:
+        try:
+            user = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if action == "suspend":
+            user.is_active = False
+            user.save(update_fields=["is_active"])
+            return Response({"success": True, "message": f"User {user.email} suspended"})
+        elif action == "activate":
+            user.is_active = True
+            user.save(update_fields=["is_active"])
+            return Response({"success": True, "message": f"User {user.email} activated"})
+
+        return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SuperAdminUserDetailView(APIView):
+    """
+    GET /api/v1/auth/superadmin/users/<id>/detail/
+    Full user profile: info + all loans + all payments
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request, pk: str) -> Response:
+        from apps.loans.models import Loan
+        from apps.payments.models import Payment
+        from django.db.models import Sum
+        try:
+            user = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        loans = Loan.objects.filter(user=user).order_by("-created_at")
+        loan_data = [{
+            "id": str(l.id), "name": l.name, "loan_type": l.loan_type,
+            "status": l.status, "principal": float(l.principal_amount),
+            "outstanding": float(l.outstanding_amount) if hasattr(l, "outstanding_amount") else 0,
+            "monthly_emi": float(l.monthly_emi) if l.monthly_emi else 0,
+            "lender": l.lender_name, "created_at": l.created_at.strftime("%Y-%m-%d"),
+        } for l in loans]
+
+        payments = Payment.objects.filter(loan__user=user).order_by("-created_at")[:20]
+        payment_data = [{
+            "id": str(p.id), "amount": float(p.amount),
+            "status": p.status, "loan_name": p.loan.name,
+            "paid_on": p.created_at.strftime("%Y-%m-%d"),
+            "method": p.payment_method,
+        } for p in payments]
+
+        total_debt = loans.aggregate(t=Sum("principal_amount"))["t"] or 0
+        total_paid = Payment.objects.filter(loan__user=user, status="confirmed").aggregate(t=Sum("amount"))["t"] or 0
+
+        return Response({
+            "id": str(user.id),
+            "name": f"{user.first_name} {user.last_name}".strip() or user.email,
+            "email": user.email,
+            "phone": user.phone_number,
+            "bio": user.bio,
+            "is_active": user.is_active,
+            "is_staff": user.is_staff,
+            "is_superuser": user.is_superuser,
+            "joined": user.created_at.strftime("%Y-%m-%d"),
+            "last_login": user.last_login.strftime("%Y-%m-%d %H:%M") if user.last_login else None,
+            "total_loans": loans.count(),
+            "total_debt": float(total_debt),
+            "total_paid": float(total_paid),
+            "loans": loan_data,
+            "payments": payment_data,
+        })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  BLOCKCHAIN AUDIT (real Receipt data)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SuperAdminBlockchainAuditView(APIView):
+    """
+    GET /api/v1/auth/superadmin/blockchain-audit/
+    Returns real blockchain receipt records from the DB.
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request) -> Response:
+        from apps.payments.models import Receipt
+        receipts = Receipt.objects.select_related("payment__loan__user").order_by("-created_at")[:100]
+        results = []
+        for r in receipts:
+            u = r.payment.loan.user
+            results.append({
+                "id": str(r.id),
+                "tx_hash": r.blockchain_tx_hash or "Pending...",
+                "block_number": r.blockchain_block_number,
+                "wallet": r.blockchain_wallet_address or "—",
+                "network": r.blockchain_network,
+                "is_verified": r.is_blockchain_verified,
+                "anchored_at": r.blockchain_anchored_at.strftime("%Y-%m-%d %H:%M") if r.blockchain_anchored_at else None,
+                "document_hash": r.document_hash[:16] + "..." if r.document_hash else "—",
+                "proof_id": r.blockchain_proof_id or "—",
+                "amount": float(r.payment.amount),
+                "loan_name": r.payment.loan.name,
+                "user_email": u.email,
+                "user_name": f"{u.first_name} {u.last_name}".strip() or u.email.split("@")[0].capitalize(),
+                "created_at": r.created_at.strftime("%Y-%m-%d %H:%M"),
+                "status": "Confirmed" if r.is_blockchain_verified else ("Pending" if r.blockchain_tx_hash else "Not Anchored"),
+            })
+        return Response({"success": True, "count": len(results), "records": results})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  REAL AUDIT LOG
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SuperAdminAuditLogView(APIView):
+    """
+    GET /api/v1/auth/superadmin/audit-log/
+    Returns real system-wide audit log from AuditLog model.
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request) -> Response:
+        from apps.audit.models import AuditLog
+        logs = AuditLog.objects.select_related("user").order_by("-created_at")[:200]
+        results = []
+        for log in logs:
+            results.append({
+                "id": str(log.id),
+                "action": log.action,
+                "action_display": log.get_action_display(),
+                "user_email": log.user.email if log.user else "System",
+                "user_name": (f"{log.user.first_name} {log.user.last_name}".strip() or log.user.email.split("@")[0].capitalize()) if log.user else "System",
+                "target": log.target_resource,
+                "ip": log.ip_address or "—",
+                "metadata": log.metadata_json,
+                "created_at": log.created_at.strftime("%Y-%m-%d %H:%M"),
+            })
+        return Response({"success": True, "count": len(results), "logs": results})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  CSV EXPORT
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SuperAdminCSVExportView(APIView):
+    """
+    GET /api/v1/auth/superadmin/export/<resource>/
+    Downloads a CSV of the requested resource: users | loans | payments | tickets
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request, resource: str) -> Response:
+        import csv
+        from django.http import HttpResponse
+        from apps.loans.models import Loan
+        from apps.payments.models import Payment
+        from apps.users.models import SupportTicket
+        from django.db.models import Sum
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="debtproof_{resource}.csv"'
+        writer = csv.writer(response)
+
+        if resource == "users":
+            writer.writerow(["Name", "Email", "Status", "Is Staff", "Joined", "Last Login", "Loans", "Total Debt"])
+            for u in User.objects.all().order_by("-created_at"):
+                debt = Loan.objects.filter(user=u).aggregate(t=Sum("principal_amount"))["t"] or 0
+                loans_count = Loan.objects.filter(user=u).count()
+                writer.writerow([
+                    f"{u.first_name} {u.last_name}".strip() or u.email,
+                    u.email,
+                    "Active" if u.is_active else "Suspended",
+                    u.is_staff,
+                    u.created_at.strftime("%Y-%m-%d"),
+                    u.last_login.strftime("%Y-%m-%d") if u.last_login else "",
+                    loans_count,
+                    float(debt),
+                ])
+
+        elif resource == "loans":
+            writer.writerow(["Loan Name", "User Email", "Type", "Status", "Principal", "Outstanding", "EMI", "Interest Rate", "Lender", "Created"])
+            for l in Loan.objects.select_related("user").order_by("-created_at"):
+                writer.writerow([
+                    l.name, l.user.email, l.loan_type, l.status,
+                    float(l.principal_amount),
+                    float(l.outstanding_amount) if hasattr(l, "outstanding_amount") else 0,
+                    float(l.monthly_emi) if l.monthly_emi else 0,
+                    float(l.interest_rate) if l.interest_rate else 0,
+                    l.lender_name, l.created_at.strftime("%Y-%m-%d"),
+                ])
+
+        elif resource == "payments":
+            writer.writerow(["User Email", "Loan Name", "Amount", "Status", "Method", "Reference", "Payment Date"])
+            for p in Payment.objects.select_related("loan__user").order_by("-created_at"):
+                writer.writerow([
+                    p.loan.user.email, p.loan.name, float(p.amount),
+                    p.status, p.payment_method,
+                    p.reference_number if hasattr(p, "reference_number") else "",
+                    p.payment_date.strftime("%Y-%m-%d") if hasattr(p, "payment_date") and p.payment_date else "",
+                ])
+
+        elif resource == "tickets":
+            writer.writerow(["User Email", "Subject", "Priority", "Status", "Assigned To", "Created", "Resolved At"])
+            for t in SupportTicket.objects.select_related("user", "assigned_to__user").order_by("-created_at"):
+                writer.writerow([
+                    t.user.email if t.user else "",
+                    t.subject, t.priority, t.status,
+                    t.assigned_to.user.email if t.assigned_to else "",
+                    t.created_at.strftime("%Y-%m-%d"),
+                    t.resolved_at.strftime("%Y-%m-%d") if t.resolved_at else "",
+                ])
+        else:
+            return Response({"error": f"Unknown resource '{resource}'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return response
+
 
 
 

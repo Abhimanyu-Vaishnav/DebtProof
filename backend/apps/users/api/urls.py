@@ -7,6 +7,9 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from .views import (
     UserRegistrationView, UserProfileView, LogoutView,
     SuperAdminUserListView, SuperAdminStatsView, SuperAdminLoansView, SuperAdminPaymentsView,
+    SuperAdminStaffView, SuperAdminStaffDetailView, SuperAdminTicketsView, SuperAdminTicketActionView,
+    SuperAdminUserActionView, SuperAdminUserDetailView, SuperAdminBlockchainAuditView,
+    SuperAdminAuditLogView, SuperAdminCSVExportView,
 )
 from .jwt_views import CustomTokenObtainPairView
 
@@ -24,6 +27,15 @@ urlpatterns = [
     path("superadmin/stats/", SuperAdminStatsView.as_view(), name="superadmin-stats"),
     path("superadmin/loans/", SuperAdminLoansView.as_view(), name="superadmin-loans"),
     path("superadmin/payments/", SuperAdminPaymentsView.as_view(), name="superadmin-payments"),
+    path("superadmin/staff/", SuperAdminStaffView.as_view(), name="superadmin-staff"),
+    path("superadmin/staff/<uuid:pk>/", SuperAdminStaffDetailView.as_view(), name="superadmin-staff-detail"),
+    path("superadmin/tickets/", SuperAdminTicketsView.as_view(), name="superadmin-tickets"),
+    path("superadmin/tickets/<uuid:pk>/<str:action>/", SuperAdminTicketActionView.as_view(), name="superadmin-ticket-action"),
+    path("superadmin/users/<uuid:pk>/detail/", SuperAdminUserDetailView.as_view(), name="superadmin-user-detail"),
+    path("superadmin/users/<uuid:pk>/<str:action>/", SuperAdminUserActionView.as_view(), name="superadmin-user-action"),
+    path("superadmin/blockchain-audit/", SuperAdminBlockchainAuditView.as_view(), name="superadmin-blockchain-audit"),
+    path("superadmin/audit-log/", SuperAdminAuditLogView.as_view(), name="superadmin-audit-log"),
+    path("superadmin/export/<str:resource>/", SuperAdminCSVExportView.as_view(), name="superadmin-export-csv"),
 
     # Token management
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
@@ -35,3 +47,4 @@ urlpatterns = [
     # Logout (blacklists refresh token)
     path("logout/", LogoutView.as_view(), name="logout"),
 ]
+
