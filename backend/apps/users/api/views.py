@@ -528,6 +528,10 @@ class SuperAdminUserActionView(APIView):
     """
     POST /api/v1/auth/superadmin/users/<id>/suspend/   → deactivate user
     POST /api/v1/auth/superadmin/users/<id>/activate/  → reactivate user
+    POST /api/v1/auth/superadmin/users/<id>/plan/      → change user plan (Free, Pro, Enterprise)
+    POST /api/v1/auth/superadmin/users/<id>/modify/    → edit user details
+    POST /api/v1/auth/superadmin/users/<id>/message/   → send direct notification/message to user
+    DELETE /api/v1/auth/superadmin/users/<id>/delete/  → delete user account
     """
     permission_classes = []
     throttle_classes = []
@@ -542,12 +546,65 @@ class SuperAdminUserActionView(APIView):
             user.is_active = False
             user.save(update_fields=["is_active"])
             return Response({"success": True, "message": f"User {user.email} suspended"})
+
         elif action == "activate":
             user.is_active = True
             user.save(update_fields=["is_active"])
             return Response({"success": True, "message": f"User {user.email} activated"})
 
+        elif action == "plan":
+            new_plan = request.data.get("plan", "Free").capitalize()
+            # Save plan in bio or dedicated field/metadata
+            user.bio = f"[Plan: {new_plan}] " + (user.bio or "")
+            user.save(update_fields=["bio"])
+            return Response({"success": True, "message": f"Plan updated to {new_plan} for {user.email}", "plan": new_plan})
+
+        elif action == "modify":
+            first_name = request.data.get("first_name")
+            last_name = request.data.get("last_name")
+            phone = request.data.get("phone_number")
+            email = request.data.get("email")
+
+            if first_name is not None: user.first_name = first_name
+            if last_name is not None: user.last_name = last_name
+            if phone is not None: user.phone_number = phone
+            if email and email != user.email:
+                if User.objects.filter(email=email).exclude(id=user.id).exists():
+                    return Response({"error": "Email already in use"}, status=status.HTTP_400_BAD_REQUEST)
+                user.email = email
+            user.save()
+            return Response({"success": True, "message": "User profile modified successfully"})
+
+        elif action == "message":
+            title = request.data.get("title", "Message from SuperAdmin")
+            message = request.data.get("message", "")
+            if not message:
+                return Response({"error": "Message content is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            from apps.notifications.models import Notification, NotificationType
+            Notification.objects.create(
+                user=user,
+                title=title,
+                message=message,
+                notification_type=NotificationType.SYSTEM_ANNOUNCEMENT,
+            )
+            return Response({"success": True, "message": f"Direct notification sent to {user.email}"})
+
         return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request: Request, pk: str, action: str = "delete") -> Response:
+        try:
+            user = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.is_superuser:
+            return Response({"error": "Cannot delete Superuser account"}, status=status.HTTP_403_FORBIDDEN)
+
+        email = user.email
+        user.delete()
+        return Response({"success": True, "message": f"User {email} permanently deleted"})
+
 
 
 class SuperAdminUserDetailView(APIView):

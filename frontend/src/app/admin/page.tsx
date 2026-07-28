@@ -1190,41 +1190,146 @@ export default function SuperAdminPortal() {
 
       {/* ── USER DETAIL MODAL OVERLAY ── */}
       {selectedUserDetail && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-xl font-black">
+        <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-3xl max-h-[92vh] overflow-y-auto space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-xl font-black shadow-lg shadow-rose-500/20">
                   {selectedUserDetail.name.charAt(0)}
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">{selectedUserDetail.name}</h3>
-                  <p className="text-xs text-slate-400">{selectedUserDetail.email}</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-white">{selectedUserDetail.name}</h3>
+                    {selectedUserDetail.is_superuser && <span className="text-[9px] px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded-full font-bold">SUPERUSER</span>}
+                  </div>
+                  <p className="text-xs text-slate-400">{selectedUserDetail.email} • Joined {selectedUserDetail.joined}</p>
                 </div>
               </div>
-              <button onClick={() => setSelectedUserDetail(null)} className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-bold">✕ Close</button>
+              <button onClick={() => setSelectedUserDetail(null)} className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-bold transition cursor-pointer">✕ Close</button>
             </div>
 
+            {/* Admin Action Control Bar */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">⚡ SuperAdmin Quick Actions</p>
+              <div className="flex flex-wrap gap-2">
+                {/* Send Direct Message */}
+                <button
+                  onClick={async () => {
+                    const msg = prompt(`Send Direct Message/Notification to ${selectedUserDetail.email}:`);
+                    if (!msg) return;
+                    const res = await superAdminFetch(`/auth/superadmin/users/${selectedUserDetail.id}/message/`, {
+                      method: "POST",
+                      body: JSON.stringify({ message: msg, title: "Message from DebtProof Support" }),
+                    });
+                    if (res?.success) alert("Direct notification sent!");
+                    else alert(res?.error || "Failed to send message");
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  💬 Send Message
+                </button>
+
+                {/* Change Subscription Plan */}
+                <button
+                  onClick={async () => {
+                    const plan = prompt("Change User Plan (Free / Pro / Enterprise):", "Pro");
+                    if (!plan) return;
+                    const res = await superAdminFetch(`/auth/superadmin/users/${selectedUserDetail.id}/plan/`, {
+                      method: "POST",
+                      body: JSON.stringify({ plan }),
+                    });
+                    if (res?.success) {
+                      alert(`Plan upgraded to ${plan}!`);
+                      fetchAllData();
+                    } else alert(res?.error || "Failed to update plan");
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-bold hover:bg-purple-500/20 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  ⭐ Change Plan (Free/Pro/Ent)
+                </button>
+
+                {/* Edit Profile */}
+                <button
+                  onClick={async () => {
+                    const newName = prompt("Edit Full Name:", selectedUserDetail.name);
+                    if (newName === null) return;
+                    const parts = newName.split(" ");
+                    const first_name = parts[0] || "";
+                    const last_name = parts.slice(1).join(" ") || "";
+                    const res = await superAdminFetch(`/auth/superadmin/users/${selectedUserDetail.id}/modify/`, {
+                      method: "POST",
+                      body: JSON.stringify({ first_name, last_name }),
+                    });
+                    if (res?.success) {
+                      alert("User profile updated!");
+                      setSelectedUserDetail(prev => prev ? { ...prev, name: newName } : null);
+                      fetchAllData();
+                    } else alert(res?.error || "Failed to edit user");
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  ✏️ Edit Profile
+                </button>
+
+                {/* Suspend / Activate Toggle */}
+                <button
+                  onClick={async () => {
+                    const action = selectedUserDetail.is_active ? "suspend" : "activate";
+                    const res = await superAdminFetch(`/auth/superadmin/users/${selectedUserDetail.id}/${action}/`, { method: "POST" });
+                    if (res?.success) {
+                      alert(`User ${action}d!`);
+                      setSelectedUserDetail(prev => prev ? { ...prev, is_active: !prev.is_active } : null);
+                      fetchAllData();
+                    } else alert(res?.error || "Action failed");
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${selectedUserDetail.is_active ? "bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20" : "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"}`}
+                >
+                  {selectedUserDetail.is_active ? "🚫 Suspend User" : "🟢 Activate User"}
+                </button>
+
+                {/* Delete Account */}
+                {!selectedUserDetail.is_superuser && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`⚠️ PERMANENT DELETE WARNING:\nAre you sure you want to delete user ${selectedUserDetail.email}? This action cannot be undone.`)) return;
+                      const res = await superAdminFetch(`/auth/superadmin/users/${selectedUserDetail.id}/delete/`, { method: "DELETE" });
+                      if (res?.success) {
+                        alert("User account deleted permanently.");
+                        setSelectedUserDetail(null);
+                        fetchAllData();
+                      } else alert(res?.error || "Failed to delete user");
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    🗑️ Delete Account
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold">TOTAL DEBT</p><p className="text-sm font-black text-rose-400">{fmt(selectedUserDetail.total_debt)}</p></div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold">TOTAL PAID</p><p className="text-sm font-black text-emerald-400">{fmt(selectedUserDetail.total_paid)}</p></div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold">LOANS COUNT</p><p className="text-sm font-black text-white">{selectedUserDetail.total_loans}</p></div>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold">STATUS</p><StatusBadge status={selectedUserDetail.is_active ? "Active" : "Suspended"} /></div>
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold uppercase">TOTAL DEBT</p><p className="text-sm font-black text-rose-400">{fmt(selectedUserDetail.total_debt)}</p></div>
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold uppercase">TOTAL PAID</p><p className="text-sm font-black text-emerald-400">{fmt(selectedUserDetail.total_paid)}</p></div>
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold uppercase">LOANS COUNT</p><p className="text-sm font-black text-white">{selectedUserDetail.total_loans}</p></div>
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800"><p className="text-[9px] text-slate-500 font-bold uppercase">STATUS</p><StatusBadge status={selectedUserDetail.is_active ? "Active" : "Suspended"} /></div>
             </div>
 
-            {/* Loans list */}
+            {/* User Loans List */}
             <div>
-              <h4 className="text-xs font-black text-slate-300 mb-2">💰 User Loans</h4>
-              {selectedUserDetail.loans.length === 0 ? <p className="text-xs text-slate-500">No loans</p> : (
+              <h4 className="text-xs font-black text-slate-300 mb-2.5">💰 User Loans ({selectedUserDetail.loans.length})</h4>
+              {selectedUserDetail.loans.length === 0 ? <p className="text-xs text-slate-500 italic">No loans recorded for this user</p> : (
                 <div className="space-y-2">
                   {selectedUserDetail.loans.map((l: any) => (
-                    <div key={l.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <div key={l.id} className="flex justify-between items-center p-3.5 rounded-xl bg-slate-950 border border-slate-800">
                       <div>
                         <p className="text-xs font-bold text-white">{l.name}</p>
-                        <p className="text-[10px] text-slate-400">{LOAN_TYPE_LABEL[l.loan_type] || l.loan_type} • Lender: {l.lender}</p>
+                        <p className="text-[10px] text-slate-400">{LOAN_TYPE_LABEL[l.loan_type] || l.loan_type} • Lender: {l.lender} • Created: {l.created_at}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-black text-rose-400">{fmt(l.principal)}</p>
+                        <p className="text-[10px] text-slate-400">EMI: {fmt(l.monthly_emi)}/mo</p>
                         <StatusBadge status={l.status} />
                       </div>
                     </div>
@@ -1233,16 +1338,16 @@ export default function SuperAdminPortal() {
               )}
             </div>
 
-            {/* Payments list */}
+            {/* User Payments List */}
             <div>
-              <h4 className="text-xs font-black text-slate-300 mb-2">💳 Recent Payments</h4>
-              {selectedUserDetail.payments.length === 0 ? <p className="text-xs text-slate-500">No payments recorded</p> : (
+              <h4 className="text-xs font-black text-slate-300 mb-2.5">💳 Recent Payments ({selectedUserDetail.payments.length})</h4>
+              {selectedUserDetail.payments.length === 0 ? <p className="text-xs text-slate-500 italic">No payments recorded</p> : (
                 <div className="space-y-2">
                   {selectedUserDetail.payments.map((p: any) => (
-                    <div key={p.id} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                    <div key={p.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-950 border border-slate-800">
                       <div>
                         <p className="text-xs font-bold text-white">{p.loan_name}</p>
-                        <p className="text-[10px] text-slate-400">{p.paid_on} • {p.method}</p>
+                        <p className="text-[10px] text-slate-400">{p.paid_on} • Method: {p.method}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-black text-emerald-400">{fmt(p.amount)}</p>
@@ -1256,6 +1361,7 @@ export default function SuperAdminPortal() {
           </div>
         </div>
       )}
+
 
     </div>
   );
