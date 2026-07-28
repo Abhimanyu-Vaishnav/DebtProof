@@ -105,7 +105,7 @@ export default function DedicatedDebtProofAdminPortal() {
     }
   }, []);
 
-  // Fetch real users from backend API
+  // Fetch real users directly from Django database API
   React.useEffect(() => {
     if (!isAuthenticated) return;
     async function fetchRealUsers() {
@@ -123,17 +123,12 @@ export default function DedicatedDebtProofAdminPortal() {
             totalDebtVolume: u.totalDebtVolume || 0,
             creditScore: 750,
           }));
-          const merged = [...fetchedUsers, ...SAMPLE_USERS];
-          const unique = merged.filter((item, index, self) => index === self.findIndex((t) => t.email === item.email));
-          setUserList(unique);
+          if (fetchedUsers.length > 0) {
+            setUserList(fetchedUsers);
+          }
         }
       } catch (err: any) {
-        // Gracefully handle network offline or backend connection resets silently
-        if (err?.code === "ERR_NETWORK" || err?.message === "Network Error") {
-          console.warn("SuperAdmin Portal running in resilient fallback mode (Backend Offline or Resetting).");
-        } else {
-          console.error("Failed to load real users for SuperAdmin:", err);
-        }
+        console.warn("SuperAdmin Portal database fetch error, keeping resilient view.");
       }
     }
     fetchRealUsers();

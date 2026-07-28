@@ -122,14 +122,14 @@ class LogoutView(generics.GenericAPIView):
             )
 
 
-class SuperAdminUserListView(generics.ListAPIView):
+class SuperAdminUserListView(APIView):
     """
     GET /api/v1/auth/superadmin/users/
-    List all real registered users with their active loan counts and volume for SuperAdmin portal.
+    Returns actual Django database users, total loan counts, and total debt volumes for SuperAdmin dashboard.
     """
-    permission_classes = [AllowAny] # Authenticated via SuperAdmin ID Key Header
+    permission_classes = []
 
-    def list(self, request: Request, *args, **kwargs) -> Response:
+    def get(self, request: Request, *args, **kwargs) -> Response:
         users = User.objects.all().order_by("-created_at")
         results = []
 
