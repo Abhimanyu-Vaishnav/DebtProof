@@ -42,6 +42,20 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [theme, setTheme] = useState("dark");
   const [soundMuted, setSoundMuted] = useState(false);
+  const [activePlan, setActivePlan] = useState<string>("Free Plan");
+
+  useEffect(() => {
+    import("@/services/plan.service").then((mod) => {
+      setActivePlan(`${mod.getUserPlan()} Plan`);
+    });
+    const onPlanChange = () => {
+      import("@/services/plan.service").then((mod) => {
+        setActivePlan(`${mod.getUserPlan()} Plan`);
+      });
+    };
+    window.addEventListener("debtproof_plan_changed", onPlanChange);
+    return () => window.removeEventListener("debtproof_plan_changed", onPlanChange);
+  }, []);
 
   const handleApplyTheme = (themeName: string) => {
     setTheme(themeName);
@@ -432,7 +446,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </p>
-              <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">Free Plan</p>
+              <p className="text-[11px] text-rose-400 font-bold mt-0.5">{activePlan}</p>
             </div>
           </button>
 
@@ -441,7 +455,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
             <div className="absolute right-0 mt-2 w-48 bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-[var(--radius-md)] shadow-2xl py-1.5 z-50 animate-fade-in-up">
               <div className="px-4 py-2 border-b border-[var(--color-border-light)] sm:hidden">
                 <p className="text-[13px] font-medium text-[var(--color-text-primary)]">My Account</p>
-                <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">Free Plan</p>
+                <p className="text-[11px] text-rose-400 font-bold mt-0.5">{activePlan}</p>
               </div>
               <Link
                 href="/profile"

@@ -15,6 +15,21 @@ export function ProfileClient() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activePlan, setActivePlan] = useState<string>("Free");
+  const [showPlanModal, setShowPlanModal] = useState(false);
+
+  useEffect(() => {
+    import("@/services/plan.service").then((mod) => {
+      setActivePlan(mod.getUserPlan());
+    });
+    const onPlanChanged = () => {
+      import("@/services/plan.service").then((mod) => {
+        setActivePlan(mod.getUserPlan());
+      });
+    };
+    window.addEventListener("debtproof_plan_changed", onPlanChanged);
+    return () => window.removeEventListener("debtproof_plan_changed", onPlanChanged);
+  }, []);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -193,8 +208,8 @@ export function ProfileClient() {
                   ? `${formData.first_name} ${formData.last_name}`
                   : "User Profile"}
               </h1>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Pro Member
+              <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/30">
+                {activePlan} Member
               </span>
             </div>
             <p className="text-xs text-[var(--color-text-tertiary)] mt-1 flex items-center gap-2">
@@ -216,6 +231,25 @@ export function ProfileClient() {
           }`}
         >
           {isEditing ? "Cancel Editing" : "✎ Edit Profile"}
+        </button>
+      </div>
+
+      {/* ── Subscription & Change Plan Card ── */}
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-rose-500 uppercase tracking-widest">SUBSCRIPTION MANAGEMENT</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">Live Sync</span>
+          </div>
+          <h3 className="text-lg font-black text-[var(--color-text-primary)]">Current Tier: <span className="text-rose-500 uppercase">{activePlan} Plan</span></h3>
+          <p className="text-xs text-[var(--color-text-tertiary)]">Upgrade or downgrade your membership tier anytime to unlock or restrict features instantly across your account.</p>
+        </div>
+
+        <button
+          onClick={() => setShowPlanModal(true)}
+          className="px-5 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-md hover:from-rose-500 hover:to-rose-400 transition cursor-pointer shrink-0"
+        >
+          ⭐ Change / Upgrade Plan
         </button>
       </div>
 
@@ -574,6 +608,78 @@ export function ProfileClient() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* ── PLAN UPGRADE / DOWNGRADE MODAL ── */}
+      {showPlanModal && (
+        <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-3xl space-y-6 shadow-2xl">
+            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                  <span>⭐</span> Switch Your Membership Plan
+                </h3>
+                <p className="text-xs text-slate-400">Instantly upgrade or downgrade your account tier</p>
+              </div>
+              <button
+                onClick={() => setShowPlanModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+              {[
+                { tag: "Free", price: "₹0/mo", loans: "2 Loans", desc: "Basic EMI Calendar" },
+                { tag: "Basic", price: "₹299/mo", loans: "5 Loans", desc: "Monad Blockchain Proofs" },
+                { tag: "Pro", price: "₹999/mo", loans: "15 Loans", desc: "AI Assistant & Discharge Certs", popular: true },
+                { tag: "Premium", price: "₹2,499/mo", loans: "Unlimited", desc: "CIBIL Heatmap & Escrow" },
+                { tag: "Enterprise", price: "₹4,999/mo", loans: "Unlimited", desc: "Whitelabel & Staff RBAC" },
+              ].map((p) => {
+                const isActive = activePlan.toLowerCase() === p.tag.toLowerCase();
+                return (
+                  <div
+                    key={p.tag}
+                    className={`p-4 rounded-2xl border flex flex-col justify-between space-y-4 ${
+                      isActive
+                        ? "bg-rose-500/10 border-rose-500 text-white"
+                        : "bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      {p.popular && (
+                        <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-500 text-white block w-max">
+                          POPULAR
+                        </span>
+                      )}
+                      <h4 className="text-sm font-black text-white">{p.tag}</h4>
+                      <p className="text-xs font-bold text-rose-400">{p.price}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">{p.loans}</p>
+                      <p className="text-[10px] text-slate-500 leading-tight pt-1">{p.desc}</p>
+                    </div>
+
+                    <button
+                      disabled={isActive}
+                      onClick={() => {
+                        import("@/services/plan.service").then((mod) => {
+                          mod.setUserPlan(p.tag as any);
+                          setShowPlanModal(false);
+                        });
+                      }}
+                      className={`w-full py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+                        isActive
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default"
+                          : "bg-gradient-to-r from-rose-600 to-rose-500 text-white hover:from-rose-500 hover:to-rose-400 cursor-pointer shadow-md"
+                      }`}
+                    >
+                      {isActive ? "Active" : "Select"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
