@@ -636,6 +636,7 @@ export default function DedicatedDebtProofAdminPortal() {
                 </div>
                 <span className="text-[10px] text-slate-400 font-bold">Audit Pass</span>
               </div>
+            </div>
           </div>
         )}
 
