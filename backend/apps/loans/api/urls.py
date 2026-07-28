@@ -10,6 +10,7 @@ from .views import (
     ExportLoansCSVView,
     P2PMarketplaceView,
     LoanSimulationView,
+    LoanClearanceCertificateView,
 )
 
 urlpatterns = [
@@ -20,6 +21,7 @@ urlpatterns = [
     path("calendar/", EMICalendarView.as_view(), name="loan-calendar"),
     path("export/csv/", ExportLoansCSVView.as_view(), name="loans-export-csv"),
     path("<uuid:pk>/", LoanRetrieveUpdateDestroyView.as_view(), name="loan-detail"),
+    path("<uuid:pk>/clearance-certificate/", LoanClearanceCertificateView.as_view(), name="loan-clearance-certificate"),
 ]
 
 

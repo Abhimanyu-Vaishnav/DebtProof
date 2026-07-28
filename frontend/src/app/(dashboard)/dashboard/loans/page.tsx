@@ -17,6 +17,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { loansService } from "@/services/loans.service";
 import { CibilParserModal } from "@/components/loans/CibilParserModal";
 import { AutomatedAIRepaymentAgentStudio } from "@/components/loans/AutomatedAIRepaymentAgentStudio";
+import { DebtDestroyerAssistant } from "@/components/ai/DebtDestroyerAssistant";
+import { ClearanceCertificateModal } from "@/components/loans/ClearanceCertificateModal";
 import type { Loan } from "@/types";
 
 const STATUS_FILTERS = [
@@ -226,6 +228,11 @@ export default function LoansPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* 🤖 AI Debt Destroyer Assistant Widget */}
+        <div className="mb-6">
+          <DebtDestroyerAssistant />
         </div>
 
         {/* Loan Grid */}
