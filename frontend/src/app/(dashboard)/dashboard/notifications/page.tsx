@@ -105,6 +105,22 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     loadNotifications();
+
+    const handleAddNotif = (e: Event) => {
+      const custom = e as CustomEvent<Notification>;
+      if (custom.detail) {
+        setNotifications((prev) => [custom.detail, ...prev]);
+      }
+    };
+
+    const handleRefresh = () => loadNotifications();
+
+    window.addEventListener("debtproof_add_notification", handleAddNotif);
+    window.addEventListener("debtproof_refresh_notifications", handleRefresh);
+    return () => {
+      window.removeEventListener("debtproof_add_notification", handleAddNotif);
+      window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
+    };
   }, [loadNotifications]);
 
   const handleMarkRead = async (id: string) => {
