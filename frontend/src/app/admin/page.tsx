@@ -82,7 +82,7 @@ export default function DedicatedDebtProofAdminPortal() {
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "monad_audit" | "risk_engine" | "push_notifications">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "monad_audit" | "risk_engine" | "web3_gas" | "payment_gateways" | "security_audit" | "push_notifications">("overview");
   const [staffList, setStaffList] = useState<StaffMember[]>(SAMPLE_STAFF);
   const [userList, setUserList] = useState<UserData[]>(SAMPLE_USERS);
   const [queryList, setQueryList] = useState<SupportQuery[]>(SAMPLE_QUERIES);
@@ -283,7 +283,7 @@ export default function DedicatedDebtProofAdminPortal() {
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-4 card p-3 bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-2xl shadow-sm">
           <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-            {(["overview", "users", "staff", "support", "monad_audit", "risk_engine", "push_notifications"] as const).map((tab) => (
+            {(["overview", "users", "staff", "support", "monad_audit", "risk_engine", "web3_gas", "payment_gateways", "security_audit", "push_notifications"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -514,6 +514,103 @@ export default function DedicatedDebtProofAdminPortal() {
                 <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Monad Liquidation Escrow Pool</span>
                 <span className="text-2xl font-black text-purple-400">450 MON</span>
                 <span className="text-[10px] text-purple-300 font-bold block">Collateral Anchored</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 7: Monad Web3 Gas & Escrow Pool Manager */}
+        {activeTab === "web3_gas" && (
+          <div className="card p-6 border border-purple-500/30 bg-[var(--color-surface)] space-y-4 font-mono text-xs">
+            <div className="flex justify-between items-center border-b border-[var(--color-border-light)] pb-4">
+              <div>
+                <h3 className="text-base font-bold text-[var(--color-text-primary)]">Monad Testnet Gas Reserve & Relayer Escrow Pool</h3>
+                <p className="text-[10px] text-[var(--color-text-tertiary)]">Monitors gas tank reserves for automated ZK proof on-chain anchoring</p>
+              </div>
+              <button onClick={() => alert("⛽ Gas Tank Refilled with +100 MON!")} className="btn bg-purple-600 text-white font-bold text-xs px-3 py-1.5 cursor-pointer">
+                ⛽ Refill Gas Reserve
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
+                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Gas Tank Balance</span>
+                <span className="text-2xl font-black text-purple-400">1,250 MON</span>
+                <span className="text-[10px] text-emerald-400 font-bold block">Optimal Gas Level</span>
+              </div>
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
+                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Avg Gas Price per ZK Proof</span>
+                <span className="text-2xl font-black text-indigo-400">0.0024 MON</span>
+                <span className="text-[10px] text-indigo-300 font-bold block">Monad EVM Speed: 10,000 TPS</span>
+              </div>
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)]">
+                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Relayer Contract Status</span>
+                <span className="text-2xl font-black text-emerald-400">Active 🟢</span>
+                <span className="text-[10px] text-emerald-500 font-bold block">Chain ID: 10143</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 8: Payment Processor & Gateway Health */}
+        {activeTab === "payment_gateways" && (
+          <div className="card p-6 border border-[var(--color-border-light)] bg-[var(--color-surface)] space-y-4 font-mono text-xs">
+            <div className="border-b border-[var(--color-border-light)] pb-4">
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Payment Gateway & Bank Processor Health Monitor</h3>
+              <p className="text-[10px] text-[var(--color-text-tertiary)]">Real-time status of Razorpay, Stripe, UPI Autopay & Bank Webhooks</p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-[var(--color-text-primary)]">💳 Razorpay UPI Autopay Gateway</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)]">Success Rate: 99.8% · Latency: 120ms</p>
+                </div>
+                <span className="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">OPERATIONAL 🟢</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-[var(--color-text-primary)]">🌐 Stripe Credit Card Settlement API</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)]">Success Rate: 99.9% · Global Settlements</p>
+                </div>
+                <span className="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 font-bold">OPERATIONAL 🟢</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-[var(--color-text-primary)]">📜 Monad Testnet Web3 Escrow Gateway</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)]">Success Rate: 100% · EVM Smart Contract</p>
+                </div>
+                <span className="px-3 py-1 rounded bg-purple-500/20 text-purple-300 font-bold">OPERATIONAL 🟢</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 9: Security Compliance & Audit Log */}
+        {activeTab === "security_audit" && (
+          <div className="card p-6 border border-rose-500/30 bg-[var(--color-surface)] space-y-4 font-mono text-xs">
+            <div className="border-b border-[var(--color-border-light)] pb-4">
+              <h3 className="text-base font-bold text-[var(--color-text-primary)]">Security Compliance & System Audit Trail</h3>
+              <p className="text-[10px] text-[var(--color-text-tertiary)]">Log of SuperAdmin actions, IP addresses, and security violation alerts</p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-emerald-400">✓ SuperAdmin Authenticated</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)]">ID: SUPERADMIN-DEBTPROOF-9901 · IP: 127.0.0.1 · Just Now</p>
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold">SHA-256 Verified</span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-purple-400">✓ Feature Flag Updated</p>
+                  <p className="text-[10px] text-[var(--color-text-tertiary)] font-mono">Autonomous Prepayment Agent set to Active · Today 11:45 AM</p>
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold">Audit Pass</span>
               </div>
             </div>
           </div>
