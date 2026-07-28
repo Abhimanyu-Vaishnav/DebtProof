@@ -1963,14 +1963,20 @@ export default function SuperAdminPortal() {
 
                 <button
                   onClick={async () => {
-                    const plan = prompt("Change User Plan (Free / Pro / Enterprise):", "Pro");
+                    const plan = prompt("Change User Plan (Free / Basic / Pro / Premium / Enterprise):", "Pro");
                     if (!plan) return;
+                    const formattedPlan = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
+                    const validPlans = ["Free", "Basic", "Pro", "Premium", "Enterprise"];
+                    const finalPlan = validPlans.find(p => p.toLowerCase() === formattedPlan.toLowerCase()) || "Pro";
                     const res = await superAdminFetch(`/auth/superadmin/users/${selectedUserDetail.id}/plan/`, {
                       method: "POST",
-                      body: JSON.stringify({ plan }),
+                      body: JSON.stringify({ plan: finalPlan }),
                     });
                     if (res?.success) {
-                      alert(`Plan upgraded to ${plan}!`);
+                      alert(`User plan updated to ${finalPlan}!`);
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("debtproof_active_plan", finalPlan);
+                      }
                       fetchAllData();
                     } else alert(res?.error || "Failed to update plan");
                   }}

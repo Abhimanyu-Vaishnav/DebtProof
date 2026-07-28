@@ -1234,6 +1234,71 @@ class SuperAdminClearCacheView(APIView):
         })
 
 
+class PlanConfigView(APIView):
+    """
+    GET /api/v1/auth/plans/
+    Returns 5 active plans (Free, Basic, Pro, Premium, Enterprise) with features & limits.
+    """
+    permission_classes = []
+    throttle_classes = []
+
+    def get(self, request: Request) -> Response:
+        plans = [
+            {
+                "id": "free",
+                "name": "Free Plan",
+                "tag": "Free",
+                "price_monthly": 0,
+                "price_yearly": 0,
+                "max_loans": 2,
+                "features": ["Track up to 2 active loans", "Basic EMI payment calendar", "Manual receipt logging", "Community support"],
+                "popular": False,
+            },
+            {
+                "id": "basic",
+                "name": "Basic Plan",
+                "tag": "Basic",
+                "price_monthly": 299,
+                "price_yearly": 2990,
+                "max_loans": 5,
+                "features": ["Track up to 5 active loans", "Monad Blockchain proof anchoring", "Email & SMS payment due alerts", "Export CSV reports"],
+                "popular": False,
+            },
+            {
+                "id": "pro",
+                "name": "Pro Plan",
+                "tag": "Pro",
+                "price_monthly": 999,
+                "price_yearly": 9990,
+                "max_loans": 15,
+                "features": ["Track up to 15 active loans", "AI Debt Destroyer Assistant", "Snowball vs Avalanche Simulator", "Zero-Debt PDF Clearance Certificates", "24/7 Priority Support"],
+                "popular": True,
+            },
+            {
+                "id": "premium",
+                "name": "Premium Plan",
+                "tag": "Premium",
+                "price_monthly": 2499,
+                "price_yearly": 24990,
+                "max_loans": 999,
+                "features": ["Unlimited active loans", "Automated CIBIL score tracking", "30-Day Default Risk Heatmap", "Web3 Escrow Vault Inspection", "Dedicated Financial Advisor"],
+                "popular": False,
+            },
+            {
+                "id": "enterprise",
+                "name": "Enterprise Plan",
+                "tag": "Enterprise",
+                "price_monthly": 4999,
+                "price_yearly": 49990,
+                "max_loans": 9999,
+                "features": ["Whitelabel Custom Domain", "Multi-tenant staff RBAC matrix", "Credit Bureau quarterly export", "Dedicated API access", "SLA uptime guarantee"],
+                "popular": False,
+            },
+        ]
+        return Response({"success": True, "plans": plans})
+
+
+
 
 
 

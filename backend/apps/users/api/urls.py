@@ -13,14 +13,16 @@ from .views import (
     SuperAdminFraudAlertsView, SuperAdminBackupView, SuperAdminMonadEscrowView, SuperAdminRevenueAnalyticsView,
     SuperAdminLegalRecoveryView, SuperAdminLenderSyndicationView, SuperAdminAIUnderwritingView,
     SuperAdminWhitelabelRBACView, SuperAdminBureauComplianceView, SuperAdminClearCacheView,
+    PlanConfigView,
 )
 from .jwt_views import CustomTokenObtainPairView
 
 app_name = "users"
 
 urlpatterns = [
-    # Registration
+    # Registration & Plans
     path("register/", UserRegistrationView.as_view(), name="register"),
+    path("plans/", PlanConfigView.as_view(), name="plans-config"),
 
     # JWT Login (returns access + refresh)
     path("login/", CustomTokenObtainPairView.as_view(), name="login"),
