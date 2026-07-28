@@ -84,7 +84,7 @@ export default function DedicatedDebtProofAdminPortal() {
   const [adminPasswordInput, setAdminPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "monad_audit" | "feature_flags" | "pricing" | "push_notifications">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "staff" | "support" | "monad_audit" | "risk_engine" | "push_notifications">("overview");
   const [staffList, setStaffList] = useState<StaffMember[]>(SAMPLE_STAFF);
   const [userList, setUserList] = useState<UserData[]>(SAMPLE_USERS);
   const [queryList, setQueryList] = useState<SupportQuery[]>(SAMPLE_QUERIES);
@@ -271,7 +271,7 @@ export default function DedicatedDebtProofAdminPortal() {
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-4 card p-3 bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-2xl shadow-sm">
           <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-            {(["overview", "users", "staff", "support", "monad_audit", "feature_flags", "pricing", "push_notifications"] as const).map((tab) => (
+            {(["overview", "users", "staff", "support", "monad_audit", "risk_engine", "push_notifications"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -458,6 +458,48 @@ export default function DedicatedDebtProofAdminPortal() {
                   </div>
                 </div>
               ))}
+        {/* Tab 6: Global Risk & Liquidation Engine */}
+        {activeTab === "risk_engine" && (
+          <div className="card p-6 border border-rose-500/30 bg-[var(--color-surface)] space-y-5 rounded-2xl shadow-xl">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[var(--color-border-light)] pb-4">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🛡️</span>
+                <div>
+                  <h3 className="text-base font-black text-[var(--color-text-primary)]">
+                    Global Risk & Liquidation Engine
+                  </h3>
+                  <p className="text-xs text-[var(--color-text-tertiary)]">
+                    Monitors platform-wide debt delinquency, automatic penalty triggers & liquidation reserves.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => alert("⚡ Global System Risk Assessment & Overdue Sweep Executed!")}
+                className="btn bg-rose-600 hover:bg-rose-500 text-white font-black text-xs px-4 py-2 shadow-lg shadow-rose-500/20 cursor-pointer"
+              >
+                ⚡ Trigger Platform Risk Sweep
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono text-xs">
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-1">
+                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Overall Non-Performing Asset (NPA) Rate</span>
+                <span className="text-2xl font-black text-emerald-400">0.42%</span>
+                <span className="text-[10px] text-emerald-500 font-bold block">Low Default Risk</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-1">
+                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Overdue Debts Under Monitoring</span>
+                <span className="text-2xl font-black text-rose-400">₹1,20,000</span>
+                <span className="text-[10px] text-rose-300 font-bold block">2 Accounts Default Alert</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-light)] space-y-1">
+                <span className="text-[10px] text-[var(--color-text-tertiary)] uppercase font-bold block">Monad Liquidation Escrow Pool</span>
+                <span className="text-2xl font-black text-purple-400">450 MON</span>
+                <span className="text-[10px] text-purple-300 font-bold block">Collateral Anchored</span>
+              </div>
             </div>
           </div>
         )}
