@@ -205,7 +205,7 @@ export default function SuperAdminPortal() {
       if (auditRes.status === "fulfilled" && auditRes.value?.logs) setAuditLogs(auditRes.value.logs);
     } catch (err) {
       console.error("SuperAdmin data fetch error:", err);
-    } fontally {
+    } finally {
       setLoadingStats(false);
     }
   }, []);
