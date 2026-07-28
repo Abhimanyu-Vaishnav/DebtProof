@@ -25,6 +25,7 @@ class NotificationListView(ListCreateAPIView):
     Allows creating a new notification for the authenticated user.
     """
     permission_classes = []
+    throttle_classes = []
     serializer_class = NotificationSerializer
     pagination_class = StandardResultsSetPagination
 
@@ -49,6 +50,7 @@ class NotificationUnreadCountView(APIView):
     Returns { "count": N } — fast endpoint for the Topbar badge.
     """
     permission_classes = []
+    throttle_classes = []
 
     def get(self, request: Request) -> Response:
         from django.db.models import Q

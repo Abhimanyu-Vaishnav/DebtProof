@@ -129,6 +129,7 @@ class SuperAdminUserListView(APIView):
     Returns actual Django database users, total loan counts, and total debt volumes for SuperAdmin dashboard.
     """
     permission_classes = []
+    throttle_classes = []
 
     def get(self, request: Request, *args, **kwargs) -> Response:
         users = User.objects.all().order_by("-created_at")
