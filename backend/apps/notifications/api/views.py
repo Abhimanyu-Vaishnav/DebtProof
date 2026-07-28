@@ -4,7 +4,7 @@ CRUD + mark-as-read + unread count for the notification panel.
 """
 import logging
 from rest_framework import status
-from rest_framework.generics import ListAPIView, DestroyAPIView
+from rest_framework.generics import ListCreateAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response

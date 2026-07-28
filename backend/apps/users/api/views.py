@@ -138,7 +138,7 @@ class SuperAdminUserListView(APIView):
         from django.db.models import Sum
 
         for u in users:
-            user_loans = Loan.objects.filter(user=u, is_deleted=False)
+            user_loans = Loan.objects.filter(user=u)
             active_loans_count = user_loans.filter(status="active").count()
             total_vol = user_loans.aggregate(total=Sum("principal_amount"))["total"] or 0
 
@@ -157,7 +157,7 @@ class SuperAdminUserListView(APIView):
             })
 
         # Calculate actual system-wide database aggregates
-        all_loans_volume = Loan.objects.filter(is_deleted=False).aggregate(total=Sum("principal_amount"))["total"] or 0
+        all_loans_volume = Loan.objects.aggregate(total=Sum("principal_amount"))["total"] or 0
         enterprise_count = User.objects.filter(is_superuser=True).count()
         pro_count = User.objects.filter(is_staff=True, is_superuser=False).count()
 
