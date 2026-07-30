@@ -1,6 +1,6 @@
 /**
- * DebtProof — All Payments Page
- * Lists all payments across all loans, with search and filter.
+ * DebtProof — All Payments Page (v3 Redesign)
+ * Lists all payments across all loans, with inline stat row and modern pill-tabs.
  */
 "use client";
 
@@ -17,6 +17,14 @@ import { formatCurrency } from "@/utils/formatters";
 import { SmartAutoPayEMISplitterStudio } from "@/components/payments/SmartAutoPayEMISplitterStudio";
 import { MonadSmartAutoEscrowStudio } from "@/components/payments/MonadSmartAutoEscrowStudio";
 import type { Payment } from "@/types";
+
+const STATUS_TABS = [
+  { value: "", label: "All" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "pending", label: "Pending" },
+  { value: "failed", label: "Failed" },
+  { value: "refunded", label: "Refunded" },
+];
 
 export default function PaymentsPage() {
   const { showToast } = useToast();
@@ -51,8 +59,13 @@ export default function PaymentsPage() {
     }
   }, [page, debouncedSearch, statusFilter, showToast]);
 
-  useEffect(() => { fetchPayments(); }, [fetchPayments]);
-  useEffect(() => { setPage(1); }, [debouncedSearch, statusFilter]);
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
 
   const resetFilters = () => {
     setSearch("");
@@ -75,11 +88,12 @@ export default function PaymentsPage() {
   };
 
   const totalAmount = payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+  const hasActiveFilters = !!(search || statusFilter);
 
   return (
     <>
-      <Topbar title="Payment History" subtitle={`${totalCount} total payment${totalCount !== 1 ? "s" : ""}`} />
-      <main className="page-content space-y-6">
+      <Topbar title="Payment History" subtitle={`${totalCount} payment${totalCount !== 1 ? "s" : ""}`} />
+      <main className="page-content space-y-5">
         {/* Monad Smart Auto-Escrow Repayment Trigger Studio */}
         <MonadSmartAutoEscrowStudio />
 
@@ -87,74 +101,66 @@ export default function PaymentsPage() {
         <SmartAutoPayEMISplitterStudio />
 
         {/* Modern Filter Toolbar */}
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border-light)] p-4 rounded-2xl shadow-sm mb-6 flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-6 rounded-full bg-[var(--color-primary)]" />
-              <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Filter Payments</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              {(search || statusFilter) && (
-                <button
-                  onClick={resetFilters}
-                  className="btn btn-secondary btn-sm font-semibold shrink-0 cursor-pointer transition-all hover:bg-[var(--color-surface-secondary)]"
-                >
-                  Clear Filters
+        <div className="filter-bar">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Pill tabs for status */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {STATUS_TABS.map((tab) => {
+                const isActive = statusFilter === tab.value;
+                const activeClass =
+                  tab.value === "failed" ? "active-error"
+                  : tab.value === "confirmed" ? "active-success"
+                  : tab.value === "pending" ? "active-warning"
+                  : "active";
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => setStatusFilter(tab.value)}
+                    className={`status-tab ${isActive ? activeClass : ""}`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+              {hasActiveFilters && (
+                <button onClick={resetFilters} className="status-tab text-[var(--color-text-tertiary)] hover:text-red-400">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Clear
                 </button>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Search Input */}
-            <div className="relative">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
-                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-              >
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="search"
-                placeholder="Search payments, loans..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="form-input !pl-10 py-2.5 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] focus:bg-[var(--color-surface)] transition-all"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="relative">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="form-input py-2.5 px-3 text-xs font-medium w-full rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface)] transition-all cursor-pointer appearance-none"
-              >
-                <option value="">All Status</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
-            </div>
+          {/* Search Input */}
+          <div className="relative">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]"
+              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+            >
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="search"
+              placeholder="Search payments, loans..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="form-input !pl-9 !py-2 text-[13px] w-full"
+            />
           </div>
         </div>
 
-        {/* Summary card */}
+        {/* Inline Summary Strip */}
         {payments.length > 0 && (
-          <div className="card p-4 mb-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-wide">Showing</p>
-              <p className="text-sm font-semibold text-[var(--color-text-primary)]">{payments.length} payments</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-wide">Page Total</p>
-              <p className="text-sm font-bold text-[var(--color-accent)]">{formatCurrency(totalAmount)}</p>
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)]">
+            <div className="stat-row">
+              <div className="stat-item">
+                <span className="stat-item-label">Showing</span>
+                <span className="stat-item-value">{payments.length} payments</span>
+              </div>
+              <div className="stat-item border-l border-[var(--color-border)] pl-4">
+                <span className="stat-item-label">Page Total</span>
+                <span className="stat-item-value text-emerald-400">{formatCurrency(totalAmount)}</span>
+              </div>
             </div>
           </div>
         )}
@@ -171,7 +177,7 @@ export default function PaymentsPage() {
           />
         ) : (
           <>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {payments.map((p) => (
                 <PaymentCard key={p.id} payment={p} showLoan onDelete={setDeleteId} />
               ))}
@@ -179,7 +185,7 @@ export default function PaymentsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-5">
                 <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="btn btn-secondary btn-sm">← Previous</button>
-                <span className="text-sm text-[var(--color-text-secondary)] px-2">Page {page} of {totalPages}</span>
+                <span className="text-[13px] text-[var(--color-text-secondary)] px-3 py-1.5 rounded-lg bg-[var(--color-surface-secondary)] border border-[var(--color-border)] font-medium">{page} / {totalPages}</span>
                 <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-secondary btn-sm">Next →</button>
               </div>
             )}

@@ -103,13 +103,13 @@ function Ring({ value, label, color, sub }: { value: number; label: string; colo
 // ── KPI Card ────────────────────────────────────────────────────
 function KPICard({ icon, label, value, sub, accent }: { icon: string; label: string; value: string; sub: string; accent: string }) {
   return (
-    <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col gap-3">
+    <div className="kpi-card">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-black uppercase tracking-widest text-[var(--color-text-secondary)]">{label}</span>
-        <span className="text-lg">{icon}</span>
+        <span className="section-title">{label}</span>
+        <span className="text-base">{icon}</span>
       </div>
       <p className={`text-2xl font-black ${accent} leading-none`}>{value}</p>
-      <p className="text-xs font-medium text-[var(--color-text-secondary)]">{sub}</p>
+      <p className="text-[11px] text-[var(--color-text-secondary)] font-medium">{sub}</p>
     </div>
   );
 }
@@ -119,8 +119,8 @@ function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: 
   return (
     <div className="flex items-start justify-between gap-4 mb-4">
       <div>
-        <h2 className="text-[13px] font-black uppercase tracking-widest text-[var(--color-text-primary)]">{title}</h2>
-        {subtitle && <p className="text-xs font-medium text-[var(--color-text-secondary)] mt-0.5">{subtitle}</p>}
+        <h2 className="section-title">{title}</h2>
+        {subtitle && <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-0.5">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -232,7 +232,7 @@ export default function AnalyticsPage() {
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
           {/* Loan Portfolio Donut */}
-          <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <div className="kpi-card !rounded-2xl p-5">
             <SectionHeader title="Loan Portfolio" subtitle="Breakdown by loan category" />
             {data.total_loans === 0
               ? <div className="py-12 text-center text-sm text-[var(--color-text-secondary)]">No loans yet</div>
@@ -241,7 +241,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Repayment Health Rings */}
-          <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <div className="kpi-card !rounded-2xl p-5">
             <SectionHeader title="Repayment Health" subtitle="Your debt reduction progress" />
             <div className="space-y-3">
               <Ring value={repaidPct} label="Principal Repaid" color="#10b981" sub={format(totalPaid)} />
@@ -251,7 +251,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* 6-Month Payments Bar Chart */}
-          <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <div className="kpi-card !rounded-2xl p-5">
             <SectionHeader
               title="Payment History"
               subtitle="Monthly EMI outflows"
@@ -318,7 +318,7 @@ export default function AnalyticsPage() {
                   <div
                     key={loan.id}
                     onClick={() => router.push(`/dashboard/loans/${loan.id}`)}
-                    className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-secondary)] cursor-pointer transition-all group"
+                    className="kpi-card hover:bg-[var(--color-surface-tertiary)] cursor-pointer transition-all group"
                   >
                     {/* Header row */}
                     <div className="flex items-start justify-between gap-3 mb-3">
@@ -406,7 +406,7 @@ export default function AnalyticsPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
                 {/* Summary + Bar Chart */}
-                <div className="lg:col-span-2 card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
+                <div className="lg:col-span-2 kpi-card !rounded-2xl p-5">
                   <div className="grid grid-cols-3 gap-4 mb-5">
                     <div className="p-3 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border)] text-center">
                       <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-text-secondary)]">Total Net Worth</p>
@@ -442,8 +442,8 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Asset breakdown donut mini */}
-                <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)]">
-                  <p className="text-[11px] font-black uppercase tracking-widest text-[var(--color-text-primary)] mb-4">Portfolio Mix</p>
+                <div className="kpi-card !rounded-2xl p-5">
+                  <p className="section-title mb-4">Portfolio Mix</p>
                   {(() => {
                     const R = 44; const C = 2 * Math.PI * R;
                     let offset2 = 0;
@@ -500,22 +500,22 @@ export default function AnalyticsPage() {
         <section>
           <SectionHeader title="Interest Cost Analysis" subtitle="Where your money really goes every month" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)]">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-secondary)]">Monthly Interest Burn</p>
-              <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-2">{format(monthlyInterestBurn)}<span className="text-sm font-normal text-[var(--color-text-secondary)] ml-1">/mo</span></p>
-              <p className="text-xs font-medium text-[var(--color-text-secondary)] mt-2">This money goes to banks, not your principal</p>
+            <div className="kpi-card">
+              <p className="section-title">Monthly Interest Burn</p>
+              <p className="text-2xl font-black text-rose-400 mt-2">{format(monthlyInterestBurn)}<span className="text-xs font-normal text-[var(--color-text-secondary)] ml-1">/mo</span></p>
+              <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-1">This money goes to banks, not your principal</p>
             </div>
-            <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)]">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-secondary)]">Total Interest Paid (Lifetime)</p>
-              <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{format(totalInterestPaid)}</p>
-              <p className="text-xs font-medium text-[var(--color-text-secondary)] mt-2">Cumulative cost of borrowing since start</p>
+            <div className="kpi-card">
+              <p className="section-title">Total Interest Paid (Lifetime)</p>
+              <p className="text-2xl font-black text-amber-400 mt-2">{format(totalInterestPaid)}</p>
+              <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-1">Cumulative cost of borrowing since start</p>
             </div>
-            <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)]">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-secondary)]">Debt-Free Projection</p>
-              <p className="text-2xl font-black text-[var(--color-primary-light)] mt-2">
+            <div className="kpi-card">
+              <p className="section-title">Debt-Free Projection</p>
+              <p className="text-2xl font-black text-[var(--color-brand-light)] mt-2">
                 {data.simulations?.baseline?.months ? `${data.simulations.baseline.months} mo` : "—"}
               </p>
-              <p className="text-xs font-medium text-[var(--color-text-secondary)] mt-2">
+              <p className="text-[11px] text-[var(--color-text-secondary)] font-medium mt-1">
                 {data.simulations?.baseline?.debt_free_date
                   ? `Est. clear by ${new Date(data.simulations.baseline.debt_free_date).toLocaleDateString("en-IN", { month: "long", year: "numeric" })}`
                   : "Keep up with EMIs"}
@@ -524,9 +524,9 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Principal vs Interest Visual Split */}
-          <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] mt-4">
+          <div className="kpi-card !rounded-2xl p-5 mt-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-primary)]">Principal vs Interest — Your Repayment Breakdown</p>
+              <p className="section-title">Principal vs Interest — Your Repayment Breakdown</p>
               <div className="flex items-center gap-4 text-[11px] font-bold text-[var(--color-text-secondary)]">
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Principal</span>
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> Interest</span>
@@ -571,28 +571,28 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 {
-                  name: "❄️ Debt Snowball", tag: "Lowest balance first", color: "border-blue-500/40",
+                  name: "❄️ Debt Snowball", tag: "Lowest balance first", color: "border-blue-500/20",
                   items: [
                     { key: "Debt-Free By", val: data.simulations.snowball.debt_free_date ? new Date(data.simulations.snowball.debt_free_date).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : "—" },
                     { key: "Months Saved", val: `${data.simulations.snowball.months_saved} months` },
                     { key: "Interest Saved", val: format(data.simulations.snowball.interest_saved) },
                   ],
-                  accentClass: "text-blue-600 dark:text-blue-400",
+                  accentClass: "text-blue-400",
                 },
                 {
-                  name: "🏔️ Debt Avalanche", tag: "Highest interest first — Most efficient", color: "border-emerald-500/50",
+                  name: "🏔️ Debt Avalanche", tag: "Highest interest first — Most efficient", color: "border-emerald-500/30",
                   badge: "Recommended",
                   items: [
                     { key: "Debt-Free By", val: data.simulations.avalanche.debt_free_date ? new Date(data.simulations.avalanche.debt_free_date).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : "—" },
                     { key: "Months Saved", val: `${data.simulations.avalanche.months_saved} months` },
                     { key: "Interest Saved", val: format(data.simulations.avalanche.interest_saved) },
                   ],
-                  accentClass: "text-emerald-600 dark:text-emerald-400",
+                  accentClass: "text-emerald-400",
                 },
               ].map(s => (
-                <div key={s.name} className={`card p-6 border-2 ${s.color} bg-[var(--color-surface)] relative`}>
+                <div key={s.name} className={`kpi-card !rounded-2xl p-5 border ${s.color} relative`}>
                   {s.badge && (
-                    <span className="absolute top-0 right-0 mt-0 mr-0 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl rounded-tr-xl uppercase tracking-wider">
+                    <span className="absolute top-0 right-0 mt-0 mr-0 bg-emerald-500 text-white text-[9px] font-black px-2.5 py-1 rounded-bl-xl rounded-tr-xl uppercase tracking-wider">
                       {s.badge}
                     </span>
                   )}

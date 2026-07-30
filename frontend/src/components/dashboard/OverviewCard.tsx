@@ -1,6 +1,6 @@
 /**
- * DebtProof — Overview Card Component
- * Statistics card displayed in the dashboard overview grid.
+ * DebtProof — Overview Card (KPI) Component v2
+ * Minimal, modern stat card for the dashboard overview grid.
  */
 import React from "react";
 import { cn } from "@/utils/cn";
@@ -11,6 +11,7 @@ interface OverviewCardProps {
   subtitle?: string;
   icon: React.ReactNode;
   iconBg?: string;
+  accentColor?: string; // e.g. "text-indigo-400"
   trend?: {
     value: string;
     direction: "up" | "down" | "neutral";
@@ -24,58 +25,51 @@ export function OverviewCard({
   value,
   subtitle,
   icon,
-  iconBg = "bg-[var(--color-primary)]",
+  iconBg = "bg-indigo-500/10 text-indigo-400",
+  accentColor = "text-[var(--color-text-primary)]",
   trend,
   loading = false,
 }: OverviewCardProps) {
   return (
-    <article className="overview-card">
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className={cn("overview-card-icon text-white", iconBg)}>
+    <article className="kpi-card">
+      {/* Top row: icon + trend */}
+      <div className="flex items-center justify-between">
+        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", iconBg)}>
           {icon}
         </div>
         {trend && (
           <div
             className={cn(
-              "flex items-center gap-1 text-xs font-semibold",
-              trend.direction === "up" && "text-[var(--color-success)]",
-              trend.direction === "down" && "text-[var(--color-error)]",
-              trend.direction === "neutral" && "text-[var(--color-text-tertiary)]"
+              "flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full",
+              trend.direction === "up"   && "bg-emerald-500/10 text-emerald-400",
+              trend.direction === "down" && "bg-red-500/10 text-red-400",
+              trend.direction === "neutral" && "bg-[var(--color-surface-tertiary)] text-[var(--color-text-tertiary)]"
             )}
           >
             {trend.direction === "up" && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <polyline points="18 15 12 9 6 15" />
-              </svg>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
             )}
             {trend.direction === "down" && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
             )}
             {trend.value}
           </div>
         )}
       </div>
 
+      {/* Value + labels */}
       {loading ? (
-        <>
-          <div className="skeleton h-7 w-32 mb-1.5" />
-          <div className="skeleton h-4 w-24" />
-        </>
+        <div className="space-y-2">
+          <div className="skeleton h-7 w-28" />
+          <div className="skeleton h-3 w-20" />
+        </div>
       ) : (
-        <>
-          <p className="text-2xl font-bold text-[var(--color-text-primary)] leading-none mb-1.5 tracking-tight">
-            {value}
-          </p>
-          <p className="text-sm text-[var(--color-text-secondary)] font-medium">{title}</p>
-          {subtitle && (
-            <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{subtitle}</p>
-          )}
-          {trend && (
-            <p className="text-xs text-[var(--color-text-tertiary)] mt-1">{trend.label}</p>
-          )}
-        </>
+        <div>
+          <p className={cn("kpi-value", accentColor)}>{value}</p>
+          <p className="kpi-label mt-1">{title}</p>
+          {subtitle && <p className="kpi-sub mt-0.5">{subtitle}</p>}
+          {trend && <p className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5">{trend.label}</p>}
+        </div>
       )}
     </article>
   );

@@ -194,9 +194,10 @@ export function DashboardClient() {
       title: "Total Loans",
       value: (data.total_loans ?? 0).toString(),
       subtitle: `${data.active_loans ?? 0} active · ${data.closed_loans ?? 0} closed`,
-      bg: "bg-[var(--color-primary)]",
+      iconBg: "bg-indigo-500/12 text-indigo-400",
+      accentColor: "text-[var(--color-text-primary)]",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
         </svg>
       ),
@@ -205,10 +206,11 @@ export function DashboardClient() {
       id: "outstanding",
       title: "Total Outstanding",
       value: format(data.total_outstanding ?? 0),
-      subtitle: `${format(data.total_paid_active ?? 0)} principal · ${format(data.total_interest_paid ?? 0)} interest`,
-      bg: "bg-[var(--color-error)]",
+      subtitle: `Principal: ${format(data.total_paid_active ?? 0)}`,
+      iconBg: "bg-rose-500/12 text-rose-400",
+      accentColor: "text-rose-400",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       ),
@@ -217,12 +219,13 @@ export function DashboardClient() {
       id: "upcoming-emi",
       title: (data.overdue_count ?? 0) > 0 ? "Overdue EMI" : "Upcoming EMI",
       value: (data.upcoming_emi_amount ?? 0) > 0 ? format(data.upcoming_emi_amount ?? 0) : "—",
-      subtitle: data.upcoming_emi_date 
-        ? `${(data.overdue_count ?? 0) > 0 ? "Overdue since" : "Due"} ${formatDate(data.upcoming_emi_date)}` 
+      subtitle: data.upcoming_emi_date
+        ? `${(data.overdue_count ?? 0) > 0 ? "Overdue since" : "Due"} ${formatDate(data.upcoming_emi_date)}`
         : "No upcoming EMI",
-      bg: (data.overdue_count ?? 0) > 0 ? "bg-[var(--color-error)]" : "bg-[var(--color-warning)]",
+      iconBg: (data.overdue_count ?? 0) > 0 ? "bg-rose-500/12 text-rose-400" : "bg-amber-500/12 text-amber-400",
+      accentColor: (data.overdue_count ?? 0) > 0 ? "text-rose-400" : "text-amber-400",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           {(data.overdue_count ?? 0) > 0 ? (
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01" />
           ) : (
@@ -236,9 +239,10 @@ export function DashboardClient() {
       title: "Loans Status",
       value: `${data.active_loans ?? 0} Active`,
       subtitle: `${data.closed_loans ?? 0} closed · ${data.defaulted_loans ?? 0} defaulted`,
-      bg: "bg-[var(--color-accent)]",
+      iconBg: "bg-emerald-500/12 text-emerald-400",
+      accentColor: "text-emerald-400",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="20 6 9 17 4 12" />
         </svg>
       ),
@@ -259,7 +263,8 @@ export function DashboardClient() {
                 value={card.value}
                 subtitle={card.subtitle}
                 icon={card.icon}
-                iconBg={card.bg}
+                iconBg={card.iconBg}
+                accentColor={card.accentColor}
               />
             ))}
           </div>
@@ -268,21 +273,21 @@ export function DashboardClient() {
 
       {/* Overdue Banner */}
       {data.overdue_count > 0 && (
-        <div className="bg-[var(--color-error)]/10 border-l-4 border-[var(--color-error)] p-4 rounded-r-[var(--radius-md)] flex items-start gap-3">
-          <div className="mt-0.5 text-[var(--color-error)]">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-rose-500/8 border border-rose-500/20">
+          <div className="w-8 h-8 rounded-lg bg-rose-500/15 flex items-center justify-center shrink-0 text-rose-400">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4m0 4h.01" />
             </svg>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-[var(--color-error)]">Action Required: Overdue Payments</h3>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
-              You have {data.overdue_count} loan(s) with overdue EMI payments totaling {formatCurrency(data.upcoming_emi_amount)}. Please clear your dues to avoid penalties.
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-rose-400">
+              {data.overdue_count} overdue loan{data.overdue_count > 1 ? "s" : ""} — {formatCurrency(data.upcoming_emi_amount)} due
             </p>
-            <Link href="/dashboard/loans" className="text-xs font-semibold text-[var(--color-error)] underline mt-2 inline-block">
-              View My Loans
-            </Link>
+            <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">Clear dues to avoid penalties and credit score impact.</p>
           </div>
+          <Link href="/dashboard/loans" className="text-[12px] font-semibold text-rose-400 hover:text-rose-300 transition-colors shrink-0">
+            View loans →
+          </Link>
         </div>
       )}
 
@@ -330,23 +335,23 @@ export function DashboardClient() {
       {/* Quick Actions */}
       {widgets.showQuickActions && (
         <section aria-labelledby="quick-actions-heading">
-          <h2 id="quick-actions-heading" className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)] mb-3">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <h2 id="quick-actions-heading" className="section-title mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {QUICK_ACTIONS.map((action) => (
               <Link
                 key={action.id}
                 href={action.href}
-                className="card p-4 hover:shadow-md transition-all hover:-translate-y-0.5 text-left group"
+                className="kpi-card hover:-translate-y-0.5 hover:shadow-md group cursor-pointer"
               >
-                <div className={`w-10 h-10 rounded-xl ${action.bg} flex items-center justify-center text-white mb-3`}>
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
                   {action.icon}
                 </div>
-                <p className="text-[13px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors">
-                  {action.label}
-                </p>
-                <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{action.description}</p>
+                <div>
+                  <p className="text-[13px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-light)] transition-colors">
+                    {action.label}
+                  </p>
+                  <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">{action.description}</p>
+                </div>
               </Link>
             ))}
           </div>
@@ -473,14 +478,14 @@ export function DashboardClient() {
           {/* Loan Portfolio — Individual Loan Progress Bars */}
           <section className="lg:col-span-2 flex flex-col">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[13px] font-extrabold uppercase tracking-widest text-[var(--color-text-primary)] flex items-center gap-2">
-                <span>📊</span> Loan Portfolio Repayment Progress ({loansList.length})
+              <h2 className="section-title">
+                Loan Portfolio · {loansList.length} loan{loansList.length !== 1 ? "s" : ""}
               </h2>
-              <Link href="/dashboard/loans" className="text-xs font-bold text-[var(--color-primary-light)] hover:underline flex items-center gap-1">
-                View all loans ({data.total_loans}) →
+              <Link href="/dashboard/loans" className="text-[12px] font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-light)] transition-colors">
+                View all ({data.total_loans}) →
               </Link>
             </div>
-            <div className="card p-5 flex-1 flex flex-col justify-between bg-[var(--color-surface)] border border-[var(--color-border)]">
+            <div className="kpi-card flex-1 flex flex-col justify-between !rounded-2xl p-5">
               {loansList.length === 0 && data.total_loans === 0 ? (
                 <div className="text-center py-10">
                   <div className="w-12 h-12 rounded-2xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">
@@ -499,11 +504,15 @@ export function DashboardClient() {
               ) : (
                 <div className="space-y-4">
                   {/* Visual Legend */}
-                  <div className="flex items-center justify-between text-xs pb-2 border-b border-[var(--color-border)]">
-                    <span className="font-bold text-[var(--color-text-secondary)]">Click any loan bar to inspect details</span>
-                    <div className="flex items-center gap-3 text-[11px] font-bold">
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Completed (Green)</span>
-                      <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Remaining (Red)</span>
+                  <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border)]">
+                    <p className="section-title">Click any bar to inspect</p>
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-tertiary)] font-medium">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" /> Paid
+                      </span>
+                      <span className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-tertiary)] font-medium">
+                        <span className="w-2 h-2 rounded-full bg-rose-500" /> Remaining
+                      </span>
                     </div>
                   </div>
 
@@ -520,50 +529,28 @@ export function DashboardClient() {
                         <div
                           key={loan.id}
                           onClick={() => setSelectedLoanForModal(loan)}
-                          className="block group p-3.5 rounded-xl bg-[var(--color-surface-secondary)] hover:bg-[var(--color-surface-tertiary)] border border-[var(--color-border)] transition-all cursor-pointer relative"
+                          className="group px-3 py-2.5 rounded-xl hover:bg-[var(--color-surface-tertiary)] transition-colors cursor-pointer"
                         >
-                          {/* Loan Header info */}
-                          <div className="flex items-center justify-between mb-1.5 text-xs">
-                            <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary-light)] transition-colors text-sm">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-[13px] font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-light)] transition-colors truncate">
                                 {loan.name}
                               </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                              <span className="text-[10px] font-medium text-[var(--color-text-tertiary)] shrink-0">
                                 {loan.lender_name}
                               </span>
                             </div>
-                            <div className="text-right">
-                              <span className="font-black text-emerald-700 dark:text-emerald-400">
-                                {paidPct.toFixed(1)}% Completed
-                              </span>
-                              <span className="text-[11px] text-[var(--color-text-secondary)] font-medium ml-2">
-                                ({format(outstanding)} left of {format(principal)})
-                              </span>
-                            </div>
+                            <span className="text-[11px] font-semibold text-emerald-400 shrink-0 ml-2">
+                              {paidPct.toFixed(1)}%
+                            </span>
                           </div>
-
-                          {/* Dual-segment Bar: Green (Paid) vs Red (Remaining) */}
-                          <div className="h-3.5 w-full rounded-full bg-rose-500/20 overflow-hidden flex border border-[var(--color-border)] relative">
-                            <div
-                              className="h-full bg-emerald-500 transition-all duration-700 relative"
-                              style={{ width: `${paidPct}%` }}
-                            />
-                            <div
-                              className="h-full bg-rose-500 transition-all duration-700 relative"
-                              style={{ width: `${remainingPct}%` }}
-                            />
+                          <div className="h-1.5 w-full rounded-full bg-[var(--color-surface-tertiary)] overflow-hidden flex">
+                            <div className="h-full bg-emerald-500 rounded-l-full transition-all duration-700" style={{ width: `${paidPct}%` }} />
+                            <div className="h-full bg-rose-500 transition-all duration-700" style={{ width: `${remainingPct}%` }} />
                           </div>
-
-                          {/* Rich Hover Tooltip */}
-                          <div className="absolute left-1/2 -top-12 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-30 shadow-xl">
-                            <div className="bg-slate-900 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 whitespace-nowrap flex items-center gap-2">
-                              <span>🏦 {loan.name} ({loan.lender_name})</span>
-                              <span className="text-slate-500">|</span>
-                              <span className="text-emerald-400">Paid: {format(paid)} ({paidPct.toFixed(1)}%)</span>
-                              <span className="text-slate-500">|</span>
-                              <span className="text-rose-400">Remaining: {format(outstanding)}</span>
-                            </div>
-                            <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700" />
+                          <div className="flex justify-between mt-1">
+                            <span className="text-[10px] text-[var(--color-text-tertiary)]">{format(paid)} paid</span>
+                            <span className="text-[10px] text-[var(--color-text-tertiary)]">{format(outstanding)} left</span>
                           </div>
                         </div>
                       );
@@ -719,22 +706,20 @@ export function DashboardClient() {
 
             <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-tertiary)]">
-                  Recent Payments
-                </h2>
-                <Link href="/dashboard/payments" className="text-xs text-[var(--color-primary-light)] hover:underline">
+                <h2 className="section-title">Recent Payments</h2>
+                <Link href="/dashboard/payments" className="text-[12px] font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-light)] transition-colors">
                   View all →
                 </Link>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {(!data.recent_payments || data.recent_payments.length === 0) ? (
-                  <div className="card p-8 text-center">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto mb-3 text-[var(--color-text-tertiary)]">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div className="kpi-card p-8 text-center items-center">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-tertiary)] flex items-center justify-center mx-auto text-[var(--color-text-tertiary)]">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
                       </svg>
                     </div>
-                    <p className="text-sm text-[var(--color-text-secondary)]">No payments yet</p>
+                    <p className="text-[13px] text-[var(--color-text-secondary)] mt-2">No payments yet</p>
                   </div>
                 ) : (
                   data.recent_payments.slice(0, 6).map((payment) => (

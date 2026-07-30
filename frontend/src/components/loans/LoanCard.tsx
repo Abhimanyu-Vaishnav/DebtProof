@@ -37,10 +37,10 @@ export function LoanCard({ loan, onDelete, searchQuery = "" }: LoanCardProps) {
 
   return (
     <>
-      <div className="card p-5 hover:shadow-md transition-shadow">
+      <div className="kpi-card group hover:-translate-y-0.5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-tertiary)] flex items-center justify-center text-lg shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-[var(--color-surface-tertiary)] flex items-center justify-center text-lg shrink-0 border border-[var(--color-border)]">
               {LOAN_TYPE_ICONS[loan.loan_type] ?? "📄"}
             </div>
             <div className="min-w-0">
