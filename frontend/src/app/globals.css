@@ -967,3 +967,27 @@ html.light .nav-landing {
     overflow-x: hidden;
   }
 }
+
+/* ── Light Mode Colored Element Contrast Safeguards ── */
+html.light .bg-rose-600,
+html.light .bg-rose-500,
+html.light .bg-pink-600,
+html.light .bg-indigo-600,
+html.light .bg-indigo-500,
+html.light .bg-blue-600,
+html.light .bg-emerald-600,
+html.light .bg-purple-600,
+html.light .btn-primary {
+  color: #ffffff !important;
+}
+html.light .bg-rose-600 *,
+html.light .bg-rose-500 *,
+html.light .bg-pink-600 *,
+html.light .bg-indigo-600 *,
+html.light .bg-indigo-500 *,
+html.light .bg-blue-600 *,
+html.light .bg-emerald-600 *,
+html.light .bg-purple-600 *,
+html.light .btn-primary * {
+  color: #ffffff !important;
+}
