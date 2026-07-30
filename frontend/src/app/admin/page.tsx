@@ -5,6 +5,7 @@ import Link from "next/link";
 import apiClient from "@/services/api";
 import { subscriptionService, Plan, PlanFeature, DEFAULT_ADMIN_PLANS, DEFAULT_CATALOG } from "@/services/subscription.service";
 import { useTheme } from "@/contexts/ThemeContext";
+import { AdminCacheStudio } from "@/components/admin/AdminCacheStudio";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "RiskAuditor" | "Web3Governor";
@@ -2252,61 +2253,7 @@ export default function SuperAdminPortal() {
 
           {/* ── TAB: CACHE CLEAR STUDIO ── */}
           {activeTab === "cache" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-black text-white flex items-center gap-2">
-                    <span>🧹</span> 1-Click System Cache Clear & Purge Studio
-                  </h3>
-                  <p className="text-xs text-slate-400">Instantly flush Django Redis backend cache keys, API query caches, and browser storage</p>
-                </div>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-6 max-w-xl mx-auto">
-                <div className="w-16 h-16 rounded-3xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-3xl flex items-center justify-center mx-auto">
-                  🧹
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-lg font-black text-white">Flush System & Application Cache</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Clearing cache flushes Redis store, Django view caches, API rate limits, and client-side cached loans/payments data. This will force live real-time queries on next fetch.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-left space-y-2">
-                  <div className="flex justify-between"><span className="text-slate-500 font-bold">Django Cache Store:</span> <span className="text-emerald-400 font-mono">Redis / Database Backend</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500 font-bold">Client Local Cache:</span> <span className="text-emerald-400 font-mono">LocalStorage & SessionStorage</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500 font-bold">Cached Memory Status:</span> <span className="text-rose-400 font-mono">148 Keys Active</span></div>
-                </div>
-
-                <button
-                  disabled={clearingCache}
-                  onClick={async () => {
-                    setClearingCache(true);
-                    try {
-                      const res = await superAdminFetch("/auth/superadmin/clear-cache/", { method: "POST" });
-                      if (typeof window !== "undefined") {
-                        localStorage.removeItem("debtproof_local_loans");
-                        localStorage.removeItem("debtproof_local_payments");
-                      }
-                      if (res?.success) {
-                        alert(`✅ Cache Cleared!\n${res.message}\nStatus: ${res.status}`);
-                        fetchAllData();
-                      } else {
-                        alert("Failed to clear backend cache.");
-                      }
-                    } catch (e) {
-                      alert("Cache clear request executed.");
-                    } finally {
-                      setClearingCache(false);
-                    }
-                  }}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-xl shadow-rose-500/20 hover:from-rose-500 hover:to-rose-400 transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {clearingCache ? "⏳ Clearing All Caches..." : "💥 1-Click Clear All System Caches"}
-                </button>
-              </div>
-            </div>
+            <AdminCacheStudio onStatsUpdated={fetchAllData} />
           )}
 
         </div>
