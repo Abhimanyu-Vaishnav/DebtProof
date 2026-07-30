@@ -104,36 +104,21 @@ html[data-theme="light"] {
 }
 
 html.light body {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
+  background-color: var(--color-surface-secondary) !important;
+  color: var(--color-text-primary) !important;
 }
 
-/* Map dark Tailwind classes → light equivalents */
-html.light .bg-slate-950 { background-color: #f8fafc !important; }
-html.light .bg-slate-900 { background-color: #ffffff !important; }
-html.light .bg-slate-900\/50, html.light .bg-slate-900\/80,
-html.light .bg-slate-900\/95 { background-color: rgba(255,255,255,0.92) !important; }
-html.light .bg-slate-800 { background-color: #f1f5f9 !important; }
-html.light .bg-slate-800\/50, html.light .bg-slate-800\/40,
-html.light .bg-slate-950\/40, html.light .bg-slate-950\/60 {
-  background-color: rgba(248,250,252,0.9) !important;
+/* Light theme card surface overrides for legacy slate classes */
+html.light .bg-slate-900:not(.physical-card),
+html.light .bg-slate-950:not(.physical-card) {
+  background-color: var(--color-surface) !important;
 }
-html.light .border-slate-800, html.light .border-slate-800\/80,
-html.light .border-slate-700, html.light .border-slate-800\/50 {
-  border-color: rgba(0,0,0,0.07) !important;
+html.light .bg-slate-800:not(.physical-card) {
+  background-color: var(--color-surface-secondary) !important;
 }
-html.light .text-slate-300, html.light .text-slate-400 {
-  color: #475569 !important;
-}
-html.light .text-slate-500 {
-  color: #64748b !important;
-}
-/* Protect colored elements from white-wash */
-html.light :not(button):not(a):not(.btn):not([class*="bg-indigo"])
-  :not([class*="bg-purple"]):not([class*="bg-rose"])
-  :not([class*="bg-emerald"]):not([class*="bg-gradient"])
-  :not([class*="bg-brand"]).text-white {
-  color: #0f172a !important;
+html.light .border-slate-800:not(.physical-card),
+html.light .border-slate-700:not(.physical-card) {
+  border-color: var(--color-border) !important;
 }
 
 /* ── Base Reset ─────────────────────────────────────────────── */

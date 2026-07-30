@@ -11,10 +11,10 @@ import { CreditCardTrapCalculator } from "./CreditCardTrapCalculator";
 // Helper for card styling gradients
 function getCardGradient(idx: number) {
   const gradients = [
-    "from-slate-900 to-slate-800 border-slate-700",
-    "from-indigo-950 to-indigo-900 border-indigo-800",
-    "from-zinc-900 to-zinc-800 border-zinc-700",
-    "from-emerald-950 to-emerald-900 border-emerald-800",
+    "from-slate-900 via-slate-800 to-indigo-950 border-slate-700/80 shadow-slate-950/30",
+    "from-indigo-950 via-slate-900 to-purple-950 border-indigo-700/80 shadow-indigo-950/30",
+    "from-zinc-950 via-zinc-900 to-slate-900 border-zinc-700/80 shadow-zinc-950/30",
+    "from-emerald-950 via-teal-950 to-slate-900 border-emerald-700/80 shadow-emerald-950/30",
   ];
   return gradients[idx % gradients.length];
 }
@@ -285,14 +285,14 @@ export function CreditCardsClient() {
           {cards.map((card, idx) => (
             <div
               key={card.id}
-              className={`rounded-2xl border p-5 sm:p-6 bg-gradient-to-br text-white shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[230px] transition-transform hover:-translate-y-1 ${getCardGradient(idx)}`}
+              className={`physical-card rounded-2xl border p-5 sm:p-6 bg-gradient-to-br !text-white shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[230px] transition-transform hover:-translate-y-1 ${getCardGradient(idx)}`}
             >
               {/* Card Header */}
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h4 className="font-extrabold text-base tracking-wide leading-tight">{card.card_name}</h4>
-                    <p className="text-[10px] text-slate-300 font-semibold">{card.bank_name}</p>
+                    <h4 className="font-extrabold text-base tracking-wide leading-tight !text-white">{card.card_name}</h4>
+                    <p className="text-[10px] !text-slate-300 font-semibold">{card.bank_name}</p>
                   </div>
                   <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border shrink-0 ${getUtilizationColor(card.utilization_rate)}`}>
                     {card.utilization_rate.toFixed(0)}% Util
@@ -300,37 +300,37 @@ export function CreditCardsClient() {
                 </div>
 
                 <div className="mt-3 sm:mt-4">
-                  <p className="text-[9px] uppercase tracking-wider text-slate-300 font-semibold">Outstanding Balance</p>
-                  <p className="text-xl sm:text-2xl font-black tracking-tight text-white">{formatCurrency(card.current_outstanding)}</p>
+                  <p className="text-[9px] uppercase tracking-wider !text-slate-300 font-semibold">Outstanding Balance</p>
+                  <p className="text-xl sm:text-2xl font-black tracking-tight !text-white">{formatCurrency(card.current_outstanding)}</p>
                 </div>
               </div>
 
               {/* Limit progress */}
               <div className="mt-3">
-                <div className="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden mb-1.5">
+                <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden mb-1.5">
                   <div
                     className={`h-full ${getUtilizationBarColor(card.utilization_rate)}`}
                     style={{ width: `${Math.min(card.utilization_rate, 100)}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[9px] text-slate-300 font-semibold">
+                <div className="flex items-center justify-between text-[9px] !text-slate-300 font-semibold">
                   <span>Limit: {formatCurrency(card.credit_limit)}</span>
                   <span>APR: {card.interest_rate}%</span>
                 </div>
               </div>
 
               {/* Action and cycle days footer */}
-              <div className="flex flex-wrap items-center justify-between border-t border-slate-700/50 pt-2 text-[10px] gap-2 mt-3">
-                <div className="flex gap-2 text-slate-300">
-                  <span>Stmt: <b>{card.statement_date}</b></span>
-                  <span>Due: <b>{card.due_date}</b></span>
+              <div className="flex flex-wrap items-center justify-between border-t border-white/10 pt-2 text-[10px] gap-2 mt-3">
+                <div className="flex gap-2 !text-slate-300">
+                  <span>Stmt: <b className="!text-white">{card.statement_date}</b></span>
+                  <span>Due: <b className="!text-white">{card.due_date}</b></span>
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <button onClick={() => handlePayOpen(card)} className="text-emerald-400 hover:text-emerald-300 font-bold bg-slate-800/60 px-2 py-0.5 rounded">Pay</button>
-                  <button onClick={() => selectCardForHistory(card.id)} className="text-blue-300 hover:text-blue-200 font-bold bg-slate-800/60 px-2 py-0.5 rounded">
+                  <button onClick={() => handlePayOpen(card)} className="text-emerald-400 hover:text-emerald-300 font-bold bg-white/10 px-2 py-0.5 rounded backdrop-blur-sm">Pay</button>
+                  <button onClick={() => selectCardForHistory(card.id)} className="text-blue-300 hover:text-blue-200 font-bold bg-white/10 px-2 py-0.5 rounded backdrop-blur-sm">
                     {selectedCardId === card.id ? "Hide Tx" : "Tx History"}
                   </button>
-                  <button onClick={() => openEditModal(card)} className="text-slate-300 hover:text-white font-bold px-1">Edit</button>
+                  <button onClick={() => openEditModal(card)} className="!text-slate-300 hover:!text-white font-bold px-1">Edit</button>
                   <button onClick={() => handleDelete(card.id)} className="text-rose-400 hover:text-rose-300 font-bold px-1">Delete</button>
                 </div>
               </div>
