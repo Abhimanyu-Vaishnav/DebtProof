@@ -145,7 +145,7 @@ export function Sidebar() {
       <nav className="flex-1 px-2.5 py-3 overflow-y-auto space-y-4">
         {navSections.map((section) => (
           <div key={section.title}>
-            <p className="text-[9.5px] font-black uppercase tracking-[0.1em] text-[var(--color-text-tertiary)] px-2.5 mb-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[var(--color-text-secondary)] opacity-80 px-2.5 mb-1">
               {section.title}
             </p>
             <ul className="space-y-0.5" role="list">
