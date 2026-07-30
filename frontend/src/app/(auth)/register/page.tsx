@@ -1,5 +1,6 @@
 /**
- * DebtProof — Register Page
+ * DebtProof — Premium Register Page v2
+ * Minimal · Split Screen · High-Contrast
  */
 "use client";
 
@@ -30,29 +31,27 @@ export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
-  const [errors, setErrors] = useState<Partial<FormData>>({});
-  const [loading, setLoading] = useState(false);
+  const [errors, setErrors]     = useState<Partial<FormData>>({});
+  const [loading, setLoading]   = useState(false);
   const [globalError, setGlobalError] = useState("");
 
   const validate = (): boolean => {
-    const newErrors: Partial<FormData> = {};
-    if (!formData.first_name.trim()) newErrors.first_name = "First name is required.";
-    if (!formData.last_name.trim()) newErrors.last_name = "Last name is required.";
-    if (!formData.email) newErrors.email = "Email is required.";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Enter a valid email.";
-    if (!formData.password) newErrors.password = "Password is required.";
-    else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters.";
-    if (formData.password !== formData.password_confirm)
-      newErrors.password_confirm = "Passwords do not match.";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: Partial<FormData> = {};
+    if (!formData.first_name.trim()) e.first_name = "First name is required.";
+    if (!formData.last_name.trim())  e.last_name  = "Last name is required.";
+    if (!formData.email) e.email = "Email is required.";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) e.email = "Enter a valid email.";
+    if (!formData.password) e.password = "Password is required.";
+    else if (formData.password.length < 8) e.password = "Minimum 8 characters.";
+    if (formData.password !== formData.password_confirm) e.password_confirm = "Passwords do not match.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setGlobalError("");
     if (!validate()) return;
-
     setLoading(true);
     try {
       await register(formData);
@@ -78,59 +77,80 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-layout">
-      {/* Left Brand Panel */}
+      {/* ── Left Brand Panel ─────────────────────────────────── */}
       <div className="auth-panel">
-        <div className="relative z-10 max-w-sm text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-6">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 max-w-xs text-center space-y-8">
+          {/* Logo */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center backdrop-blur-sm">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-white text-xl font-black tracking-tight">DebtProof</h2>
+              <p className="text-indigo-300 text-[11px] font-semibold uppercase tracking-wider mt-0.5">Monad FinTech</p>
+            </div>
           </div>
-          <h2 className="text-white text-2xl font-bold mb-3">Secure by Design</h2>
-          <p className="text-blue-200 text-sm leading-relaxed">
-            Your data is protected with industry-standard encryption. 
-            Receipts are hashed before storage — we never see your documents.
-          </p>
-          <div className="mt-8 p-4 rounded-xl bg-white/5 border border-white/10 text-left">
-            <p className="text-xs text-blue-300 font-semibold uppercase tracking-wider mb-2">
-              Privacy Promise
+
+          <div className="space-y-2">
+            <h3 className="text-white text-2xl font-bold leading-tight">Secure by design.</h3>
+            <p className="text-indigo-200/80 text-sm leading-relaxed">
+              We never read your receipts. Only the SHA-256 hash is anchored on Monad Blockchain.
             </p>
-            <p className="text-sm text-blue-100 leading-relaxed">
-              DebtProof never reads or stores the content of your receipts. 
-              Only the cryptographic hash (digital fingerprint) is anchored on blockchain.
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-left space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Privacy Promise</p>
+            <p className="text-[13px] text-indigo-100/80 leading-relaxed">
+              Your documents stay encrypted and private. Only the cryptographic fingerprint is stored publicly — your data never is.
             </p>
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/8 border border-white/10 backdrop-blur-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-semibold text-white/80">Free plan — No credit card needed</span>
           </div>
         </div>
       </div>
 
-      {/* Right Form Panel */}
+      {/* ── Right Form Panel ─────────────────────────────────── */}
       <div className="auth-form-panel">
-        <div className="w-full max-w-[420px]">
-          <div className="flex items-center gap-2 mb-8 md:hidden">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-primary)] flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        <div className="w-full max-w-[400px] space-y-6">
+          {/* Mobile Logo */}
+          <div className="flex items-center gap-2.5 md:hidden">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
             </div>
-            <span className="font-bold text-[var(--color-text-primary)]">DebtProof</span>
+            <span className="font-bold text-[var(--color-text-primary)] tracking-tight">DebtProof</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mb-1.5">
-            Create your account
-          </h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mb-8">
-            Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-[var(--color-primary-light)] hover:text-[var(--color-primary)]">
-              Sign in
-            </Link>
-          </p>
+          {/* Header */}
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight mb-1.5">
+              Create your account
+            </h1>
+            <p className="text-[13px] text-[var(--color-text-secondary)]">
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-light)] transition-colors">
+                Sign in →
+              </Link>
+            </p>
+          </div>
 
+          {/* Error */}
           {globalError && (
-            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-[var(--radius-md)] text-sm text-red-700" role="alert">
+            <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-[13px] text-red-400 font-medium" role="alert">
               {globalError}
             </div>
           )}
 
+          {/* Form */}
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <Input
@@ -176,7 +196,7 @@ export default function RegisterPage() {
               value={formData.password}
               onChange={set("password")}
               error={errors.password}
-              hint="Use at least 8 characters with a mix of letters and numbers."
+              hint="Use at least 8 characters with letters and numbers."
               required
             />
 
@@ -198,17 +218,17 @@ export default function RegisterPage() {
               size="lg"
               loading={loading}
               id="register-submit-btn"
-              className="mt-2"
+              className="mt-1 !rounded-xl"
             >
-              Create Account
+              Create free account
             </Button>
           </form>
 
-          <p className="text-center text-xs text-[var(--color-text-tertiary)] mt-5">
+          <p className="text-center text-[11px] text-[var(--color-text-tertiary)]">
             By creating an account, you agree to our{" "}
-            <a href="#" className="underline">Terms</a>
+            <a href="#" className="underline hover:text-[var(--color-text-secondary)] transition-colors">Terms</a>
             {" "}and{" "}
-            <a href="#" className="underline">Privacy Policy</a>
+            <a href="#" className="underline hover:text-[var(--color-text-secondary)] transition-colors">Privacy Policy</a>
           </p>
         </div>
       </div>

@@ -8,9 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { notificationsService } from "@/services/notifications.service";
 import type { Notification } from "@/types";
 import { TenantSwitcher } from "@/components/tenant/TenantSwitcher";
-
 import { THEME_PRESETS, applyGlobalTheme } from "@/utils/theme";
-
 import { Web3WalletConnect } from "@/components/layout/Web3WalletConnect";
 
 interface TopbarProps {
@@ -18,7 +16,6 @@ interface TopbarProps {
   subtitle?: string;
 }
 
-// ── Helpers ─────────────────────────────────────────────────────
 function timeAgo(isoString: string): string {
   const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
   if (diff < 60) return "Just now";
@@ -28,31 +25,26 @@ function timeAgo(isoString: string): string {
 }
 
 function notifIcon(type: string) {
-  if (type === "emi_overdue") return { dot: "bg-rose-500", emoji: "⚠️" };
-  if (type === "emi_upcoming") return { dot: "bg-amber-400", emoji: "📅" };
-  if (type === "payment_received") return { dot: "bg-emerald-500", emoji: "✅" };
-  if (type === "loan_closed") return { dot: "bg-purple-500", emoji: "🎉" };
+  if (type === "emi_overdue")       return { dot: "bg-rose-500",    emoji: "⚠️" };
+  if (type === "emi_upcoming")      return { dot: "bg-amber-400",   emoji: "📅" };
+  if (type === "payment_received")  return { dot: "bg-emerald-500", emoji: "✅" };
+  if (type === "loan_closed")       return { dot: "bg-purple-500",  emoji: "🎉" };
   return { dot: "bg-blue-500", emoji: "ℹ️" };
 }
 
 export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen]         = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [theme, setTheme] = useState("system");
-  const [soundMuted, setSoundMuted] = useState(false);
-  const [activePlan, setActivePlan] = useState<string>("Free Plan");
+  const [notifications, setNotifications]       = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount]           = useState(0);
+  const [theme, setTheme]                       = useState("system");
+  const [soundMuted, setSoundMuted]             = useState(false);
+  const [activePlan, setActivePlan]             = useState<string>("Free Plan");
 
   useEffect(() => {
-    import("@/services/plan.service").then((mod) => {
-      setActivePlan(`${mod.getUserPlan()} Plan`);
-    });
-    const onPlanChange = () => {
-      import("@/services/plan.service").then((mod) => {
-        setActivePlan(`${mod.getUserPlan()} Plan`);
-      });
-    };
+    import("@/services/plan.service").then((mod) => setActivePlan(`${mod.getUserPlan()} Plan`));
+    const onPlanChange = () =>
+      import("@/services/plan.service").then((mod) => setActivePlan(`${mod.getUserPlan()} Plan`));
     window.addEventListener("debtproof_plan_changed", onPlanChange);
     return () => window.removeEventListener("debtproof_plan_changed", onPlanChange);
   }, []);
@@ -63,29 +55,23 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("debtproof_theme") || "system";
-    setTheme(savedTheme);
-    applyGlobalTheme(savedTheme);
-
+    const saved = localStorage.getItem("debtproof_theme") || "system";
+    setTheme(saved);
+    applyGlobalTheme(saved);
     const onThemeChanged = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail) {
-        setTheme(customEvent.detail);
-      }
+      const ev = e as CustomEvent;
+      if (ev.detail) setTheme(ev.detail);
     };
-
     window.addEventListener("debtproof_theme_changed", onThemeChanged);
     return () => window.removeEventListener("debtproof_theme_changed", onThemeChanged);
   }, []);
 
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-  const { logout } = useAuth();
+  const dropdownRef      = useRef<HTMLDivElement>(null);
+  const router           = useRouter();
+  const { logout }       = useAuth();
+  const seenNotifIdsRef  = useRef<Set<string>>(new Set());
 
-  const seenNotifIdsRef = useRef<Set<string>>(new Set());
-
-  // ── Fetch notifications ────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
     try {
       const [listResp] = await Promise.all([
@@ -93,77 +79,46 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
         notificationsService.getUnreadCount(),
       ]);
       const notifArray = Array.isArray(listResp) ? listResp : listResp.results ?? [];
-      
-      const localBroadcastsRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
-      const localBroadcasts: Notification[] = localBroadcastsRaw ? JSON.parse(localBroadcastsRaw) : [];
-
+      const localRaw = typeof window !== "undefined" ? localStorage.getItem("debtproof_local_broadcasts") : null;
+      const localBroadcasts: Notification[] = localRaw ? JSON.parse(localRaw) : [];
       const combined = [...localBroadcasts, ...notifArray];
-      const unique = combined.filter((item, index, self) => index === self.findIndex((t) => t.id === item.id || t.title === item.title));
-
+      const unique = combined.filter((item, i, self) => i === self.findIndex((t) => t.id === item.id || t.title === item.title));
       setNotifications(unique);
-      const actualUnread = unique.filter((n) => !n.is_read).length;
-      setUnreadCount(actualUnread);
-
-      // Toast for genuinely new unread notifications (seen set prevents duplicates from any source)
+      setUnreadCount(unique.filter((n) => !n.is_read).length);
       if (seenNotifIdsRef.current.size > 0) {
-        const unreadItems = unique.filter((n) => !n.is_read);
-        const brandNew = unreadItems.filter((n) => !seenNotifIdsRef.current.has(n.id));
+        const brandNew = unique.filter((n) => !n.is_read && !seenNotifIdsRef.current.has(n.id));
         if (brandNew.length > 0) {
-          const item = brandNew[0];
-          window.dispatchEvent(
-            new CustomEvent("debtproof-toast", {
-              detail: {
-                message: item.title || "New notification received!",
-                body: item.body || undefined,
-                type: "info",
-              },
-            })
-          );
+          window.dispatchEvent(new CustomEvent("debtproof-toast", {
+            detail: { message: brandNew[0].title || "New notification received!", type: "info" },
+          }));
         }
       }
       unique.forEach((n) => seenNotifIdsRef.current.add(n.id));
-    } catch {
-      // Silent fail — don't break UI if notification API is unavailable
-    }
+    } catch { /* silent fail */ }
   }, []);
 
   useEffect(() => {
     fetchNotifications();
     const handleRefresh = () => fetchNotifications();
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "debtproof_local_broadcasts") {
-        fetchNotifications();
-      }
-    };
+    const handleStorage = (e: StorageEvent) => { if (e.key === "debtproof_local_broadcasts") fetchNotifications(); };
     const handleAddNotif = (e: Event) => {
       const custom = e as CustomEvent<Notification>;
       if (custom.detail) {
         setNotifications((prev) => {
-          if (prev.find(n => n.id === custom.detail.id)) return prev;
+          if (prev.find((n) => n.id === custom.detail.id)) return prev;
           return [custom.detail, ...prev];
         });
-        // Don't manually increment — fetchNotifications recalculates the true count
         if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-          try {
-            new Notification(custom.detail.title || "DebtProof Alert", {
-              body: custom.detail.body || "New notification received.",
-              icon: "/favicon.ico",
-            });
-          } catch {}
+          try { new Notification(custom.detail.title || "DebtProof Alert", { body: custom.detail.body || "", icon: "/favicon.ico" }); } catch {}
         }
       }
     };
-
-    // Request native browser push notification permission
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
       try { Notification.requestPermission(); } catch {}
     }
-
     window.addEventListener("debtproof_refresh_notifications", handleRefresh);
     window.addEventListener("debtproof_add_notification", handleAddNotif);
     window.addEventListener("storage", handleStorage);
-
-    // BroadcastChannel listener — guarantees real-time notification receipt across tabs
     let bc: BroadcastChannel | null = null;
     try {
       bc = new BroadcastChannel("debtproof_notifications_channel");
@@ -171,22 +126,12 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
         if (event.data?.type === "ADD_NOTIFICATION" && event.data?.notif) {
           const newNotif = event.data.notif as Notification;
           setNotifications((prev) => {
-            if (prev.find(n => n.id === newNotif.id)) return prev;
+            if (prev.find((n) => n.id === newNotif.id)) return prev;
             return [newNotif, ...prev];
           });
-          // Don't manually increment — fetchNotifications recalculates the true count
-          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-            try {
-              new Notification(newNotif.title || "DebtProof Alert", {
-                body: newNotif.body || "New notification received.",
-                icon: "/favicon.ico",
-              });
-            } catch {}
-          }
         }
       };
     } catch {}
-
     const interval = setInterval(fetchNotifications, 4_000);
     return () => {
       window.removeEventListener("debtproof_refresh_notifications", handleRefresh);
@@ -197,160 +142,140 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
     };
   }, [fetchNotifications]);
 
-  // ── Actions ────────────────────────────────────────────────────
   const handleMarkRead = async (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === id ? { ...n, is_read: true } : n)
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
-    try { await notificationsService.markRead(id); } catch { /* silent */ }
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+    try { await notificationsService.markRead(id); } catch {}
   };
-
   const handleMarkAllRead = async () => {
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
-    try { await notificationsService.markAllRead(); } catch { /* silent */ }
+    try { await notificationsService.markAllRead(); } catch {}
   };
-
   const handleDismiss = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const notif = notifications.find(n => n.id === id);
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    if (notif && !notif.is_read) setUnreadCount(prev => Math.max(0, prev - 1));
-    try { await notificationsService.deleteNotification(id); } catch { /* silent */ }
+    const notif = notifications.find((n) => n.id === id);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    if (notif && !notif.is_read) setUnreadCount((prev) => Math.max(0, prev - 1));
+    try { await notificationsService.deleteNotification(id); } catch {}
   };
-
   const handleLogout = async () => {
     setDropdownOpen(false);
     await logout();
     router.push("/login");
   };
 
-  // Close panels when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
-        setNotificationsOpen(false);
-      }
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setDropdownOpen(false);
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) setNotificationsOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
-    <header className="topbar gap-4" role="banner">
-      {/* Mobile Menu Toggle Button */}
+    <header className="topbar gap-3" role="banner">
+      {/* Mobile Menu Toggle */}
       <button
-        onClick={() => {
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("sidebar:open"));
-          }
-        }}
-        className="lg:hidden p-1.5 -ml-1 rounded-lg hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] transition-colors cursor-pointer"
+        onClick={() => typeof window !== "undefined" && window.dispatchEvent(new CustomEvent("sidebar:open"))}
+        className="lg:hidden p-1.5 -ml-1 rounded-lg hover:bg-[var(--color-surface-tertiary)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors cursor-pointer"
         aria-label="Open menu"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="18" x2="21" y2="18" />
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
         </svg>
       </button>
 
       {/* Page Title */}
       <div className="flex-1 min-w-0 flex items-center gap-3">
-        <div>
-          <h1 className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate leading-none">
+        <div className="min-w-0">
+          <h1 className="text-[14px] font-semibold text-[var(--color-text-primary)] truncate leading-none tracking-tight">
             {title}
           </h1>
           {subtitle && (
-            <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{subtitle}</p>
+            <p className="text-[11px] text-[var(--color-text-tertiary)] mt-0.5 truncate">{subtitle}</p>
           )}
         </div>
-
-        {/* Tenant / Workspace Switcher */}
         <div className="hidden sm:block">
           <TenantSwitcher />
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Sound FX Mute/Unmute Toggle */}
+      {/* Right Actions */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Sound Toggle */}
         <button
           onClick={() => {
             const { sounds } = require("@/utils/sound");
-            const newMuteState = !soundMuted;
-            sounds.toggleSound(!newMuteState);
-            setSoundMuted(newMuteState);
-            if (!newMuteState) sounds.playPaymentSuccess();
+            const next = !soundMuted;
+            sounds.toggleSound(!next);
+            setSoundMuted(next);
+            if (!next) sounds.playPaymentSuccess();
           }}
-          className={`w-8 h-8 rounded-xl border flex items-center justify-center text-xs transition cursor-pointer ${
-            !soundMuted 
-              ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-400" 
-              : "bg-[var(--color-surface-secondary)] border-[var(--color-border)] text-[var(--color-text-tertiary)]"
-          }`}
-          title={!soundMuted ? "Sound Effects Enabled (Click to Mute)" : "Sound Effects Muted (Click to Enable)"}
+          className={`topbar-icon-btn ${!soundMuted ? "text-indigo-400 bg-indigo-500/10" : "text-[var(--color-text-tertiary)]"}`}
+          title={!soundMuted ? "Mute sound effects" : "Unmute sound effects"}
         >
-          {!soundMuted ? "🔊" : "🔇"}
+          {!soundMuted ? (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          ) : (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          )}
         </button>
 
-        {/* Web3 Wallet Connector */}
+        {/* Web3 Wallet */}
         <Web3WalletConnect />
 
-        {/* Theme Preset Switcher */}
-        <div className="relative hidden sm:block">
+        {/* Theme Preset */}
+        <div className="hidden sm:block">
           <select
             value={theme}
             onChange={(e) => handleApplyTheme(e.target.value)}
-            className="input text-[11px] h-8 px-2 py-0 bg-[var(--color-surface-secondary)] border-[var(--color-border-light)] rounded-xl font-bold text-[var(--color-text-secondary)] cursor-pointer"
+            className="h-8 px-2 text-[11px] font-semibold rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-tertiary)] text-[var(--color-text-secondary)] cursor-pointer outline-none hover:border-[var(--color-brand)] transition-colors"
           >
             {THEME_PRESETS.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.icon} {t.label}
-              </option>
+              <option key={t.id} value={t.id}>{t.icon} {t.label}</option>
             ))}
           </select>
         </div>
 
-        {/* Notification Bell (Hidden on Mobile) */}
+        {/* Divider */}
+        <div className="w-px h-5 bg-[var(--color-border)] mx-0.5" />
+
+        {/* Notification Bell */}
         <div className="relative hidden lg:block" ref={notificationsRef}>
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] transition-colors relative cursor-pointer"
+            className="topbar-icon-btn relative"
             aria-label="Notifications"
             id="topbar-notifications-btn"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
           </button>
 
-          {/* Notifications Panel */}
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-88 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] shadow-2xl z-50 animate-fade-in-up overflow-hidden" style={{ width: "22rem" }}>
+            <div className="absolute right-0 mt-2 w-80 bg-[var(--color-surface-secondary)] border border-[var(--color-border)] rounded-2xl shadow-2xl z-50 animate-fade-in-up overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-light)] bg-[var(--color-surface-secondary)]">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[var(--color-text-primary)]">Notifications</span>
+                  <span className="text-[13px] font-bold text-[var(--color-text-primary)]">Notifications</span>
                   {unreadCount > 0 && (
-                    <span className="text-[9px] font-bold bg-rose-500 text-white px-1.5 py-0.5 rounded-full">
-                      {unreadCount} new
+                    <span className="text-[10px] font-bold bg-rose-500 text-white px-1.5 py-0.5 rounded-full">
+                      {unreadCount}
                     </span>
                   )}
                 </div>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllRead}
-                    className="text-[10px] font-bold text-[var(--color-primary-light)] hover:underline cursor-pointer"
+                    className="text-[11px] font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-light)] transition cursor-pointer"
                   >
                     Mark all read
                   </button>
@@ -358,7 +283,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
               </div>
 
               {/* List */}
-              <div className="max-h-80 overflow-y-auto divide-y divide-[var(--color-border-light)]">
+              <div className="max-h-72 overflow-y-auto divide-y divide-[var(--color-border)]">
                 {notifications.length === 0 ? (
                   <div className="py-10 text-center">
                     <p className="text-2xl mb-2">🔔</p>
@@ -371,34 +296,30 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                       <div
                         key={n.id}
                         onClick={() => { if (!n.is_read) handleMarkRead(n.id); }}
-                        className={`px-4 py-3 flex gap-3 items-start hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer ${
-                          !n.is_read ? "bg-[var(--color-primary)]/5" : ""
-                        }`}
+                        className={`px-4 py-2.5 flex gap-3 items-start hover:bg-[var(--color-surface-tertiary)] transition-colors cursor-pointer ${!n.is_read ? "bg-indigo-500/5" : ""}`}
                       >
-                        {/* Icon */}
                         <div className="relative shrink-0 mt-0.5">
                           <span className="text-base">{icon.emoji}</span>
                           {!n.is_read && (
                             <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${icon.dot}`} />
                           )}
                         </div>
-                        {/* Content */}
                         <div className="min-w-0 flex-1">
-                          <p className={`text-xs leading-snug text-[var(--color-text-primary)] ${!n.is_read ? "font-bold" : "font-medium"}`}>
+                          <p className={`text-[12px] leading-snug text-[var(--color-text-primary)] ${!n.is_read ? "font-semibold" : "font-medium"}`}>
                             {n.title}
                           </p>
                           {n.loan_name && (
-                            <p className="text-[10px] text-[var(--color-primary-light)] font-semibold mt-0.5">{n.loan_name}</p>
+                            <p className="text-[10px] text-[var(--color-brand)] font-semibold mt-0.5">{n.loan_name}</p>
                           )}
-                          <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed line-clamp-2"
+                          <p
+                            className="text-[10px] text-[var(--color-text-tertiary)] mt-0.5 line-clamp-2"
                             dangerouslySetInnerHTML={{ __html: n.body }}
                           />
                           <span className="text-[9px] text-[var(--color-text-tertiary)] mt-1 inline-block">{timeAgo(n.created_at)}</span>
                         </div>
-                        {/* Dismiss */}
                         <button
                           onClick={(e) => handleDismiss(n.id, e)}
-                          className="shrink-0 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] transition-colors p-0.5 cursor-pointer mt-0.5"
+                          className="shrink-0 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] transition-colors p-0.5 mt-0.5"
                           title="Dismiss"
                         >
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -411,62 +332,64 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                 )}
               </div>
 
-              {/* Dropdown Footer - View All Link */}
-              <div className="bg-[var(--color-surface-secondary)] border-t border-[var(--color-border-light)] p-2 text-center shrink-0">
+              <div className="border-t border-[var(--color-border)] p-2 text-center">
                 <Link
                   href="/dashboard/notifications"
                   onClick={() => setNotificationsOpen(false)}
-                  className="text-xs font-bold text-[var(--color-primary-light)] hover:text-[var(--color-primary)] hover:underline block py-1 cursor-pointer"
+                  className="text-[11px] font-semibold text-[var(--color-brand)] hover:text-[var(--color-brand-light)] py-1 block transition"
                 >
-                  View All Notifications
+                  View all notifications
                 </Link>
               </div>
             </div>
           )}
         </div>
 
-
         {/* Divider */}
-        <div className="w-px h-5 bg-[var(--color-border)]" />
+        <div className="w-px h-5 bg-[var(--color-border)] mx-0.5" />
 
-        {/* User Account Dropdown */}
+        {/* User Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity cursor-pointer text-left"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer rounded-lg px-1.5 py-1"
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
             id="user-menu-button"
           >
             <Avatar name="User" size="sm" />
-            <div className="hidden sm:block">
-              <p className="text-[13px] font-medium text-[var(--color-text-primary)] leading-none flex items-center gap-1">
+            <div className="hidden sm:block text-left">
+              <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-none flex items-center gap-1 tracking-tight">
                 My Account
-                <svg className={`w-3.5 h-3.5 text-[var(--color-text-tertiary)] transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <svg className={`w-3 h-3 text-[var(--color-text-tertiary)] transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </p>
-              <p className="text-[11px] text-rose-400 font-bold mt-0.5">{activePlan}</p>
+              <p className="text-[10px] text-indigo-400 font-bold mt-0.5 truncate max-w-[90px]">{activePlan}</p>
             </div>
           </button>
 
-          {/* Dropdown Menu */}
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-[var(--color-surface)] border border-[var(--color-border-light)] rounded-[var(--radius-md)] shadow-2xl py-1.5 z-50 animate-fade-in-up">
-              <div className="px-4 py-2 border-b border-[var(--color-border-light)] sm:hidden">
-                <p className="text-[13px] font-medium text-[var(--color-text-primary)]">My Account</p>
-                <p className="text-[11px] text-rose-400 font-bold mt-0.5">{activePlan}</p>
+            <div className="absolute right-0 mt-2 w-48 bg-[var(--color-surface-secondary)] border border-[var(--color-border)] rounded-xl shadow-2xl py-1.5 z-50 animate-fade-in-up">
+              <div className="px-3 py-2 border-b border-[var(--color-border)] sm:hidden">
+                <p className="text-[12px] font-semibold text-[var(--color-text-primary)]">My Account</p>
+                <p className="text-[10px] text-indigo-400 font-bold mt-0.5">{activePlan}</p>
               </div>
-              <Link
-                href="/profile"
-                onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                </svg>
-                View Profile
-              </Link>
+              {[
+                { href: "/profile", icon: "👤", label: "View Profile" },
+                { href: "/dashboard/settings", icon: "⚙️", label: "Settings" },
+                { href: "/dashboard/help", icon: "❓", label: "Help & About" },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-[12px] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+                >
+                  <span className="text-sm">{item.icon}</span>
+                  {item.label}
+                </Link>
+              ))}
               <button
                 onClick={() => {
                   setDropdownOpen(false);
@@ -474,43 +397,18 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                   localStorage.removeItem(dismissKey);
                   window.dispatchEvent(new Event("debtproof_pwa_show"));
                 }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-xs text-[var(--color-primary-light)] font-bold hover:bg-[var(--color-surface-secondary)] transition-colors cursor-pointer text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-indigo-400 font-semibold hover:bg-[var(--color-surface-tertiary)] transition-colors cursor-pointer text-left"
               >
-                <span>📲</span>
+                <span className="text-sm">📲</span>
                 Install Mobile App
               </button>
-              <Link
-                href="/dashboard/settings"
-                onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-                Settings
-              </Link>
-              <Link
-                href="/dashboard/help"
-                onClick={() => setDropdownOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                Help & About
-              </Link>
-              <div className="border-t border-[var(--color-border-light)] my-1" />
+              <div className="border-t border-[var(--color-border)] my-1" />
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-4 py-2 text-xs text-[var(--color-error)] hover:bg-red-50 transition-colors cursor-pointer text-left font-medium"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-[12px] text-[var(--color-error)] hover:bg-red-500/8 transition-colors cursor-pointer text-left font-medium"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                Logout
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign Out
               </button>
             </div>
           )}
