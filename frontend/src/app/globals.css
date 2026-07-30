@@ -490,37 +490,40 @@ body {
 
 /* ── Feature Cards ───────────────────────────────────────────── */
 .feature-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg, 16px);
+  background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.3);
 }
 
 /* ── Overview Cards ─────────────────────────────────────────── */
 .overview-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 1.375rem;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  transition: box-shadow var(--transition-base);
+  border-radius: var(--radius-xl, 20px);
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .overview-card:hover {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07);
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .overview-card-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md, 12px);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* ── Sidebar Navigation ────────────────────────────────────── */
@@ -528,15 +531,15 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.625rem 0.875rem;
-  border-radius: var(--radius-md);
+  padding: 0.6875rem 0.875rem;
+  border-radius: var(--radius-md, 12px);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.18s ease-out;
   text-decoration: none;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   width: 100%;
   text-align: left;
@@ -545,12 +548,14 @@ body {
 .nav-item:hover {
   background: var(--color-surface-tertiary);
   color: var(--color-text-primary);
+  transform: translateX(2px);
 }
 
 .nav-item.active {
-  background: rgb(26 58 92 / 0.08);
-  color: var(--color-primary);
-  font-weight: 600;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(6, 182, 212, 0.12) 100%);
+  color: var(--color-primary-light, #4f46e5);
+  font-weight: 700;
+  border-color: rgba(79, 70, 229, 0.2);
 }
 
 .nav-item.active .nav-icon {
