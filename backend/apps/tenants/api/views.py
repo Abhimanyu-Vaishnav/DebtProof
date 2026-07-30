@@ -380,16 +380,57 @@ class TransferOwnershipAPIView(views.APIView):
         return Response({"success": True, "message": f"Organization ownership transferred to {new_owner.email}."})
 
 
+class FeaturesCatalogAPIView(views.APIView):
+    """
+    GET /api/v1/tenants/features-catalog/
+    Returns the comprehensive catalog of system feature modules for drag-and-drop plan management.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        catalog = [
+            {"key": "my_loans", "name": "My Loans & Liability Tracker", "category": "Core Finance", "description": "Track bank loans, EMIs, and payoff progress", "icon": "Landmark", "is_core": True},
+            {"key": "credit_cards", "name": "Credit Cards Command Center", "category": "Core Finance", "description": "Track credit card limits, utilization & due dates", "icon": "CreditCard", "is_core": True},
+            {"key": "budget", "name": "Intelligent Budget Planner", "category": "Core Finance", "description": "Category living expenses and DTI health meter", "icon": "Wallet", "is_core": True},
+            {"key": "investments", "name": "Investments & Wealth Tracker", "category": "Wealth", "description": "Track stocks, mutual funds, gold & compound calculator", "icon": "TrendingUp", "is_core": False},
+            {"key": "payoff_quest", "name": "Gamified Payoff Quests & Badges", "category": "Gamification", "description": "Earn streak rewards & achievement badges for debt payoff", "icon": "Trophy", "is_core": False},
+            {"key": "joint_workspace", "name": "Joint Workspace & Family Sharing", "category": "Collaboration", "description": "Shared debt & household budget view with partner/family", "icon": "Users", "is_core": False},
+            {"key": "refinance_studio", "name": "Refinance Savings Studio & Comparison", "category": "Analytics", "description": "Compare interest rates & balance transfer savings", "icon": "Calculator", "is_core": False},
+            {"key": "auto_saver", "name": "Micro Auto-Saver Vault", "category": "Automation", "description": "Automated round-up savings towards principal payoff", "icon": "PiggyBank", "is_core": False},
+            {"key": "statement_parser", "name": "AI CIBIL & PDF Statement Parser", "category": "AI Tools", "description": "Auto-extract loan schedules from uploaded PDF statements", "icon": "FileText", "is_core": False},
+            {"key": "payments_log", "name": "Payments Log & Export", "category": "Core Finance", "description": "Detailed log of principal vs interest paid", "icon": "Receipt", "is_core": True},
+            {"key": "activity_log", "name": "Audit & Activity Log", "category": "Security", "description": "Complete audit trail of all financial actions", "icon": "Activity", "is_core": False},
+            {"key": "zk_proofs", "name": "Zero-Knowledge Credit Proofs & Web3 Badges", "category": "Web3 & Security", "description": "Generate privacy-preserving ZK proof of creditworthiness", "icon": "ShieldCheck", "is_core": False},
+            {"key": "receipt_anchoring", "name": "Monad Blockchain Receipt Anchoring", "category": "Web3 & Security", "description": "SHA-256 cryptographic proof of payment anchored on-chain", "icon": "Database", "is_core": False},
+            {"key": "p2p_market", "name": "P2P Web3 Lending Marketplace & Escrow", "category": "Web3 & Security", "description": "Peer-to-peer MON token loans with smart contract escrow", "icon": "Repeat", "is_core": False},
+            {"key": "ai_coach", "name": "AI Financial Advisor & Chat Coach", "category": "AI Tools", "description": "24/7 AI financial guidance & payoff strategies", "icon": "Bot", "is_core": False},
+            {"key": "reports_export", "name": "Official Bank-Grade PDF Reports", "category": "Analytics", "description": "Export formal PDF statements & audit packages", "icon": "Download", "is_core": False},
+            {"key": "api_access", "name": "Developer API Access & Webhooks", "category": "Developer", "description": "REST API access for custom integrations", "icon": "Code", "is_core": False},
+        ]
+        return Response({"success": True, "catalog": catalog})
+
+
 class SuperAdminPlanConfigAPIView(views.APIView):
     """
-    POST  /api/v1/tenants/admin/plans/ — Create Plan
-    PATCH /api/v1/tenants/admin/plans/<id>/ — Edit Plan
+    GET    /api/v1/tenants/admin/plans/ — List all plans (Admin)
+    POST   /api/v1/tenants/admin/plans/ — Create Plan
+    PATCH  /api/v1/tenants/admin/plans/<id>/ — Edit Plan (limits, pricing, features_json drag & drop)
+    DELETE /api/v1/tenants/admin/plans/<id>/ — Delete / Archive Plan
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, plan_id=None):
+        if plan_id:
+            plan = Plan.objects.filter(id=plan_id).first()
+            if not plan:
+                return Response({"success": False, "message": "Plan not found."}, status=404)
+            return Response({"success": True, "plan": PlanSerializer(plan).data})
+        plans = Plan.objects.all().order_by("price_monthly")
+        return Response({"success": True, "plans": PlanSerializer(plans, many=True).data})
 
     def post(self, request):
-        code = request.data.get("code")
-        name = request.data.get("name")
+        code = request.data.get("code") or f"custom_{uuid.uuid4().hex[:6]}"
+        name = request.data.get("name", "Custom Tier")
         price_m = Decimal(str(request.data.get("price_monthly", 0)))
         price_y = Decimal(str(request.data.get("price_yearly", 0)))
 
@@ -420,6 +461,19 @@ class SuperAdminPlanConfigAPIView(views.APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"success": True, "plan": serializer.data})
+
+    def delete(self, request, plan_id):
+        plan = Plan.objects.filter(id=plan_id).first()
+        if not plan:
+            return Response({"success": False, "message": "Plan not found."}, status=404)
+        if plan.code in ["free", "basic", "premium"]:
+            # Archive standard plans instead of hard delete
+            plan.is_archived = True
+            plan.is_active = False
+            plan.save()
+            return Response({"success": True, "message": f"Plan '{plan.name}' archived."})
+        plan.delete()
+        return Response({"success": True, "message": "Plan deleted."})
 
 
 class AcceptRejectInvitationAPIView(views.APIView):
@@ -512,31 +566,96 @@ class FeatureFlagsAPIView(views.APIView):
         return Response({"success": True, "message": f"Feature '{flag.name}' set to {is_enabled}."})
 
 
-# ── 6. SUBSCRIPTION & BILLING ───────────────────────────────────
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+
 class SubscriptionPlansAPIView(views.APIView):
     """
     GET /api/v1/tenants/billing/plans/ — List available plans
     GET /api/v1/tenants/billing/subscription/ — Current subscription status & usage
     POST /api/v1/tenants/billing/subscribe/ — Change plan (Upgrade/Downgrade/Cancel)
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        # Ensure default plans exist
-        if not Plan.objects.exists():
-            Plan.objects.create(code="free", name="Free Plan", price_monthly=0, max_loans=5, max_storage_bytes=104857600, max_reports=10, max_ai_requests=20, max_blockchain_proofs=5, max_team_members=1)
-            Plan.objects.create(code="basic", name="Basic Plan", price_monthly=499, max_loans=25, max_storage_bytes=1073741824, max_reports=100, max_ai_requests=200, max_blockchain_proofs=50, max_team_members=3)
-            Plan.objects.create(code="premium", name="Premium Plan", price_monthly=999, max_loans=-1, max_storage_bytes=10737418240, max_reports=-1, max_ai_requests=-1, max_blockchain_proofs=-1, max_team_members=10, allow_api_access=True)
-            Plan.objects.create(code="business", name="Business Plan", price_monthly=2499, max_loans=-1, max_storage_bytes=107374182400, max_reports=-1, max_ai_requests=-1, max_blockchain_proofs=-1, max_team_members=50, allow_api_access=True)
+        # Default feature key lists
+        free_feats = ["my_loans", "credit_cards", "budget", "payments_log"]
+        basic_feats = ["my_loans", "credit_cards", "budget", "investments", "payoff_quest", "statement_parser", "payments_log", "activity_log", "reports_export"]
+        premium_feats = ["my_loans", "credit_cards", "budget", "investments", "payoff_quest", "joint_workspace", "refinance_studio", "auto_saver", "statement_parser", "payments_log", "activity_log", "zk_proofs", "receipt_anchoring", "p2p_market", "ai_coach", "reports_export"]
+        business_feats = premium_feats + ["api_access"]
+        enterprise_feats = business_feats + ["whitelabel_custom_domain", "staff_rbac_matrix", "bureau_export_cibil", "cache_studio_access", "dedicated_api_sla"]
 
-        plans = Plan.objects.all().order_by("price_monthly")
+        # Ensure default plans exist and have features_json
+        if not Plan.objects.exists():
+            Plan.objects.create(code="free", name="Free Plan", price_monthly=0, max_loans=3, max_storage_bytes=104857600, max_reports=5, max_ai_requests=5, max_blockchain_proofs=2, max_team_members=1, features_json=free_feats)
+            Plan.objects.create(code="basic", name="Basic Plan", price_monthly=499, max_loans=10, max_storage_bytes=1073741824, max_reports=50, max_ai_requests=50, max_blockchain_proofs=10, max_team_members=3, features_json=basic_feats)
+            Plan.objects.create(code="premium", name="Premium Plan", price_monthly=999, is_recommended=True, is_popular=True, max_loans=-1, max_storage_bytes=10737418240, max_reports=-1, max_ai_requests=-1, max_blockchain_proofs=-1, max_team_members=10, allow_api_access=True, features_json=premium_feats)
+            Plan.objects.create(code="business", name="Business Plan", price_monthly=2499, max_loans=-1, max_storage_bytes=107374182400, max_reports=-1, max_ai_requests=-1, max_blockchain_proofs=-1, max_team_members=50, allow_api_access=True, features_json=business_feats)
+            Plan.objects.create(code="enterprise", name="Enterprise Plan", price_monthly=4999, max_loans=-1, max_storage_bytes=1073741824000, max_reports=-1, max_ai_requests=-1, max_blockchain_proofs=-1, max_team_members=500, allow_api_access=True, has_priority_support=True, has_custom_branding=True, features_json=enterprise_feats)
+        else:
+            # Check if enterprise plan exists, if not create it
+            if not Plan.objects.filter(code="enterprise").exists():
+                Plan.objects.create(code="enterprise", name="Enterprise Plan", price_monthly=4999, max_loans=-1, max_storage_bytes=1073741824000, max_reports=-1, max_ai_requests=-1, max_blockchain_proofs=-1, max_team_members=500, allow_api_access=True, has_priority_support=True, has_custom_branding=True, features_json=enterprise_feats)
+
+            # Seed missing features_json for default plans
+            for p in Plan.objects.all():
+                if not p.features_json:
+                    if p.code == "free":
+                        p.features_json = free_feats
+                    elif p.code == "basic":
+                        p.features_json = basic_feats
+                    elif p.code == "premium":
+                        p.features_json = premium_feats
+                    elif p.code == "business":
+                        p.features_json = business_feats
+                    elif p.code == "enterprise":
+                        p.features_json = enterprise_feats
+                    else:
+                        p.features_json = basic_feats
+                    p.save()
+
+        plans = Plan.objects.filter(is_archived=False).order_by("price_monthly")
         org = getattr(request, "organization", None)
+        if not org and request.user.is_authenticated:
+            # Get user's first owned or joined org
+            org_member = OrganizationMember.objects.filter(user=request.user).first()
+            if org_member:
+                org = org_member.organization
+
         current_sub = getattr(org, "subscription", None) if org else None
+        if not current_sub and org:
+            free_plan = Plan.objects.filter(code="free").first() or plans.first()
+            if free_plan:
+                current_sub, _ = OrganizationSubscription.objects.get_or_create(
+                    organization=org,
+                    defaults={
+                        "plan": free_plan,
+                        "status": "active",
+                        "current_period_start": timezone.now(),
+                        "current_period_end": timezone.now() + timedelta(days=3650),
+                    }
+                )
+
+        allowed_features = current_sub.plan.features_json if current_sub and current_sub.plan else free_feats
+        
+        # Calculate real usage stats for current org/user
+        usage_stats = {
+            "loans_count": 0,
+            "ai_requests_count": 0,
+            "blockchain_proofs_count": 0,
+            "storage_bytes_used": 0,
+        }
+        if org:
+            from apps.loans.models import Loan
+            from apps.payments.models import ReceiptProof
+            usage_stats["loans_count"] = Loan.objects.filter(organization=org).count()
+            usage_stats["blockchain_proofs_count"] = ReceiptProof.objects.filter(organization=org, is_anchored=True).count()
 
         return Response({
             "success": True,
             "plans": PlanSerializer(plans, many=True).data,
             "current_subscription": OrganizationSubscriptionSerializer(current_sub).data if current_sub else None,
+            "allowed_features": allowed_features,
+            "usage_stats": usage_stats,
         })
 
     def post(self, request):

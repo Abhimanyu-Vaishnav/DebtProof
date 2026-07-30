@@ -42,9 +42,29 @@ export const FONT_OPTIONS = [
 
 export const THEME_PRESETS: ThemeConfig[] = [
   {
+    id: "system",
+    label: "System Default",
+    desc: "Auto-sync with OS dark/light mode",
+    color: "#0f172a",
+    accent: "#38bdf8",
+    icon: "💻",
+    vars: {
+      "--color-surface": "#0f172a",
+      "--color-surface-secondary": "#020617",
+      "--color-surface-tertiary": "#1e293b",
+      "--color-primary": "#38bdf8",
+      "--color-primary-light": "#0ea5e9",
+      "--color-primary-dark": "#7dd3fc",
+      "--color-accent": "#10b981",
+      "--color-text-primary": "#f8fafc",
+      "--color-text-secondary": "#94a3b8",
+      "--color-border-light": "rgba(255, 255, 255, 0.1)",
+    },
+  },
+  {
     id: "dark",
     label: "Dark Titanium",
-    desc: "Default sleek dark theme",
+    desc: "Sleek dark theme",
     color: "#0f172a",
     accent: "#38bdf8",
     icon: "🌙",
@@ -219,12 +239,14 @@ export function applyCustomColors(colors: Partial<CustomColors>): void {
   window.dispatchEvent(new CustomEvent("debtproof_theme_changed", { detail: "custom" }));
 }
 
-export function applyGlobalTheme(themeId: string): void {
+export function applyGlobalTheme(themeId: string = "system"): void {
   if (typeof window === "undefined") return;
   const root = document.documentElement;
 
-  let targetThemeId = themeId;
-  if (themeId === "system") {
+  const actualThemeId = themeId || "system";
+  let targetThemeId = actualThemeId;
+
+  if (actualThemeId === "system") {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     targetThemeId = isDark ? "dark" : "light";
   }
@@ -240,7 +262,7 @@ export function applyGlobalTheme(themeId: string): void {
     targetThemeId = "dark";
   }
 
-  const config = THEME_PRESETS.find((t) => t.id === targetThemeId) || THEME_PRESETS[0];
+  const config = THEME_PRESETS.find((t) => t.id === targetThemeId) || THEME_PRESETS.find((t) => t.id === "dark") || THEME_PRESETS[0];
 
   Object.entries(config.vars).forEach(([key, val]) => {
     root.style.setProperty(key, val);
@@ -249,7 +271,8 @@ export function applyGlobalTheme(themeId: string): void {
   const isLight = targetThemeId === "light";
   root.classList.remove("dark", "light");
   root.classList.add(isLight ? "light" : "dark");
-  root.setAttribute("data-theme", targetThemeId);
+  root.setAttribute("data-theme", actualThemeId);
+  root.setAttribute("data-resolved-theme", targetThemeId);
 
   // Re-apply saved custom font if selected
   const savedFont = localStorage.getItem("debtproof_font_family");
@@ -257,8 +280,8 @@ export function applyGlobalTheme(themeId: string): void {
     root.style.fontFamily = savedFont;
   }
 
-  localStorage.setItem("debtproof_theme", themeId);
-  window.dispatchEvent(new CustomEvent("debtproof_theme_changed", { detail: themeId }));
+  localStorage.setItem("debtproof_theme", actualThemeId);
+  window.dispatchEvent(new CustomEvent("debtproof_theme_changed", { detail: actualThemeId }));
 }
 
 export function applyFontFamily(fontFamily: string): void {
@@ -266,4 +289,3 @@ export function applyFontFamily(fontFamily: string): void {
   document.documentElement.style.fontFamily = fontFamily;
   localStorage.setItem("debtproof_font_family", fontFamily);
 }
-

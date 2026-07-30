@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/Toast";
 import { loansService } from "@/services/loans.service";
 import { useWallet } from "@/hooks/useWallet";
+import { useSubscription } from "@/context/SubscriptionContext";
+import { Lock, Zap } from "lucide-react";
 import type { Loan, LoanFormData, LoanType, LoanStatus } from "@/types";
 
 interface LoanFormProps {
@@ -42,8 +44,11 @@ export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
   const router = useRouter();
   const { showToast } = useToast();
   const { walletAddress, connectWallet, createEscrowLoan } = useWallet();
+  const { canCreateLoan, openPaywall, currentPlan, usageStats } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+
+  const quotaCheck = canCreateLoan();
 
   const [form, setForm] = useState<LoanFormData>({
     name: initialData?.name ?? "",
@@ -141,8 +146,26 @@ export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      {!isEdit && !quotaCheck.allowed && (
+        <div className="mb-6 p-6 rounded-2xl bg-slate-900 border border-amber-500/30 text-white space-y-3 shadow-xl">
+          <div className="flex items-center gap-2 text-amber-400 font-extrabold text-sm uppercase tracking-wider">
+            <Lock className="w-5 h-5" /> Bank Loan Limit Reached ({usageStats.loans_count} / {currentPlan?.max_loans})
+          </div>
+          <p className="text-sm text-slate-300">
+            {quotaCheck.reason}
+          </p>
+          <button
+            type="button"
+            onClick={() => openPaywall({ reason: quotaCheck.reason })}
+            className="px-5 py-2.5 bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 text-white font-extrabold text-xs rounded-xl shadow-lg hover:shadow-indigo-500/20 transition flex items-center gap-2 cursor-pointer"
+          >
+            <Zap className="w-4 h-4 text-amber-300" /> Upgrade Plan to Add Unlimited Loans
+          </button>
+        </div>
+      )}
+
       {errors.submit && (
-        <div className="mb-5 px-4 py-3 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-sm text-[var(--color-error)]">
+        <div className="mb-5 px-4 py-3 rounded-[var(--radius-md)] bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-sm text-[var(--color-error)]">
           {errors.submit}
         </div>
       )}
@@ -302,20 +325,30 @@ export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-3 pt-6 mt-6 border-t border-[var(--color-border)]">
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={loading}
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              {isEdit ? "Saving..." : "Creating..."}
-            </span>
-          ) : (
-            isEdit ? "Save Changes" : "Create Loan"
-          )}
-        </button>
+        {!isEdit && !quotaCheck.allowed ? (
+          <button
+            type="button"
+            onClick={() => openPaywall({ reason: quotaCheck.reason })}
+            className="btn font-extrabold bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 text-white shadow-lg flex items-center gap-2 cursor-pointer"
+          >
+            <Zap className="w-4 h-4 text-amber-300" /> Upgrade Plan to Create Loan
+          </button>
+        ) : (
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                {isEdit ? "Saving..." : "Creating..."}
+              </span>
+            ) : (
+              isEdit ? "Save Changes" : "Create Loan"
+            )}
+          </button>
+        )}
         <button
           type="button"
           className="btn btn-secondary"

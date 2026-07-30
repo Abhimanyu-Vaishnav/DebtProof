@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import apiClient from "@/services/api";
+import { subscriptionService, Plan, PlanFeature, DEFAULT_ADMIN_PLANS, DEFAULT_CATALOG } from "@/services/subscription.service";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "RiskAuditor" | "Web3Governor";
-type TabId = "overview" | "users" | "loans" | "push" | "staff" | "support" | "risk" | "monad" | "payments" | "security" | "analytics" | "audit" | "settings" | "fraud" | "backups" | "escrow" | "revenue" | "legal" | "syndication" | "underwriting" | "whitelabel" | "bureau" | "cache";
+type TabId = "overview" | "users" | "loans" | "plans" | "push" | "staff" | "support" | "risk" | "monad" | "payments" | "security" | "analytics" | "audit" | "settings" | "fraud" | "backups" | "escrow" | "revenue" | "legal" | "syndication" | "underwriting" | "whitelabel" | "bureau" | "cache";
 
 interface StaffMember { id: string; user_id: string; name: string; email: string; role: string; department: string; queries_resolved: number; avg_rating: number; is_active: boolean; notes: string; joined: string; }
 interface SupportTicket { id: string; user_name: string; user_email: string; subject: string; message: string; priority: "urgent" | "high" | "normal" | "low"; status: "open" | "in_progress" | "escalated" | "resolved" | "closed"; assigned_to: string | null; assigned_name: string; resolution_notes: string; resolved_at: string | null; filed_by_admin: boolean; created_at: string; }
@@ -118,12 +120,11 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${STATUS_BADGE[status] || "bg-slate-500/15 text-slate-400 border-slate-500/30"}`}>{status}</span>;
 }
 
-import { useTheme } from "@/contexts/ThemeContext";
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function SuperAdminPortal() {
   const SUPERADMIN_KEY = "debtproof_superadmin_auth_token";
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const isLight = resolvedTheme === "light";
 
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -165,6 +166,24 @@ export default function SuperAdminPortal() {
   const [selectedUserDetail, setSelectedUserDetail] = useState<UserDetailData | null>(null);
   const [loadingUserDetail, setLoadingUserDetail] = useState(false);
 
+  // Drag & Drop Plan Customizer Studio State
+  const [plansStudioList, setPlansStudioList] = useState<Plan[]>(DEFAULT_ADMIN_PLANS);
+  const [catalogStudioList, setCatalogStudioList] = useState<PlanFeature[]>(DEFAULT_CATALOG);
+  const [savingPlanId, setSavingPlanId] = useState<string | null>(null);
+  const [savingAllPlans, setSavingAllPlans] = useState(false);
+  const [savePlansMsg, setSavePlansMsg] = useState<string | null>(null);
+  const [draggedFeatureKey, setDraggedFeatureKey] = useState<string | null>(null);
+  const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
+  const [newPlanObj, setNewPlanObj] = useState({
+    code: "",
+    name: "",
+    price_monthly: 499,
+    max_loans: 10,
+    max_ai_requests: 50,
+    max_blockchain_proofs: 10,
+    features_json: ["my_loans", "credit_cards", "budget"],
+  });
+
   // Push notification state
   const [pushTitle, setPushTitle] = useState("");
   const [pushBody, setPushBody] = useState("");
@@ -198,6 +217,15 @@ export default function SuperAdminPortal() {
 
   const fetchAllData = useCallback(async () => {
     setLoadingStats(true);
+    try {
+      const [fetchedPlans, fetchedCat] = await Promise.all([
+        subscriptionService.getAdminPlans(),
+        subscriptionService.getFeaturesCatalog(),
+      ]);
+      if (fetchedPlans && fetchedPlans.length > 0) setPlansStudioList(fetchedPlans);
+      if (fetchedCat && fetchedCat.length > 0) setCatalogStudioList(fetchedCat);
+    } catch {}
+
     try {
       const [statsRes, usersRes, loansRes, paymentsRes, staffRes, ticketsRes, monadRes, auditRes, fraudRes, backupRes, escrowRes, revenueRes, legalRes, synRes, aiRes, wlRes, burRes] = await Promise.allSettled([
         superAdminFetch("/auth/superadmin/stats/"),
@@ -522,6 +550,7 @@ export default function SuperAdminPortal() {
     { id: "overview", label: "Overview", icon: "📊" },
     { id: "users", label: "User Directory", icon: "👥", count: userList.length },
     { id: "loans", label: "Loan Management", icon: "💰", count: loanList.length },
+    { id: "plans", label: "Plans & Pricing Studio", icon: "💎" },
     { id: "push", label: "Broadcast", icon: "📣" },
     { id: "staff", label: "Staff & Team", icon: "👔", count: staffList.length },
     { id: "support", label: "Support SLA", icon: "🎧", count: ticketList.filter(t => t.status !== "resolved" && t.status !== "closed").length },
@@ -643,6 +672,372 @@ export default function SuperAdminPortal() {
 
         {/* Tab Content Container */}
         <div className="p-6 space-y-6 flex-1">
+
+          {/* ══════════ TAB: PLANS & PRICING STUDIO ══════════ */}
+          {activeTab === "plans" && (
+            <div className="space-y-6">
+              {/* Studio Header Banner - Vivid Titanium Gradient with Crystal Clear High Contrast Text */}
+              <div className={`flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 rounded-3xl shadow-2xl border transition-all ${
+                isLight
+                  ? "bg-gradient-to-r from-indigo-900 via-indigo-950 to-purple-950 text-white border-indigo-500/30"
+                  : "bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white border-indigo-500/20"
+              }`}>
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs uppercase tracking-widest mb-2 border border-indigo-400/30">
+                    🛡️ Super Admin Pricing & Feature Authority
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+                    Subscription Plans & Drag-and-Drop Studio
+                  </h2>
+                  <p className="text-xs md:text-sm text-indigo-100/90 mt-1 max-w-2xl font-medium">
+                    Control pricing (₹), loan limits, AI quotas, and drag & drop feature tags across all 5 tiers (Free, Basic, Premium, Business, Enterprise).
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    onClick={fetchAllData}
+                    className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition shadow cursor-pointer border border-white/20"
+                    title="Refresh Data"
+                  >
+                    🔄
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      setSavingAllPlans(true);
+                      try {
+                        for (const p of plansStudioList) {
+                          await subscriptionService.savePlan(p);
+                        }
+                        setSavePlansMsg("All 5 Plan Tiers saved & updated live across the platform!");
+                        setTimeout(() => setSavePlansMsg(null), 3500);
+                      } catch (e) {
+                        console.error("Save all failed", e);
+                      } finally {
+                        setSavingAllPlans(false);
+                      }
+                    }}
+                    disabled={savingAllPlans}
+                    className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50 border border-emerald-400/30"
+                  >
+                    {savingAllPlans ? "⏳ Saving..." : "💾 Save All Plans Live"}
+                  </button>
+
+                  <button
+                    onClick={() => setShowCreatePlanModal(true)}
+                    className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow transition flex items-center gap-2 cursor-pointer border border-white/20"
+                  >
+                    ➕ Add Tier
+                  </button>
+                </div>
+              </div>
+
+              {savePlansMsg && (
+                <div className={`p-4 rounded-xl font-bold text-sm flex items-center gap-2 animate-fadeIn shadow-lg border ${
+                  isLight
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                }`}>
+                  ✅ {savePlansMsg}
+                </div>
+              )}
+
+              {/* Studio Grid: Features Catalog Pool (Left) + 5 Plan Tier Columns (Right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Left Column: System Features Catalog Pool */}
+                <div className={`lg:col-span-1 rounded-3xl p-4 border shadow-xl flex flex-col h-full transition-all ${
+                  isLight
+                    ? "bg-white border-slate-200 text-slate-900"
+                    : "bg-slate-900 border-slate-800 text-white"
+                }`}>
+                  <div className="mb-3">
+                    <h3 className={`text-sm font-extrabold flex items-center gap-2 ${isLight ? "text-slate-900" : "text-white"}`}>
+                      <span>🗂️</span> Features Catalog ({catalogStudioList.length})
+                    </h3>
+                    <p className={`text-[11px] mt-0.5 font-medium ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                      Drag cards onto plan columns to grant access.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 overflow-y-auto max-h-[75vh] pr-1">
+                    {catalogStudioList.map((feat) => (
+                      <div
+                        key={feat.key}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedFeatureKey(feat.key);
+                          e.dataTransfer.setData("text/plain", feat.key);
+                        }}
+                        className={`p-2.5 rounded-xl cursor-grab active:cursor-grabbing transition shadow-sm border group select-none ${
+                          isLight
+                            ? "bg-slate-50 hover:bg-indigo-50/80 border-slate-200 hover:border-indigo-300"
+                            : "bg-slate-800/80 hover:bg-indigo-950/40 border-slate-700/70 hover:border-indigo-500/50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`${isLight ? "text-slate-400 group-hover:text-indigo-600" : "text-slate-400 group-hover:text-indigo-400"} text-xs font-bold`}>⋮⋮</span>
+                            <span className={`text-xs font-bold ${isLight ? "text-slate-800 group-hover:text-indigo-700" : "text-slate-200 group-hover:text-indigo-400"}`}>
+                              {feat.name}
+                            </span>
+                          </div>
+                          {feat.is_core && (
+                            <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded border shrink-0 ${
+                              isLight
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            }`}>
+                              CORE
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-[10px] mt-1 leading-tight line-clamp-2 ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                          {feat.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right Columns: 5-Plan Columns Editor Grid */}
+                <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                  {plansStudioList.map((plan) => {
+                    const isSaving = savingPlanId === plan.id;
+                    const isEnterprise = plan.code.toLowerCase() === "enterprise";
+                    const isPopular = plan.is_popular || plan.is_recommended;
+
+                    return (
+                      <div
+                        key={plan.id || plan.code}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const featureKey = e.dataTransfer.getData("text/plain") || draggedFeatureKey;
+                          if (featureKey) {
+                            setPlansStudioList((prev) =>
+                              prev.map((p) => {
+                                if (p.id !== plan.id) return p;
+                                if (p.features_json.includes(featureKey)) return p;
+                                return { ...p, features_json: [...p.features_json, featureKey] };
+                              })
+                            );
+                          }
+                          setDraggedFeatureKey(null);
+                        }}
+                        className={`flex flex-col rounded-3xl p-4 border-2 transition-all shadow-xl ${
+                          draggedFeatureKey
+                            ? isLight
+                              ? "border-dashed border-indigo-500 bg-indigo-50/50 scale-[1.01]"
+                              : "border-dashed border-indigo-400 bg-indigo-950/20 scale-[1.01]"
+                            : isPopular
+                            ? isLight ? "border-indigo-400 bg-white shadow-indigo-100" : "border-indigo-500/60 bg-slate-900"
+                            : isEnterprise
+                            ? isLight ? "border-purple-400 bg-white shadow-purple-100" : "border-purple-500/60 bg-slate-900"
+                            : isLight ? "border-slate-200 bg-white" : "border-slate-800 bg-slate-900"
+                        }`}
+                      >
+                        {/* Header Badge & Delete Button */}
+                        <div className="flex items-center justify-between gap-1 mb-2">
+                          <span
+                            className={`text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                              isPopular
+                                ? "bg-indigo-600 text-white shadow-sm"
+                                : isEnterprise
+                                ? "bg-purple-600 text-white shadow-sm"
+                                : isLight
+                                ? "bg-slate-100 text-slate-700 border border-slate-200"
+                                : "bg-slate-800 text-slate-300"
+                            }`}
+                          >
+                            {plan.code.toUpperCase()}
+                          </span>
+
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Archive plan ${plan.name}?`)) return;
+                              await subscriptionService.deletePlan(plan.id);
+                              setPlansStudioList((prev) => prev.filter((p) => p.id !== plan.id));
+                            }}
+                            className={`p-1 rounded transition shrink-0 cursor-pointer ${
+                              isLight ? "text-red-500 hover:text-red-700 hover:bg-red-50" : "text-red-400 hover:text-red-300 hover:bg-red-950/30"
+                            }`}
+                            title="Archive Plan"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+
+                        {/* Plan Name Input */}
+                        <input
+                          type="text"
+                          value={plan.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPlansStudioList((prev) => prev.map((p) => (p.id === plan.id ? { ...p, name: val } : p)));
+                          }}
+                          className={`text-sm font-black bg-transparent border-b border-dashed w-full mb-3 pb-1 focus:outline-none ${
+                            isLight
+                              ? "text-slate-900 border-slate-300 focus:border-indigo-600"
+                              : "text-white border-slate-700 focus:border-indigo-500"
+                          }`}
+                        />
+
+                        {/* Price Input Box */}
+                        <div className={`mb-3 flex items-center justify-between gap-1 p-2 rounded-xl border ${
+                          isLight
+                            ? "bg-slate-50 border-slate-200 text-slate-900"
+                            : "bg-slate-800/60 border-slate-700/60 text-white"
+                        }`}>
+                          <span className={`text-[11px] font-bold ${isLight ? "text-slate-500" : "text-slate-400"}`}>Monthly ₹</span>
+                          <input
+                            type="number"
+                            value={plan.price_monthly}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setPlansStudioList((prev) => prev.map((p) => (p.id === plan.id ? { ...p, price_monthly: val } : p)));
+                            }}
+                            className={`text-sm font-black bg-transparent focus:outline-none w-20 text-right ${
+                              isLight ? "text-indigo-600 font-extrabold" : "text-indigo-400 font-extrabold"
+                            }`}
+                          />
+                        </div>
+
+                        {/* Limits & Quotas Controls Box */}
+                        <div className={`space-y-1.5 mb-3 p-2.5 rounded-xl border text-[11px] ${
+                          isLight
+                            ? "bg-slate-50/80 border-slate-200 text-slate-700"
+                            : "bg-slate-800/40 border-slate-700/50 text-slate-300"
+                        }`}>
+                          <div className={`font-black mb-1 uppercase text-[9px] tracking-wider ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                            Limits (-1 = Unlimited)
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className={isLight ? "text-slate-600 font-medium" : "text-slate-400"}>Max Loans</span>
+                            <input
+                              type="number"
+                              value={plan.max_loans}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setPlansStudioList((prev) => prev.map((p) => (p.id === plan.id ? { ...p, max_loans: val } : p)));
+                              }}
+                              className={`w-14 p-1 text-right font-black border rounded-lg text-xs ${
+                                isLight
+                                  ? "bg-white border-slate-300 text-slate-900 focus:border-indigo-600"
+                                  : "bg-slate-950 border-slate-700 text-white focus:border-indigo-400"
+                              }`}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className={isLight ? "text-slate-600 font-medium" : "text-slate-400"}>AI Requests</span>
+                            <input
+                              type="number"
+                              value={plan.max_ai_requests}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setPlansStudioList((prev) => prev.map((p) => (p.id === plan.id ? { ...p, max_ai_requests: val } : p)));
+                              }}
+                              className={`w-14 p-1 text-right font-black border rounded-lg text-xs ${
+                                isLight
+                                  ? "bg-white border-slate-300 text-slate-900 focus:border-indigo-600"
+                                  : "bg-slate-950 border-slate-700 text-white focus:border-indigo-400"
+                              }`}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className={isLight ? "text-slate-600 font-medium" : "text-slate-400"}>Monad Proofs</span>
+                            <input
+                              type="number"
+                              value={plan.max_blockchain_proofs}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setPlansStudioList((prev) => prev.map((p) => (p.id === plan.id ? { ...p, max_blockchain_proofs: val } : p)));
+                              }}
+                              className={`w-14 p-1 text-right font-black border rounded-lg text-xs ${
+                                isLight
+                                  ? "bg-white border-slate-300 text-slate-900 focus:border-indigo-600"
+                                  : "bg-slate-950 border-slate-700 text-white focus:border-indigo-400"
+                              }`}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Drop Zone & Assigned Features List Box */}
+                        <div className="flex-1 flex flex-col mb-3">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className={`text-[9px] font-black uppercase tracking-wider ${isLight ? "text-slate-600" : "text-slate-300"}`}>
+                              Features ({plan.features_json.length})
+                            </span>
+                            <span className="text-[9px] text-indigo-500 font-black">Drop here ⬇</span>
+                          </div>
+
+                          <div className={`space-y-1 flex-1 min-h-[200px] max-h-[280px] p-2 rounded-2xl border overflow-y-auto ${
+                            isLight
+                              ? "bg-slate-50/80 border-slate-200"
+                              : "bg-slate-950/50 border-slate-800"
+                          }`}>
+                            {catalogStudioList.map((feat) => {
+                              const isIncluded = plan.features_json.includes(feat.key);
+                              return (
+                                <div
+                                  key={feat.key}
+                                  onClick={() => {
+                                    setPlansStudioList((prev) =>
+                                      prev.map((p) => {
+                                        if (p.id !== plan.id) return p;
+                                        const exists = p.features_json.includes(feat.key);
+                                        const updatedFeats = exists
+                                          ? p.features_json.filter((f) => f !== feat.key)
+                                          : [...p.features_json, feat.key];
+                                        return { ...p, features_json: updatedFeats };
+                                      })
+                                    );
+                                  }}
+                                  className={`flex items-center justify-between p-1.5 rounded-lg text-[11px] cursor-pointer transition select-none ${
+                                    isIncluded
+                                      ? "bg-indigo-600 text-white font-extrabold shadow-sm"
+                                      : isLight
+                                      ? "bg-white text-slate-400 border border-slate-200/60 hover:border-slate-300 hover:text-slate-800"
+                                      : "bg-slate-900 text-slate-500 opacity-60 hover:opacity-100 hover:text-slate-300"
+                                  }`}
+                                >
+                                  <span className="truncate pr-1">{feat.name}</span>
+                                  <span className="shrink-0 font-bold">{isIncluded ? "✓" : "+"}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Save Button per Card */}
+                        <button
+                          onClick={async () => {
+                            setSavingPlanId(plan.id);
+                            try {
+                              await subscriptionService.savePlan(plan);
+                              setSavePlansMsg(`Plan '${plan.name}' saved live!`);
+                              setTimeout(() => setSavePlansMsg(null), 3000);
+                            } catch (e) {
+                              console.error("Save plan failed", e);
+                            } finally {
+                              setSavingPlanId(null);
+                            }
+                          }}
+                          disabled={isSaving}
+                          className="w-full py-2.5 px-3 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          {isSaving ? "⏳ Saving..." : `💾 Save ${plan.name}`}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ══════════ TAB 1: OVERVIEW ══════════ */}
           {activeTab === "overview" && (

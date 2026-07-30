@@ -23,6 +23,7 @@ urlpatterns = [
     path("billing/subscribe/", views.SubscriptionPlansAPIView.as_view(), name="tenant-billing-subscribe"),
     path("billing/invoices/", views.InvoicesHistoryAPIView.as_view(), name="tenant-billing-invoices"),
     path("settings/", views.OrganizationSettingsAPIView.as_view(), name="tenant-settings"),
+    path("features-catalog/", views.FeaturesCatalogAPIView.as_view(), name="tenant-features-catalog"),
     path("admin/dashboard/", views.SuperAdminDashboardAPIView.as_view(), name="tenant-super-admin-dashboard"),
     path("admin/plans/", views.SuperAdminPlanConfigAPIView.as_view(), name="tenant-admin-plans"),
     path("admin/plans/<uuid:plan_id>/", views.SuperAdminPlanConfigAPIView.as_view(), name="tenant-admin-plan-detail"),

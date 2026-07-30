@@ -12,29 +12,55 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "dark",
+  theme: "system",
   resolvedTheme: "dark",
   setTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>("dark");
+  const [theme, setThemeState] = useState<ThemeMode>("system");
   const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("debtproof_theme") || "dark";
+    const savedTheme = localStorage.getItem("debtproof_theme") || "system";
     setThemeState(savedTheme);
     applyGlobalTheme(savedTheme);
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemChange = () => {
+      const currentSaved = localStorage.getItem("debtproof_theme") || "system";
+      if (currentSaved === "system") {
+        applyGlobalTheme("system");
+        setResolvedTheme(mediaQuery.matches ? "dark" : "light");
+      }
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", handleSystemChange);
+    } else {
+      mediaQuery.addListener(handleSystemChange);
+    }
 
     const onThemeChanged = (e: Event) => {
       const customEvent = e as CustomEvent;
       if (customEvent.detail) {
         setThemeState(customEvent.detail);
+        const active = customEvent.detail === "system"
+          ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+          : (customEvent.detail === "light" ? "light" : "dark");
+        setResolvedTheme(active);
       }
     };
 
     window.addEventListener("debtproof_theme_changed", onThemeChanged);
-    return () => window.removeEventListener("debtproof_theme_changed", onThemeChanged);
+    return () => {
+      window.removeEventListener("debtproof_theme_changed", onThemeChanged);
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", handleSystemChange);
+      } else {
+        mediaQuery.removeListener(handleSystemChange);
+      }
+    };
   }, []);
 
   useEffect(() => {

@@ -399,7 +399,14 @@ export const loansService = {
         setStoredLoans(current);
       }
       return data.loan;
-    } catch {
+    } catch (err: any) {
+      if (
+        err?.response?.status === 403 ||
+        err?.response?.data?.error === "LOAN_LIMIT_REACHED" ||
+        err?.status === 403
+      ) {
+        throw err;
+      }
       const newLoan: Loan = {
         id: `loan-${Date.now()}`,
         user: "usr-1",

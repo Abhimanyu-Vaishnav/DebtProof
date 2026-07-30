@@ -15,6 +15,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import { loansService } from "@/services/loans.service";
+import { useSubscription } from "@/context/SubscriptionContext";
 import { CibilParserModal } from "@/components/loans/CibilParserModal";
 import { AutomatedAIRepaymentAgentStudio } from "@/components/loans/AutomatedAIRepaymentAgentStudio";
 import { DebtDestroyerAssistant } from "@/components/ai/DebtDestroyerAssistant";
@@ -51,6 +52,7 @@ const SORT_OPTIONS = [
 
 export default function LoansPage() {
   const { showToast } = useToast();
+  const { canCreateLoan, openPaywall } = useSubscription();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -160,14 +162,31 @@ export default function LoansPage() {
                 </button>
               )}
               <button
-                onClick={() => setShowCibilModal(true)}
-                className="btn btn-secondary btn-sm shrink-0 font-bold flex items-center gap-1 text-xs"
+                onClick={() => {
+                  const check = canCreateLoan();
+                  if (!check.allowed) {
+                    openPaywall({ reason: check.reason });
+                  } else {
+                    setShowCibilModal(true);
+                  }
+                }}
+                className="btn btn-secondary btn-sm shrink-0 font-bold flex items-center gap-1 text-xs cursor-pointer"
               >
                 <span>📄</span> Import CIBIL Report
               </button>
-              <Link href="/dashboard/loans/new" className="btn btn-primary btn-sm shrink-0 font-bold shadow-sm shadow-[var(--color-primary)]/10 hover:shadow-md transition-all">
+              <button
+                onClick={() => {
+                  const check = canCreateLoan();
+                  if (!check.allowed) {
+                    openPaywall({ reason: check.reason });
+                  } else {
+                    window.location.href = "/dashboard/loans/new";
+                  }
+                }}
+                className="btn btn-primary btn-sm shrink-0 font-bold shadow-sm shadow-[var(--color-primary)]/10 hover:shadow-md transition-all cursor-pointer"
+              >
                 + New Loan
-              </Link>
+              </button>
             </div>
           </div>
 

@@ -82,6 +82,27 @@ class LoanListCreateView(generics.ListCreateAPIView):
         return LoanSerializer
 
     def create(self, request: Request, *args, **kwargs) -> Response:
+        # Enforce subscription plan max_loans quota
+        from apps.tenants.models import OrganizationMember, Plan
+        org_member = OrganizationMember.objects.filter(user=request.user).first()
+        org = org_member.organization if org_member else None
+        sub = getattr(org, "subscription", None) if org else None
+        plan = sub.plan if sub else Plan.objects.filter(code="free").first()
+
+        if plan and plan.max_loans != -1:
+            active_loan_count = Loan.objects.filter(user=request.user).exclude(status=LoanStatus.CLOSED).count()
+            if active_loan_count >= plan.max_loans:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "LOAN_LIMIT_REACHED",
+                        "message": f"Loan quota limit of {plan.max_loans} reached for your {plan.name}. Please upgrade your plan to manage more loans.",
+                        "max_loans": plan.max_loans,
+                        "current_count": active_loan_count,
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
         serializer = LoanSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         loan = serializer.save()

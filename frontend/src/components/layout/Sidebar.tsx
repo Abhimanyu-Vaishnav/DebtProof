@@ -9,6 +9,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils/cn";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/context/SubscriptionContext";
 
 interface NavItem {
   label: string;
@@ -16,6 +17,19 @@ interface NavItem {
   icon: React.ReactNode;
   badge?: string;
 }
+
+const routeToFeatureKey: Record<string, string> = {
+  "/dashboard/payoff-quest": "payoff_quest",
+  "/dashboard/joint-workspace": "joint_workspace",
+  "/dashboard/refinance": "refinance_studio",
+  "/dashboard/auto-saver": "auto_saver",
+  "/dashboard/statement-import": "statement_parser",
+  "/dashboard/activity": "activity_log",
+  "/dashboard/zk-proofs": "zk_proofs",
+  "/dashboard/p2p-market": "p2p_market",
+  "/dashboard/investments": "investments",
+  "/dashboard/reports": "reports_export",
+};
 
 interface NavSection {
   title: string;
@@ -334,6 +348,7 @@ export function openSidebar() {
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { hasAccess, openPaywall, currentPlan } = useSubscription();
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -381,59 +396,78 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-5">
         {navSections.map((section) => (
           <div key={section.title} className="space-y-1">
-            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--color-text-tertiary)] px-2.5 mb-1.5">
-              {section.title}
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--color-text-tertiary)] px-2.5 mb-1.5 flex items-center justify-between">
+              <span>{section.title}</span>
             </p>
             <ul className="space-y-0.5" role="list">
-      {section.items.map((item) => {
-        const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-        
-        // Track visited NEW features in localStorage so badge disappears after first click
-        const storageKey = `visited_feature_${item.href.replace(/\//g, "_")}`;
-        const [isVisited, setIsVisited] = React.useState<boolean>(false);
+              {section.items.map((item) => {
+                const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                const featureKey = routeToFeatureKey[item.href];
+                const isLocked = featureKey ? !hasAccess(featureKey) : false;
 
-        React.useEffect(() => {
-          if (typeof window !== "undefined" && localStorage.getItem(storageKey)) {
-            setIsVisited(true);
-          }
-          if (isActive && item.badge) {
-            localStorage.setItem(storageKey, "true");
-            setIsVisited(true);
-          }
-        }, [isActive, item.href, item.badge, storageKey]);
+                // Track visited NEW features in localStorage so badge disappears after first click
+                const storageKey = `visited_feature_${item.href.replace(/\//g, "_")}`;
+                const [isVisited, setIsVisited] = React.useState<boolean>(false);
 
-        const showBadge = item.badge && !isVisited;
+                React.useEffect(() => {
+                  if (typeof window !== "undefined" && localStorage.getItem(storageKey)) {
+                    setIsVisited(true);
+                  }
+                  if (isActive && item.badge) {
+                    localStorage.setItem(storageKey, "true");
+                    setIsVisited(true);
+                  }
+                }, [isActive, item.href, item.badge, storageKey]);
 
-        return (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              onClick={() => {
-                if (item.badge) {
-                  localStorage.setItem(storageKey, "true");
-                  setIsVisited(true);
-                }
-              }}
-              className={cn(
-                "nav-item flex items-center justify-between",
-                isActive && "active"
-              )}
-              aria-current={isActive ? "page" : undefined}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="nav-icon shrink-0">{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
+                const showBadge = item.badge && !isVisited && !isLocked;
 
-              {showBadge && (
-                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 animate-pulse">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          </li>
-        );
-      })}
+                return (
+                  <li key={item.href}>
+                    {isLocked ? (
+                      <button
+                        onClick={() => openPaywall({ featureKey, featureName: item.label })}
+                        className={cn(
+                          "nav-item w-full flex items-center justify-between opacity-85 hover:opacity-100 group",
+                          isActive && "active"
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="nav-icon shrink-0 text-amber-500">{item.icon}</span>
+                          <span className="text-slate-600 dark:text-slate-300 font-medium">{item.label}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:bg-amber-500 group-hover:text-white transition">
+                            PRO 🔒
+                          </span>
+                        </div>
+                      </button>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={() => {
+                          if (item.badge) {
+                            localStorage.setItem(storageKey, "true");
+                            setIsVisited(true);
+                          }
+                        }}
+                        className={cn("nav-item flex items-center justify-between", isActive && "active")}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="nav-icon shrink-0">{item.icon}</span>
+                          <span>{item.label}</span>
+                        </div>
+
+                        {showBadge && (
+                          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 animate-pulse">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}

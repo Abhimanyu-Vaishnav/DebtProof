@@ -40,7 +40,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState("system");
   const [soundMuted, setSoundMuted] = useState(false);
   const [activePlan, setActivePlan] = useState<string>("Free Plan");
 
@@ -63,7 +63,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("debtproof_theme") || "dark";
+    const savedTheme = localStorage.getItem("debtproof_theme") || "system";
     setTheme(savedTheme);
     applyGlobalTheme(savedTheme);
 

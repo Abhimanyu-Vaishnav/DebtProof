@@ -1,29 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { LandingNavbar } from "@/components/layout/LandingNavbar";
 import { LandingFooter } from "@/components/layout/LandingFooter";
 import { useTheme } from "@/contexts/ThemeContext";
+import { subscriptionService, Plan } from "@/services/subscription.service";
 
 export default function LandingPage() {
   const [isYearly, setIsYearly] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [dbPlans, setDbPlans] = useState<Plan[]>([]);
 
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === "light";
 
-  const plans = [
+  useEffect(() => {
+    subscriptionService.getSubscriptionOverview().then((res) => {
+      if (res.plans && res.plans.length > 0) {
+        setDbPlans(res.plans);
+      }
+    });
+  }, []);
+
+  const fallbackPlans = [
     {
       id: "free",
+      code: "free",
       name: "Free Plan",
       badge: "STARTER",
       priceMonthly: 0,
       priceYearly: 0,
       description: "Essential loan tracking for individuals with basic EMI monitoring needs.",
-      maxLoans: "Up to 2 Active Loans",
+      maxLoans: "Up to 3 Bank Loans",
       features: [
-        "Track up to 2 active loans",
+        "Track up to 3 active loans",
         "Basic EMI payment calendar",
         "Manual receipt document upload",
         "Community support",
@@ -34,14 +45,15 @@ export default function LandingPage() {
     },
     {
       id: "basic",
+      code: "basic",
       name: "Basic Plan",
       badge: "ESSENTIAL",
-      priceMonthly: 299,
-      priceYearly: 2990,
+      priceMonthly: 499,
+      priceYearly: 4990,
       description: "Blockchain cryptographic proof anchoring for serious borrowers.",
-      maxLoans: "Up to 5 Active Loans",
+      maxLoans: "Up to 10 Bank Loans",
       features: [
-        "Track up to 5 active loans",
+        "Track up to 10 active loans",
         "Monad Blockchain SHA-256 anchoring",
         "Email & SMS payment due alerts",
         "Export CSV financial reports",
@@ -51,51 +63,54 @@ export default function LandingPage() {
       popular: false,
     },
     {
-      id: "pro",
-      name: "Pro Plan",
+      id: "premium",
+      code: "premium",
+      name: "Premium Plan",
       badge: "MOST POPULAR",
       priceMonthly: 999,
       priceYearly: 9990,
       description: "Full AI Debt Destroyer suite & zero-debt clearance certificates.",
-      maxLoans: "Up to 15 Active Loans",
+      maxLoans: "Unlimited Bank Loans",
       features: [
-        "Track up to 15 active loans",
+        "Unlimited active bank loans",
         "AI Debt Destroyer Assistant",
         "Snowball vs Avalanche Simulator",
-        "Zero-Debt PDF Clearance Certificates",
-        "Monad Blockchain QR verification",
+        "Refinance Savings Studio",
+        "Zero-Knowledge Credit Proofs",
         "24/7 Priority Support SLA",
       ],
-      ctaText: "Start Pro Trial",
-      ctaHref: "/register?plan=pro",
+      ctaText: "Start Premium",
+      ctaHref: "/register?plan=premium",
       popular: true,
     },
     {
-      id: "premium",
-      name: "Premium Plan",
+      id: "business",
+      code: "business",
+      name: "Business Plan",
       badge: "ADVANCED",
       priceMonthly: 2499,
       priceYearly: 24990,
       description: "Automated credit score tracking & 30-day predictive risk heatmaps.",
-      maxLoans: "Unlimited Loans",
+      maxLoans: "Unlimited Bank Loans",
       features: [
-        "Unlimited active loans",
+        "Unlimited active bank loans",
         "Automated CIBIL score tracking",
         "30-Day Default Risk Heatmap",
         "Web3 Monad Escrow Vault inspection",
         "Dedicated Financial Advisor",
       ],
-      ctaText: "Get Premium",
-      ctaHref: "/register?plan=premium",
+      ctaText: "Get Business",
+      ctaHref: "/register?plan=business",
       popular: false,
     },
     {
       id: "enterprise",
+      code: "enterprise",
       name: "Enterprise Plan",
       badge: "INSTITUTIONAL",
       priceMonthly: 4999,
       priceYearly: 49990,
-      description: "Whitelabel custom branding, staff RBAC, and credit bureau exports.",
+      description: "Whitelabel custom domain, multi-tenant staff RBAC, and bureau exports.",
       maxLoans: "Unlimited Enterprise",
       features: [
         "Whitelabel Custom Domain & Logo",
@@ -109,6 +124,30 @@ export default function LandingPage() {
       popular: false,
     },
   ];
+
+  const displayPlans = dbPlans.length > 0
+    ? dbPlans.map((p) => ({
+        id: p.id || p.code,
+        code: p.code,
+        name: p.name,
+        badge: p.is_popular ? "MOST POPULAR" : p.code.toUpperCase(),
+        priceMonthly: Number(p.price_monthly),
+        priceYearly: Number(p.price_yearly || Number(p.price_monthly) * 10),
+        description: `${p.name} subscription tier.`,
+        maxLoans: p.max_loans === -1 ? "Unlimited Bank Loans" : `Up to ${p.max_loans} Bank Loans`,
+        features: [
+          p.max_loans === -1 ? "Unlimited active bank loans" : `Up to ${p.max_loans} active loans`,
+          `${p.max_ai_requests === -1 ? "Unlimited" : p.max_ai_requests} AI Requests/mo`,
+          `${p.max_blockchain_proofs === -1 ? "Unlimited" : p.max_blockchain_proofs} Monad Proofs/mo`,
+          p.features_json.includes("refinance_studio") ? "Refinance Savings Studio" : "Basic EMI Calculator",
+          p.features_json.includes("auto_saver") ? "Micro Auto-Saver Vault" : "Standard Manual Payments",
+          p.features_json.includes("zk_proofs") ? "Zero-Knowledge Credit Proofs" : "Basic PDF Proofs",
+        ],
+        ctaText: p.code === "free" ? "Get Started Free" : `Choose ${p.name}`,
+        ctaHref: `/register?plan=${p.code}`,
+        popular: p.is_popular || p.is_recommended,
+      }))
+    : fallbackPlans;
 
   const featuresShowcase = [
     {
@@ -326,9 +365,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* 5-Plan Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {plans.map((p) => {
+          {/* Dynamic Plan Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+            {displayPlans.map((p) => {
               const price = isYearly ? Math.round(p.priceYearly / 12) : p.priceMonthly;
               return (
                 <div
@@ -377,7 +416,7 @@ export default function LandingPage() {
 
                   <button
                     onClick={() => {
-                      const tagMap: Record<string, any> = { free: "Free", basic: "Basic", pro: "Pro", premium: "Premium", enterprise: "Enterprise" };
+                      const tagMap: Record<string, any> = { free: "Free", basic: "Basic", pro: "Pro", premium: "Premium", business: "Business", enterprise: "Enterprise" };
                       const targetTag = tagMap[p.id] || "Pro";
                       import("@/services/plan.service").then((mod) => {
                         mod.setUserPlan(targetTag);
@@ -412,20 +451,20 @@ export default function LandingPage() {
                   <tr className={`border-b font-black ${isLight ? "bg-slate-100 border-slate-200 text-slate-900" : "bg-slate-950 border-slate-800 text-white"}`}>
                     <th className="p-4">App Capability / Feature</th>
                     <th className="p-4 text-center">Free (₹0)</th>
-                    <th className="p-4 text-center">Basic (₹299)</th>
-                    <th className="p-4 text-center text-rose-500">Pro (₹999) ⭐</th>
-                    <th className="p-4 text-center">Premium (₹2.4k)</th>
-                    <th className="p-4 text-center">Enterprise (₹4.9k)</th>
+                    <th className="p-4 text-center">Basic (₹499)</th>
+                    <th className="p-4 text-center text-rose-500">Premium (₹999) ⭐</th>
+                    <th className="p-4 text-center">Business (₹2,499)</th>
+                    <th className="p-4 text-center text-purple-500">Enterprise (₹4,999)</th>
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isLight ? "divide-slate-200 text-slate-700" : "divide-slate-800/80 text-slate-300"}`}>
                   <tr className="hover:bg-slate-500/5 transition">
                     <td className="p-4 font-bold">Active Loan Tracking Limit</td>
-                    <td className="p-4 text-center font-bold">2 Loans</td>
-                    <td className="p-4 text-center font-bold">5 Loans</td>
-                    <td className="p-4 text-center font-bold text-rose-500">15 Loans</td>
+                    <td className="p-4 text-center font-bold">Up to 3 Loans</td>
+                    <td className="p-4 text-center font-bold">Up to 10 Loans</td>
                     <td className="p-4 text-center font-bold text-emerald-500">Unlimited</td>
                     <td className="p-4 text-center font-bold text-purple-500">Unlimited</td>
+                    <td className="p-4 text-center font-bold text-indigo-500">Unlimited Enterprise</td>
                   </tr>
                   <tr className="hover:bg-slate-500/5 transition">
                     <td className="p-4 font-bold">EMI Calendar & Reminders</td>

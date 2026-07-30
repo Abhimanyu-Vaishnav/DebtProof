@@ -3,6 +3,7 @@
 import React from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { RefinanceSavingsStudio } from "@/components/refinance/RefinanceSavingsStudio";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 export default function RefinancePage() {
   return (
@@ -36,7 +37,9 @@ export default function RefinancePage() {
         </div>
 
         {/* Main Refinance Studio Component */}
-        <RefinanceSavingsStudio />
+        <FeatureGate featureKey="refinance_studio" featureName="Refinance & Balance Transfer Studio" description="Refinance Savings Studio is available on Basic, Premium, and Business subscription plans. Upgrade to calculate lifetime interest savings and balance transfer comparisons.">
+          <RefinanceSavingsStudio />
+        </FeatureGate>
       </main>
     </>
   );

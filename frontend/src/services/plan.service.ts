@@ -13,7 +13,7 @@ export interface PlanFeatureDetail {
 }
 
 export const ALL_APP_FEATURES: PlanFeatureDetail[] = [
-  { key: "maxLoans", name: "Active Loan Limit", free: "2 Loans", basic: "5 Loans", pro: "15 Loans", premium: "Unlimited", enterprise: "Unlimited" },
+  { key: "maxLoans", name: "Active Loan Limit", free: "3 Loans", basic: "10 Loans", pro: "Unlimited", premium: "Unlimited", enterprise: "Unlimited" },
   { key: "hasCalendar", name: "EMI Payment Calendar & Alerts", free: true, basic: true, pro: true, premium: true, enterprise: true },
   { key: "hasBlockchain", name: "Monad Blockchain SHA-256 Proofs", free: false, basic: true, pro: true, premium: true, enterprise: true },
   { key: "hasAiAssistant", name: "AI Debt Destroyer Assistant", free: false, basic: false, pro: true, premium: true, enterprise: true },
@@ -37,9 +37,9 @@ export const PLAN_MATRIX: Record<PlanTag, {
   hasMonadEscrow: boolean;
   hasWhitelabel: boolean;
 }> = {
-  Free: { maxLoans: 2, hasCalendar: true, hasBlockchain: false, hasAiAssistant: false, hasSimulator: false, hasClearancePdf: false, hasP2pSettlement: false, hasCibilTracking: false, hasMonadEscrow: false, hasWhitelabel: false },
-  Basic: { maxLoans: 5, hasCalendar: true, hasBlockchain: true, hasAiAssistant: false, hasSimulator: false, hasClearancePdf: false, hasP2pSettlement: false, hasCibilTracking: false, hasMonadEscrow: false, hasWhitelabel: false },
-  Pro: { maxLoans: 15, hasCalendar: true, hasBlockchain: true, hasAiAssistant: true, hasSimulator: true, hasClearancePdf: true, hasP2pSettlement: true, hasCibilTracking: false, hasMonadEscrow: false, hasWhitelabel: false },
+  Free: { maxLoans: 3, hasCalendar: true, hasBlockchain: false, hasAiAssistant: false, hasSimulator: false, hasClearancePdf: false, hasP2pSettlement: false, hasCibilTracking: false, hasMonadEscrow: false, hasWhitelabel: false },
+  Basic: { maxLoans: 10, hasCalendar: true, hasBlockchain: true, hasAiAssistant: false, hasSimulator: false, hasClearancePdf: false, hasP2pSettlement: false, hasCibilTracking: false, hasMonadEscrow: false, hasWhitelabel: false },
+  Pro: { maxLoans: 999, hasCalendar: true, hasBlockchain: true, hasAiAssistant: true, hasSimulator: true, hasClearancePdf: true, hasP2pSettlement: true, hasCibilTracking: false, hasMonadEscrow: false, hasWhitelabel: false },
   Premium: { maxLoans: 999, hasCalendar: true, hasBlockchain: true, hasAiAssistant: true, hasSimulator: true, hasClearancePdf: true, hasP2pSettlement: true, hasCibilTracking: true, hasMonadEscrow: true, hasWhitelabel: false },
   Enterprise: { maxLoans: 9999, hasCalendar: true, hasBlockchain: true, hasAiAssistant: true, hasSimulator: true, hasClearancePdf: true, hasP2pSettlement: true, hasCibilTracking: true, hasMonadEscrow: true, hasWhitelabel: true },
 };
@@ -47,30 +47,16 @@ export const PLAN_MATRIX: Record<PlanTag, {
 export function getUserPlan(): PlanTag {
   if (typeof window === "undefined") return "Free";
   const storedPlan = localStorage.getItem("debtproof_active_plan") as PlanTag;
-  if (storedPlan && PLAN_MATRIX[storedPlan]) return storedPlan;
-  const userRaw = localStorage.getItem("debtproof_user");
-  if (userRaw) {
-    try {
-      const u = JSON.parse(userRaw);
-      if (u.plan && PLAN_MATRIX[u.plan as PlanTag]) return u.plan as PlanTag;
-      if (u.is_superuser) return "Enterprise";
-      if (u.is_staff) return "Pro";
-    } catch {}
+  if (storedPlan) {
+    const formatted = storedPlan.charAt(0).toUpperCase() + storedPlan.slice(1).toLowerCase();
+    if (PLAN_MATRIX[formatted as PlanTag]) return formatted as PlanTag;
   }
   return "Free";
 }
 
 export function setUserPlan(plan: PlanTag): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem("debtproof_active_plan", plan);
-  const userRaw = localStorage.getItem("debtproof_user");
-  if (userRaw) {
-    try {
-      const u = JSON.parse(userRaw);
-      u.plan = plan;
-      localStorage.setItem("debtproof_user", JSON.stringify(u));
-    } catch {}
-  }
+  localStorage.setItem("debtproof_active_plan", plan.toLowerCase());
   window.dispatchEvent(new Event("debtproof_plan_changed"));
 }
 
@@ -82,13 +68,13 @@ export function checkPlanPermission(permission: keyof typeof PLAN_MATRIX.Pro, cu
     const allowed = currentLoanCount < rules.maxLoans;
     return {
       allowed,
-      reason: allowed ? undefined : `Your current ${planTag} Plan limit is ${rules.maxLoans} active loans. You currently have ${currentLoanCount} loans.`,
+      reason: allowed ? undefined : `Limit Reached! Your current ${planTag} Plan limit is ${rules.maxLoans} active loans. You currently have ${currentLoanCount} loans. Please upgrade your plan to add more.`,
     };
   }
 
   const allowed = Boolean(rules[permission]);
   return {
     allowed,
-    reason: allowed ? undefined : `This feature requires a higher plan (Pro, Premium, or Enterprise). Your active plan is ${planTag}.`,
+    reason: allowed ? undefined : `This feature requires a higher plan (Basic or Premium). Your active plan is ${planTag}.`,
   };
 }
