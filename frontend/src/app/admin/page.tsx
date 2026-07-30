@@ -96,20 +96,27 @@ function SectionHeader({ icon, title, sub, action }: { icon: string; title: stri
 
 // ─── Data Table ───────────────────────────────────────────────────────────────
 function DataTable({ columns, rows }: { columns: string[]; rows: (string | React.ReactNode)[][] }) {
+  const { resolvedTheme } = useTheme();
+  const isLight = resolvedTheme === "light";
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-800">
+    <div className={`overflow-x-auto rounded-2xl border ${isLight ? "border-slate-200 bg-white" : "border-slate-800 bg-slate-900/50"}`}>
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-slate-900 border-b border-slate-800">
-            {columns.map((c, i) => <th key={i} className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">{c}</th>)}
+          <tr className={`border-b ${isLight ? "bg-slate-100/90 border-slate-200 text-slate-900" : "bg-slate-950 border-slate-800 text-slate-400"}`}>
+            {columns.map((c, i) => (
+              <th key={i} className={`px-4 py-3 text-left text-[10px] font-black uppercase tracking-wider ${isLight ? "text-slate-900 font-extrabold" : "text-slate-400"}`}>
+                {c}
+              </th>
+            ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className={`divide-y ${isLight ? "divide-slate-200 text-slate-900" : "divide-slate-800/50 text-slate-200"}`}>
           {rows.length === 0 ? (
-            <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-slate-500 text-xs">No data available</td></tr>
+            <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-slate-400 text-xs font-medium">No data available</td></tr>
           ) : rows.map((row, i) => (
-            <tr key={i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-              {row.map((cell, j) => <td key={j} className="px-4 py-3 text-slate-300">{cell}</td>)}
+            <tr key={i} className={`transition-colors ${isLight ? "hover:bg-slate-50 text-slate-900 font-medium" : "hover:bg-slate-800/30 text-slate-200"}`}>
+              {row.map((cell, j) => <td key={j} className="px-4 py-3">{cell}</td>)}
             </tr>
           ))}
         </tbody>
@@ -1161,32 +1168,53 @@ export default function SuperAdminPortal() {
                 }
               />
               <div className="flex flex-wrap gap-2">
-                <input value={userSearch} onChange={e => setUserSearch(e.target.value)} placeholder="Search name or email..." className="flex-1 min-w-[180px] px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none" />
+                <input
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
+                  placeholder="Search name or email..."
+                  className={`flex-1 min-w-[180px] px-3 py-2 rounded-xl text-xs font-medium border focus:outline-none transition ${
+                    isLight
+                      ? "bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-rose-500"
+                      : "bg-slate-900 border-slate-800 text-white placeholder-slate-500 focus:border-rose-500"
+                  }`}
+                />
                 {["all", "Active", "Suspended", "Free", "Pro", "Enterprise"].map(f => (
-                  <button key={f} onClick={() => setUserFilter(f)} className={`px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${userFilter === f ? "bg-rose-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>{f === "all" ? "All" : f}</button>
+                  <button
+                    key={f}
+                    onClick={() => setUserFilter(f)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      userFilter === f
+                        ? "bg-rose-600 text-white shadow-sm font-extrabold"
+                        : isLight
+                        ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        : "bg-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {f === "all" ? "All" : f}
+                  </button>
                 ))}
               </div>
               <DataTable
                 columns={["User", "Email", "Plan", "Loans", "Total Debt", "Joined", "Status", "Actions"]}
                 rows={filteredUsers.map(u => [
                   <div key={u.id} className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[9px] font-black shrink-0">{u.name?.charAt(0)?.toUpperCase()}</div>
-                    <span className="font-bold text-white text-xs">{u.name}</span>
-                    {u.isSuperuser && <span className="text-[8px] px-1 py-0.5 bg-rose-500/20 text-rose-400 rounded-full font-bold">SUPER</span>}
+                    <div className="w-6.5 h-6.5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-sm">{u.name?.charAt(0)?.toUpperCase()}</div>
+                    <span className={`text-xs font-black ${isLight ? "text-slate-900" : "text-white"}`}>{u.name}</span>
+                    {u.isSuperuser && <span className="text-[8px] px-1.5 py-0.5 bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded-full font-black">SUPER</span>}
                   </div>,
-                  <span key="e" className="text-slate-400">{u.email}</span>,
-                  <span key="p" className="font-bold">{u.plan || "Free"}</span>,
-                  <span key="l">{u.loansCount}</span>,
-                  <span key="d" className="font-bold text-rose-400">{fmt(u.totalDebtVolume)}</span>,
-                  <span key="j" className="text-slate-400">{u.joinedDate || "—"}</span>,
+                  <span key="e" className={`font-medium ${isLight ? "text-slate-600" : "text-slate-400"}`}>{u.email}</span>,
+                  <span key="p" className={`font-bold ${isLight ? "text-slate-800" : "text-slate-200"}`}>{u.plan || "Free"}</span>,
+                  <span key="l" className={`font-extrabold ${isLight ? "text-slate-900" : "text-white"}`}>{u.loansCount}</span>,
+                  <span key="d" className="font-extrabold text-rose-500">{fmt(u.totalDebtVolume)}</span>,
+                  <span key="j" className={`font-medium ${isLight ? "text-slate-600" : "text-slate-400"}`}>{u.joinedDate || "—"}</span>,
                   <StatusBadge key="s" status={u.status} />,
                   <div key="a" className="flex gap-1">
                     {u.status === "Active" ? (
-                      <button onClick={() => handleUserAction(u.id, "suspend")} className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 text-[10px] font-bold hover:bg-amber-500/20 transition cursor-pointer">Suspend</button>
+                      <button onClick={() => handleUserAction(u.id, "suspend")} className="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold hover:bg-amber-500/20 transition cursor-pointer">Suspend</button>
                     ) : (
-                      <button onClick={() => handleUserAction(u.id, "activate")} className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold hover:bg-emerald-500/20 transition cursor-pointer">Activate</button>
+                      <button onClick={() => handleUserAction(u.id, "activate")} className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold hover:bg-emerald-500/20 transition cursor-pointer">Activate</button>
                     )}
-                    <button onClick={() => handleViewUserDetail(u.id)} className="px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-400 text-[10px] font-bold hover:bg-blue-500/20 transition cursor-pointer">View</button>
+                    <button onClick={() => handleViewUserDetail(u.id)} className="px-2 py-1 rounded-lg bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[10px] font-bold hover:bg-blue-500/20 transition cursor-pointer">View</button>
                   </div>
                 ])}
               />

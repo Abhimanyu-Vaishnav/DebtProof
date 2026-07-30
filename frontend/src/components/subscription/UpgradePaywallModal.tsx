@@ -265,13 +265,13 @@ export const UpgradePaywallModal: React.FC = () => {
 
                   {/* Quotas & Features List */}
                   <ul
-                    className={`space-y-2 text-xs mb-5 flex-1 border-t pt-3 ${
-                      isLight ? "border-slate-200 text-slate-700" : "border-slate-800 text-slate-300"
+                    className={`space-y-2.5 text-xs mb-5 flex-1 border-t pt-3.5 ${
+                      isLight ? "border-slate-200 text-slate-800" : "border-slate-800 text-slate-200"
                     }`}
                   >
                     <li className="flex items-center gap-2">
                       <Check
-                        className={`w-4 h-4 shrink-0 ${
+                        className={`w-4 h-4 shrink-0 stroke-[2.5] ${
                           isCurrent
                             ? "text-emerald-500"
                             : isPopular
@@ -279,7 +279,7 @@ export const UpgradePaywallModal: React.FC = () => {
                             : "text-emerald-500"
                         }`}
                       />
-                      <span className="font-bold">
+                      <span className={`font-bold ${isLight ? "text-slate-900" : "text-white"}`}>
                         {plan.max_loans === -1
                           ? "Unlimited Bank Loans"
                           : `Up to ${plan.max_loans} Bank Loans`}
@@ -287,7 +287,7 @@ export const UpgradePaywallModal: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check
-                        className={`w-4 h-4 shrink-0 ${
+                        className={`w-4 h-4 shrink-0 stroke-[2.5] ${
                           isCurrent
                             ? "text-emerald-500"
                             : isPopular
@@ -295,7 +295,7 @@ export const UpgradePaywallModal: React.FC = () => {
                             : "text-emerald-500"
                         }`}
                       />
-                      <span>
+                      <span className={`font-semibold ${isLight ? "text-slate-800" : "text-slate-200"}`}>
                         {plan.max_ai_requests === -1
                           ? "Unlimited AI Requests"
                           : `${plan.max_ai_requests} AI Requests/mo`}
@@ -303,7 +303,7 @@ export const UpgradePaywallModal: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check
-                        className={`w-4 h-4 shrink-0 ${
+                        className={`w-4 h-4 shrink-0 stroke-[2.5] ${
                           isCurrent
                             ? "text-emerald-500"
                             : isPopular
@@ -311,7 +311,7 @@ export const UpgradePaywallModal: React.FC = () => {
                             : "text-emerald-500"
                         }`}
                       />
-                      <span>
+                      <span className={`font-semibold ${isLight ? "text-slate-800" : "text-slate-200"}`}>
                         {plan.max_blockchain_proofs === -1
                           ? "Unlimited Monad Proofs"
                           : `${plan.max_blockchain_proofs} Monad Proofs/mo`}
@@ -319,7 +319,7 @@ export const UpgradePaywallModal: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check
-                        className={`w-4 h-4 shrink-0 ${
+                        className={`w-4 h-4 shrink-0 stroke-[2.5] ${
                           isCurrent
                             ? "text-emerald-500"
                             : isPopular
@@ -327,7 +327,7 @@ export const UpgradePaywallModal: React.FC = () => {
                             : "text-emerald-500"
                         }`}
                       />
-                      <span>
+                      <span className={`font-semibold ${isLight ? "text-slate-800" : "text-slate-200"}`}>
                         {plan.features_json?.includes("refinance_studio")
                           ? "Refinance Savings Studio"
                           : "Basic EMI Calculator"}
@@ -335,7 +335,7 @@ export const UpgradePaywallModal: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check
-                        className={`w-4 h-4 shrink-0 ${
+                        className={`w-4 h-4 shrink-0 stroke-[2.5] ${
                           isCurrent
                             ? "text-emerald-500"
                             : isPopular
@@ -343,7 +343,7 @@ export const UpgradePaywallModal: React.FC = () => {
                             : "text-emerald-500"
                         }`}
                       />
-                      <span>
+                      <span className={`font-semibold ${isLight ? "text-slate-800" : "text-slate-200"}`}>
                         {plan.features_json?.includes("auto_saver")
                           ? "Micro Auto-Saver Vault"
                           : "Manual Payments Log"}
@@ -351,7 +351,7 @@ export const UpgradePaywallModal: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-2">
                       <Check
-                        className={`w-4 h-4 shrink-0 ${
+                        className={`w-4 h-4 shrink-0 stroke-[2.5] ${
                           isCurrent
                             ? "text-emerald-500"
                             : isPopular
@@ -359,7 +359,7 @@ export const UpgradePaywallModal: React.FC = () => {
                             : "text-emerald-500"
                         }`}
                       />
-                      <span>
+                      <span className={`font-semibold ${isLight ? "text-slate-800" : "text-slate-200"}`}>
                         {plan.features_json?.includes("zk_proofs")
                           ? "Zero-Knowledge Credit Proofs"
                           : "Basic PDF Proofs"}

@@ -105,17 +105,32 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     [allowedFeatures, currentPlan]
   );
 
+  const getActualLoanCount = useCallback(() => {
+    if (usageStats?.loans_count) return usageStats.loans_count;
+    if (typeof window !== "undefined") {
+      try {
+        const localLoans = localStorage.getItem("debtproof_local_loans");
+        if (localLoans) {
+          const parsed = JSON.parse(localLoans);
+          if (Array.isArray(parsed)) return parsed.length;
+        }
+      } catch {}
+    }
+    return 0;
+  }, [usageStats]);
+
   const canCreateLoan = useCallback(() => {
     if (!currentPlan) return { allowed: true };
     if (currentPlan.max_loans === -1) return { allowed: true };
-    if (usageStats.loans_count >= currentPlan.max_loans) {
+    const count = getActualLoanCount();
+    if (count >= currentPlan.max_loans) {
       return {
         allowed: false,
-        reason: `Limit Reached! You have reached your limit of ${currentPlan.max_loans} bank loan(s) on your ${currentPlan.name}. Please upgrade to Basic or Premium tier to manage more loans.`,
+        reason: `Loan Quota Exceeded! Your current ${currentPlan.name} allows a maximum of ${currentPlan.max_loans} active loans. You currently have ${count} active loans. Please upgrade your subscription tier to manage more loans.`,
       };
     }
     return { allowed: true };
-  }, [currentPlan, usageStats]);
+  }, [currentPlan, getActualLoanCount]);
 
   const openPaywall = useCallback((info?: PaywallInfo) => {
     setPaywallInfo(info || { reason: "Unlock full financial command features by upgrading your membership tier." });
