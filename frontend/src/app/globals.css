@@ -109,7 +109,7 @@ html.light .border-slate-700 {
   border-color: var(--color-border-light, #e2e8f0) !important;
 }
 
-html.light .text-white {
+html.light :not(button):not(a):not(.btn):not([class*="bg-indigo"]):not([class*="bg-purple"]):not([class*="bg-rose"]):not([class*="bg-emerald"]):not([class*="bg-teal"]):not([class*="bg-gradient"]):not([class*="bg-slate-900"]):not([class*="bg-slate-950"]).text-white {
   color: var(--color-text-primary, #0f172a) !important;
 }
 

@@ -574,38 +574,50 @@ export default function SuperAdminPortal() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col lg:flex-row font-sans selection:bg-rose-500 selection:text-white">
+    <div className={`min-h-screen flex flex-col lg:flex-row font-sans transition-colors ${
+      isLight ? "bg-slate-50 text-slate-900" : "bg-slate-950 text-white selection:bg-rose-500 selection:text-white"
+    }`}>
       {/* ── Mobile Header ── */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-slate-900 border-b border-slate-800 sticky top-0 z-30">
+      <div className={`lg:hidden flex items-center justify-between p-4 border-b sticky top-0 z-30 ${
+        isLight ? "bg-white border-slate-200 text-slate-900" : "bg-slate-900 border-slate-800 text-white"
+      }`}>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-lg font-black">🛡️</div>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-lg font-black text-white">🛡️</div>
           <span className="font-black text-sm">SuperAdmin</span>
         </div>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-lg bg-slate-800 text-slate-300 text-sm font-bold">
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className={`p-2 rounded-lg text-sm font-bold ${
+          isLight ? "bg-slate-100 text-slate-700" : "bg-slate-800 text-slate-300"
+        }`}>
           {sidebarOpen ? "✕" : "☰"}
         </button>
       </div>
 
       {/* ── Sidebar ── */}
-      <aside className={`w-full lg:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 fixed lg:static inset-y-0 left-0 z-40 transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+      <aside className={`w-full lg:w-64 flex flex-col shrink-0 fixed lg:static inset-y-0 left-0 z-40 transition-transform duration-300 border-r ${
+        isLight ? "bg-white border-slate-200 text-slate-900" : "bg-slate-900 border-slate-800 text-white"
+      } ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+        <div className={`p-5 border-b flex items-center justify-between ${isLight ? "border-slate-200" : "border-slate-800"}`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-xl shadow-lg shadow-rose-500/20">🛡️</div>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-xl text-white shadow-lg shadow-rose-500/20">🛡️</div>
             <div>
-              <h1 className="text-sm font-black tracking-wide text-white">SuperAdmin</h1>
-              <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Global Control</p>
+              <h1 className={`text-sm font-black tracking-wide ${isLight ? "text-slate-900" : "text-white"}`}>SuperAdmin</h1>
+              <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Global Control</p>
             </div>
           </div>
-          <Link href="/dashboard" className="text-[10px] px-2 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-bold transition">User App ↗</Link>
+          <Link href="/dashboard" className={`text-[10px] px-2.5 py-1 rounded-lg font-bold transition ${
+            isLight ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "bg-slate-800 text-slate-400 hover:text-white"
+          }`}>User App ↗</Link>
         </div>
 
         {/* Live Status indicator */}
-        <div className="px-5 py-3 border-b border-slate-800/60 bg-slate-950/40 flex items-center justify-between">
+        <div className={`px-5 py-3 border-b flex items-center justify-between ${
+          isLight ? "border-slate-200 bg-slate-50" : "border-slate-800/60 bg-slate-950/40"
+        }`}>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[10px] font-bold text-slate-400">Django DB Connected</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className={`text-[10px] font-bold ${isLight ? "text-slate-600" : "text-slate-400"}`}>Django DB Connected</span>
           </div>
-          <button onClick={fetchAllData} disabled={loadingStats} className="text-[10px] text-rose-400 hover:underline font-bold">
+          <button onClick={fetchAllData} disabled={loadingStats} className="text-[10px] text-rose-500 hover:underline font-bold cursor-pointer">
             {loadingStats ? "Refreshing..." : "↻ Refresh"}
           </button>
         </div>
@@ -616,14 +628,26 @@ export default function SuperAdminPortal() {
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === tab.id ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20" : "text-slate-400 hover:bg-slate-800/60 hover:text-white"}`}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === tab.id
+                  ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20"
+                  : isLight
+                  ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <span className="text-base">{tab.icon}</span>
                 <span>{tab.label}</span>
               </div>
               {tab.count !== undefined && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === tab.id ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  activeTab === tab.id
+                    ? "bg-white/20 text-white"
+                    : isLight
+                    ? "bg-slate-100 text-slate-600"
+                    : "bg-slate-800 text-slate-400"
+                }`}>
                   {tab.count}
                 </span>
               )}
@@ -631,14 +655,18 @@ export default function SuperAdminPortal() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 space-y-2">
+        <div className={`p-4 border-t space-y-2 ${isLight ? "border-slate-200" : "border-slate-800"}`}>
           <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
             <span>Session: ACTIVE</span>
-            <span className="text-emerald-400 font-bold">SUPERUSER</span>
+            <span className="text-emerald-500 font-bold">SUPERUSER</span>
           </div>
           <button
             onClick={() => { localStorage.removeItem(SUPERADMIN_KEY); setIsAuthenticated(false); }}
-            className="w-full py-2 rounded-xl bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2"
+            className={`w-full py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2 ${
+              isLight
+                ? "bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-600"
+                : "bg-slate-800 text-slate-400 hover:bg-red-500/20 hover:text-red-400"
+            }`}
           >
             <span>🚪</span> Logout SuperAdmin
           </button>
@@ -648,23 +676,25 @@ export default function SuperAdminPortal() {
       {/* ── Main Content Area ── */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto max-h-screen">
         {/* Top bar */}
-        <header className="px-6 py-4 bg-slate-900/50 border-b border-slate-800/80 backdrop-blur-sm sticky top-0 z-20 flex items-center justify-between">
+        <header className={`px-6 py-4 border-b sticky top-0 z-20 flex items-center justify-between backdrop-blur-md ${
+          isLight ? "bg-white/80 border-slate-200 text-slate-900" : "bg-slate-900/50 border-slate-800/80 text-white"
+        }`}>
           <div className="flex items-center gap-3">
             <span className="text-xl">{navTabs.find(t => t.id === activeTab)?.icon}</span>
-            <h2 className="text-sm font-black text-white">{navTabs.find(t => t.id === activeTab)?.label}</h2>
-            {loadingStats && <span className="text-[10px] text-rose-400 animate-pulse font-bold">Loading live DB data...</span>}
+            <h2 className={`text-sm font-black ${isLight ? "text-slate-900" : "text-white"}`}>{navTabs.find(t => t.id === activeTab)?.label}</h2>
+            {loadingStats && <span className="text-[10px] text-rose-500 animate-pulse font-bold">Loading live DB data...</span>}
           </div>
           <div className="flex items-center gap-2">
             {/* Quick CSV Export button */}
             {["users", "loans", "payments", "support"].includes(activeTab) && (
               <button
                 onClick={() => handleExportCSV(activeTab === "support" ? "tickets" : activeTab)}
-                className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs font-bold hover:bg-emerald-500/20 transition cursor-pointer flex items-center gap-1.5"
               >
                 📥 Export CSV
               </button>
             )}
-            <span className="text-[10px] px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-black uppercase tracking-wider">
+            <span className="text-[10px] px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 font-black uppercase tracking-wider">
               SUPERADMIN-DEBTPROOF-9901
             </span>
           </div>
