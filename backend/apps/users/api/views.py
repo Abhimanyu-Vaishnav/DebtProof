@@ -585,8 +585,8 @@ class SuperAdminUserActionView(APIView):
             Notification.objects.create(
                 user=user,
                 title=title,
-                message=message,
-                notification_type=NotificationType.SYSTEM_ANNOUNCEMENT,
+                body=message,
+                notif_type=NotificationType.INFO,
             )
             return Response({"success": True, "message": f"Direct notification sent to {user.email}"})
 
