@@ -104,8 +104,7 @@ html[data-resolved-theme="light"] {
   --color-text-tertiary:  #64748b;
 }
 
-html.light body,
-html[data-resolved-theme="light"] body {
+html.light body {
   background-color: var(--color-surface-secondary) !important;
   color: var(--color-text-primary) !important;
 }
@@ -114,50 +113,35 @@ html[data-resolved-theme="light"] body {
 html.light .bg-slate-900:not(.physical-card),
 html.light .bg-slate-950:not(.physical-card),
 html.light .bg-slate-900\/90:not(.physical-card),
-html.light .bg-slate-900\/80:not(.physical-card),
-html[data-resolved-theme="light"] .bg-slate-900:not(.physical-card),
-html[data-resolved-theme="light"] .bg-slate-950:not(.physical-card),
-html[data-resolved-theme="light"] .bg-slate-900\/90:not(.physical-card),
-html[data-resolved-theme="light"] .bg-slate-900\/80:not(.physical-card) {
+html.light .bg-slate-900\/80:not(.physical-card) {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }
 
 html.light .bg-slate-800:not(.physical-card),
 html.light .bg-slate-800\/40:not(.physical-card),
-html.light .bg-slate-800\/60:not(.physical-card),
-html[data-resolved-theme="light"] .bg-slate-800:not(.physical-card),
-html[data-resolved-theme="light"] .bg-slate-800\/40:not(.physical-card),
-html[data-resolved-theme="light"] .bg-slate-800\/60:not(.physical-card) {
+html.light .bg-slate-800\/60:not(.physical-card) {
   background-color: #f1f5f9 !important;
   color: #0f172a !important;
 }
 
 html.light .border-slate-800:not(.physical-card),
 html.light .border-slate-700:not(.physical-card),
-html.light .border-slate-700\/30:not(.physical-card),
-html[data-resolved-theme="light"] .border-slate-800:not(.physical-card),
-html[data-resolved-theme="light"] .border-slate-700:not(.physical-card),
-html[data-resolved-theme="light"] .border-slate-700\/30:not(.physical-card) {
+html.light .border-slate-700\/30:not(.physical-card) {
   border-color: #cbd5e1 !important;
 }
 
 html.light .text-slate-100:not(.physical-card),
 html.light .text-slate-200:not(.physical-card),
-html.light .text-slate-300:not(.physical-card),
-html[data-resolved-theme="light"] .text-slate-100:not(.physical-card),
-html[data-resolved-theme="light"] .text-slate-200:not(.physical-card),
-html[data-resolved-theme="light"] .text-slate-300:not(.physical-card) {
+html.light .text-slate-300:not(.physical-card) {
   color: #0f172a !important;
 }
 
-html.light .text-slate-400:not(.physical-card),
-html[data-resolved-theme="light"] .text-slate-400:not(.physical-card) {
+html.light .text-slate-400:not(.physical-card) {
   color: #475569 !important;
 }
 
-html.light .text-slate-500:not(.physical-card),
-html[data-resolved-theme="light"] .text-slate-500:not(.physical-card) {
+html.light .text-slate-500:not(.physical-card) {
   color: #64748b !important;
 }
 

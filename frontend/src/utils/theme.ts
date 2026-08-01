@@ -247,8 +247,7 @@ export function applyGlobalTheme(themeId: string = "system"): void {
   let targetThemeId = actualThemeId;
 
   if (actualThemeId === "system") {
-    const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches && !window.matchMedia("(prefers-color-scheme: dark)").matches;
-    targetThemeId = prefersLight ? "light" : "dark";
+    targetThemeId = "dark";
   }
 
   if (targetThemeId === "custom") {

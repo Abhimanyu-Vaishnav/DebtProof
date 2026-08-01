@@ -30,8 +30,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const currentSaved = localStorage.getItem("debtproof_theme") || "system";
       if (currentSaved === "system") {
         applyGlobalTheme("system");
-        const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches && !window.matchMedia("(prefers-color-scheme: dark)").matches;
-        setResolvedTheme(prefersLight ? "light" : "dark");
+        setResolvedTheme("dark");
       }
     };
 
@@ -46,10 +45,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const customEvent = e as CustomEvent;
       if (customEvent.detail) {
         setThemeState(customEvent.detail);
-        const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches && !window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const active = customEvent.detail === "system"
-          ? (prefersLight ? "light" : "dark")
-          : (customEvent.detail === "light" ? "light" : "dark");
+        const active = customEvent.detail === "light" ? "light" : "dark";
         setResolvedTheme(active);
       }
     };
@@ -67,8 +63,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     applyGlobalTheme(theme);
-    const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches && !window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const active = theme === "system" ? (prefersLight ? "light" : "dark") : (theme === "light" ? "light" : "dark");
+    const active = theme === "light" ? "light" : "dark";
     setResolvedTheme(active);
   }, [theme]);
 
