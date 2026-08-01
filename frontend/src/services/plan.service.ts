@@ -46,18 +46,41 @@ export const PLAN_MATRIX: Record<PlanTag, {
 
 export function getUserPlan(): PlanTag {
   if (typeof window === "undefined") return "Free";
-  const storedPlan = localStorage.getItem("debtproof_active_plan") as PlanTag;
-  if (storedPlan) {
-    const formatted = storedPlan.charAt(0).toUpperCase() + storedPlan.slice(1).toLowerCase();
-    if (PLAN_MATRIX[formatted as PlanTag]) return formatted as PlanTag;
+
+  const candidates = [
+    localStorage.getItem("debtproof_active_plan"),
+    localStorage.getItem("debtproof_plan"),
+    localStorage.getItem("active_plan"),
+    localStorage.getItem("plan"),
+  ];
+
+  for (const raw of candidates) {
+    if (raw) {
+      const formatted = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+      if (PLAN_MATRIX[formatted as PlanTag]) return formatted as PlanTag;
+    }
   }
+
+  try {
+    const userRaw = localStorage.getItem("debtproof_user") || localStorage.getItem("user");
+    if (userRaw) {
+      const parsed = JSON.parse(userRaw);
+      const val = parsed?.plan || parsed?.active_plan;
+      if (val) {
+        const formatted = String(val).charAt(0).toUpperCase() + String(val).slice(1).toLowerCase();
+        if (PLAN_MATRIX[formatted as PlanTag]) return formatted as PlanTag;
+      }
+    }
+  } catch {}
+
   return "Free";
 }
 
 export function setUserPlan(plan: PlanTag): void {
   if (typeof window === "undefined") return;
   localStorage.setItem("debtproof_active_plan", plan.toLowerCase());
-  window.dispatchEvent(new Event("debtproof_plan_changed"));
+  localStorage.setItem("debtproof_plan", plan.toLowerCase());
+  window.dispatchEvent(new CustomEvent("debtproof_plan_changed", { detail: plan }));
 }
 
 export function checkPlanPermission(permission: keyof typeof PLAN_MATRIX.Pro, currentLoanCount = 0): { allowed: boolean; reason?: string } {

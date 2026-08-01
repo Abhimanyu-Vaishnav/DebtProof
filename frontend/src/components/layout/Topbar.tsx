@@ -10,6 +10,7 @@ import type { Notification } from "@/types";
 import { TenantSwitcher } from "@/components/tenant/TenantSwitcher";
 import { THEME_PRESETS, applyGlobalTheme } from "@/utils/theme";
 import { Web3WalletConnect } from "@/components/layout/Web3WalletConnect";
+import { useSubscription } from "@/context/SubscriptionContext";
 
 interface TopbarProps {
   title?: string;
@@ -41,13 +42,34 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const [soundMuted, setSoundMuted]             = useState(false);
   const [activePlan, setActivePlan]             = useState<string>("Free Plan");
 
+  const { user } = useAuth();
+  const sub = useSubscription();
+  const currentPlan = sub?.currentPlan;
+
   useEffect(() => {
-    import("@/services/plan.service").then((mod) => setActivePlan(`${mod.getUserPlan()} Plan`));
-    const onPlanChange = () =>
-      import("@/services/plan.service").then((mod) => setActivePlan(`${mod.getUserPlan()} Plan`));
-    window.addEventListener("debtproof_plan_changed", onPlanChange);
-    return () => window.removeEventListener("debtproof_plan_changed", onPlanChange);
-  }, []);
+    const refreshPlan = async () => {
+      const { getUserPlan } = await import("@/services/plan.service");
+      let planTag = getUserPlan();
+      if (planTag === "Free" && user?.plan) {
+        const p = user.plan.charAt(0).toUpperCase() + user.plan.slice(1).toLowerCase();
+        if (["Basic", "Pro", "Premium", "Enterprise"].includes(p)) planTag = p as any;
+      }
+      if (planTag === "Free" && currentPlan?.name && currentPlan.code !== "free") {
+        const p = currentPlan.name.split(" ")[0];
+        const formatted = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+        if (["Basic", "Pro", "Premium", "Enterprise"].includes(formatted)) planTag = formatted as any;
+      }
+      setActivePlan(`${planTag} Plan`);
+    };
+
+    refreshPlan();
+    window.addEventListener("debtproof_plan_changed", refreshPlan);
+    window.addEventListener("storage", refreshPlan);
+    return () => {
+      window.removeEventListener("debtproof_plan_changed", refreshPlan);
+      window.removeEventListener("storage", refreshPlan);
+    };
+  }, [user, currentPlan]);
 
   const handleApplyTheme = (themeName: string) => {
     setTheme(themeName);
