@@ -48,17 +48,23 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
   useEffect(() => {
     const refreshPlan = async () => {
+      if (currentPlan?.name && currentPlan.code !== "free") {
+        let name = currentPlan.name.trim();
+        if (!name.toLowerCase().includes("plan")) name = `${name} Plan`;
+        setActivePlan(name);
+        return;
+      }
+
+      if (user?.plan && user.plan.toLowerCase() !== "free") {
+        let p = user.plan.trim();
+        if (!p.toLowerCase().includes("plan")) p = `${p} Plan`;
+        const formatted = p.charAt(0).toUpperCase() + p.slice(1);
+        setActivePlan(formatted);
+        return;
+      }
+
       const { getUserPlan } = await import("@/services/plan.service");
-      let planTag = getUserPlan();
-      if (planTag === "Free" && user?.plan) {
-        const p = user.plan.charAt(0).toUpperCase() + user.plan.slice(1).toLowerCase();
-        if (["Basic", "Pro", "Premium", "Enterprise"].includes(p)) planTag = p as any;
-      }
-      if (planTag === "Free" && currentPlan?.name && currentPlan.code !== "free") {
-        const p = currentPlan.name.split(" ")[0];
-        const formatted = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
-        if (["Basic", "Pro", "Premium", "Enterprise"].includes(formatted)) planTag = formatted as any;
-      }
+      const planTag = getUserPlan();
       setActivePlan(`${planTag} Plan`);
     };
 

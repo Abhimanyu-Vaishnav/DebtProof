@@ -1,6 +1,6 @@
 "use client";
 
-export type PlanTag = "Free" | "Basic" | "Pro" | "Premium" | "Enterprise";
+export type PlanTag = "Free" | "Basic" | "Pro" | "Premium" | "Business" | "Enterprise";
 
 export interface PlanFeatureDetail {
   key: string;
@@ -9,20 +9,21 @@ export interface PlanFeatureDetail {
   basic: string | boolean;
   pro: string | boolean;
   premium: string | boolean;
+  business?: string | boolean;
   enterprise: string | boolean;
 }
 
 export const ALL_APP_FEATURES: PlanFeatureDetail[] = [
-  { key: "maxLoans", name: "Active Loan Limit", free: "3 Loans", basic: "10 Loans", pro: "Unlimited", premium: "Unlimited", enterprise: "Unlimited" },
-  { key: "hasCalendar", name: "EMI Payment Calendar & Alerts", free: true, basic: true, pro: true, premium: true, enterprise: true },
-  { key: "hasBlockchain", name: "Monad Blockchain SHA-256 Proofs", free: false, basic: true, pro: true, premium: true, enterprise: true },
-  { key: "hasAiAssistant", name: "AI Debt Destroyer Assistant", free: false, basic: false, pro: true, premium: true, enterprise: true },
-  { key: "hasSimulator", name: "Snowball vs Avalanche Payoff Simulator", free: false, basic: false, pro: true, premium: true, enterprise: true },
-  { key: "hasClearancePdf", name: "Zero-Debt PDF Discharge Certificates", free: false, basic: false, pro: true, premium: true, enterprise: true },
-  { key: "hasP2pSettlement", name: "P2P Debt Settlement & Waiver Desk", free: false, basic: false, pro: true, premium: true, enterprise: true },
-  { key: "hasCibilTracking", name: "CIBIL Score & 30-Day Default Risk Heatmap", free: false, basic: false, pro: false, premium: true, enterprise: true },
-  { key: "hasMonadEscrow", name: "Web3 Monad Escrow Vault Inspection", free: false, basic: false, pro: false, premium: true, enterprise: true },
-  { key: "hasWhitelabel", name: "Whitelabel Domain, Staff RBAC & Bureau Export", free: false, basic: false, pro: false, premium: false, enterprise: true },
+  { key: "maxLoans", name: "Active Loan Limit", free: "3 Loans", basic: "10 Loans", pro: "Unlimited", premium: "Unlimited", business: "Unlimited", enterprise: "Unlimited" },
+  { key: "hasCalendar", name: "EMI Payment Calendar & Alerts", free: true, basic: true, pro: true, premium: true, business: true, enterprise: true },
+  { key: "hasBlockchain", name: "Monad Blockchain SHA-256 Proofs", free: false, basic: true, pro: true, premium: true, business: true, enterprise: true },
+  { key: "hasAiAssistant", name: "AI Debt Destroyer Assistant", free: false, basic: false, pro: true, premium: true, business: true, enterprise: true },
+  { key: "hasSimulator", name: "Snowball vs Avalanche Payoff Simulator", free: false, basic: false, pro: true, premium: true, business: true, enterprise: true },
+  { key: "hasClearancePdf", name: "Zero-Debt PDF Discharge Certificates", free: false, basic: false, pro: true, premium: true, business: true, enterprise: true },
+  { key: "hasP2pSettlement", name: "P2P Debt Settlement & Waiver Desk", free: false, basic: false, pro: true, premium: true, business: true, enterprise: true },
+  { key: "hasCibilTracking", name: "CIBIL Score & 30-Day Default Risk Heatmap", free: false, basic: false, pro: false, premium: true, business: true, enterprise: true },
+  { key: "hasMonadEscrow", name: "Web3 Monad Escrow Vault Inspection", free: false, basic: false, pro: false, premium: true, business: true, enterprise: true },
+  { key: "hasWhitelabel", name: "Whitelabel Domain, Staff RBAC & Bureau Export", free: false, basic: false, pro: false, premium: false, business: true, enterprise: true },
 ];
 
 export const PLAN_MATRIX: Record<PlanTag, {
@@ -41,6 +42,7 @@ export const PLAN_MATRIX: Record<PlanTag, {
   Basic: { maxLoans: 10, hasCalendar: true, hasBlockchain: true, hasAiAssistant: false, hasSimulator: false, hasClearancePdf: false, hasP2pSettlement: false, hasCibilTracking: false, hasMonadEscrow: false, hasWhitelabel: false },
   Pro: { maxLoans: 999, hasCalendar: true, hasBlockchain: true, hasAiAssistant: true, hasSimulator: true, hasClearancePdf: true, hasP2pSettlement: true, hasCibilTracking: false, hasMonadEscrow: false, hasWhitelabel: false },
   Premium: { maxLoans: 999, hasCalendar: true, hasBlockchain: true, hasAiAssistant: true, hasSimulator: true, hasClearancePdf: true, hasP2pSettlement: true, hasCibilTracking: true, hasMonadEscrow: true, hasWhitelabel: false },
+  Business: { maxLoans: 9999, hasCalendar: true, hasBlockchain: true, hasAiAssistant: true, hasSimulator: true, hasClearancePdf: true, hasP2pSettlement: true, hasCibilTracking: true, hasMonadEscrow: true, hasWhitelabel: true },
   Enterprise: { maxLoans: 9999, hasCalendar: true, hasBlockchain: true, hasAiAssistant: true, hasSimulator: true, hasClearancePdf: true, hasP2pSettlement: true, hasCibilTracking: true, hasMonadEscrow: true, hasWhitelabel: true },
 };
 
@@ -56,7 +58,8 @@ export function getUserPlan(): PlanTag {
 
   for (const raw of candidates) {
     if (raw) {
-      const formatted = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+      let formatted = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+      if (formatted.toLowerCase().includes("business")) formatted = "Business";
       if (PLAN_MATRIX[formatted as PlanTag]) return formatted as PlanTag;
     }
   }
@@ -67,7 +70,8 @@ export function getUserPlan(): PlanTag {
       const parsed = JSON.parse(userRaw);
       const val = parsed?.plan || parsed?.active_plan;
       if (val) {
-        const formatted = String(val).charAt(0).toUpperCase() + String(val).slice(1).toLowerCase();
+        let formatted = String(val).charAt(0).toUpperCase() + String(val).slice(1).toLowerCase();
+        if (formatted.toLowerCase().includes("business")) formatted = "Business";
         if (PLAN_MATRIX[formatted as PlanTag]) return formatted as PlanTag;
       }
     }
