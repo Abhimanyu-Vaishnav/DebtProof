@@ -133,7 +133,7 @@ function StatusBadge({ status }: { status: string }) {
 export default function SuperAdminPortal() {
   const SUPERADMIN_KEY = "debtproof_superadmin_auth_token";
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const isLight = resolvedTheme === "light";
+  const isLight = theme === "light";
 
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);

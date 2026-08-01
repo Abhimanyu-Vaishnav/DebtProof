@@ -26,15 +26,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(savedTheme);
     applyGlobalTheme(savedTheme);
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleSystemChange = () => {
       const currentSaved = localStorage.getItem("debtproof_theme") || "system";
       if (currentSaved === "system") {
         applyGlobalTheme("system");
-        setResolvedTheme(mediaQuery.matches ? "dark" : "light");
+        const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches && !window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setResolvedTheme(prefersLight ? "light" : "dark");
       }
     };
 
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener("change", handleSystemChange);
     } else {
@@ -45,8 +46,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const customEvent = e as CustomEvent;
       if (customEvent.detail) {
         setThemeState(customEvent.detail);
+        const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches && !window.matchMedia("(prefers-color-scheme: dark)").matches;
         const active = customEvent.detail === "system"
-          ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+          ? (prefersLight ? "light" : "dark")
           : (customEvent.detail === "light" ? "light" : "dark");
         setResolvedTheme(active);
       }
@@ -65,8 +67,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     applyGlobalTheme(theme);
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const active = theme === "system" ? (mediaQuery.matches ? "dark" : "light") : (theme === "light" ? "light" : "dark");
+    const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches && !window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const active = theme === "system" ? (prefersLight ? "light" : "dark") : (theme === "light" ? "light" : "dark");
     setResolvedTheme(active);
   }, [theme]);
 
