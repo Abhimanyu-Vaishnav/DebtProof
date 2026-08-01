@@ -299,20 +299,21 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Apply theme when settings change
+  // Apply preset theme accent colors if explicit preset selected
   useEffect(() => {
     if (!mounted) return;
     const root = document.documentElement;
-    // Theme vars
     const themes: Record<string, { primary: string; accent: string; primaryLight: string }> = {
       titanium:  { primary: "#2563a8", accent: "#10b981", primaryLight: "#3b82f6" },
       emerald:   { primary: "#059669", accent: "#34d399", primaryLight: "#10b981" },
       midnight:  { primary: "#4f46e5", accent: "#818cf8", primaryLight: "#6366f1" },
     };
-    const t = themes[settings.theme] ?? themes.titanium;
-    root.style.setProperty("--color-primary", t.primary);
-    root.style.setProperty("--color-accent", t.accent);
-    root.style.setProperty("--color-primary-light", t.primaryLight);
+    if (settings.theme && themes[settings.theme]) {
+      const t = themes[settings.theme];
+      root.style.setProperty("--color-primary", t.primary);
+      root.style.setProperty("--color-accent", t.accent);
+      root.style.setProperty("--color-primary-light", t.primaryLight);
+    }
   }, [settings.theme, mounted]);
 
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
