@@ -17,6 +17,7 @@ import { loansService } from "@/services/loans.service";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { CibilParserModal } from "@/components/loans/CibilParserModal";
 import { AutomatedAIRepaymentAgentStudio } from "@/components/loans/AutomatedAIRepaymentAgentStudio";
+import { ForeclosureSavingsCalculator } from "@/components/loans/ForeclosureSavingsCalculator";
 import { DebtDestroyerAssistant } from "@/components/ai/DebtDestroyerAssistant";
 import { ClearanceCertificateModal } from "@/components/loans/ClearanceCertificateModal";
 import type { Loan } from "@/types";
@@ -141,6 +142,9 @@ export default function LoansPage() {
     <>
       <Topbar title="My Loans" subtitle={`${totalCount} loan${totalCount !== 1 ? "s" : ""}`} />
       <main className="page-content space-y-5">
+
+        {/* Foreclosure & Part-Prepayment Savings Calculator */}
+        <ForeclosureSavingsCalculator />
 
         {/* AI Repayment Studio */}
         <AutomatedAIRepaymentAgentStudio />

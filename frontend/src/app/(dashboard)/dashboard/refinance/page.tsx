@@ -3,6 +3,7 @@
 import React from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { RefinanceSavingsStudio } from "@/components/refinance/RefinanceSavingsStudio";
+import { MultiLenderRefinanceMatrix } from "@/components/refinance/MultiLenderRefinanceMatrix";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 export default function RefinancePage() {
@@ -14,6 +15,9 @@ export default function RefinancePage() {
       />
 
       <main className="page-content space-y-6 pb-12">
+        {/* Multi-Lender Matrix */}
+        <MultiLenderRefinanceMatrix />
+
         {/* Top Banner */}
         <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-6 md:p-8 rounded-2xl shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />

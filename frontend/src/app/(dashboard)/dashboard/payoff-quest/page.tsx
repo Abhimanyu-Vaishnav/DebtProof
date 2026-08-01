@@ -3,6 +3,7 @@
 import React from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { DebtDestroyerStudio } from "@/components/quest/DebtDestroyerStudio";
+import { PayoffQuestBadgesStudio } from "@/components/quest/PayoffQuestBadgesStudio";
 
 export default function PayoffQuestPage() {
   return (
@@ -13,6 +14,7 @@ export default function PayoffQuestPage() {
       />
 
       <main className="page-content space-y-6 pb-12">
+        <PayoffQuestBadgesStudio />
         <DebtDestroyerStudio />
       </main>
     </>
