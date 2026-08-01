@@ -88,11 +88,10 @@ export function AdminUserDetailModal({ user, onClose, onRefresh, superAdminFetch
 
     try {
       const { notificationsService } = await import("@/services/notifications.service");
-      await notificationsService.addLocalNotification({
+      await notificationsService.createNotification({
         title: msgTitle || "Message from DebtProof Support",
         body: msgBody.trim(),
         notif_type: "info",
-        user_id: currentUser.id,
       });
     } catch (err) {
       console.error("Local notification dispatch error:", err);

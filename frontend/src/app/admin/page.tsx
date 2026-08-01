@@ -197,11 +197,10 @@ export default function SuperAdminPortal() {
 
     try {
       const { notificationsService } = await import("@/services/notifications.service");
-      await notificationsService.addLocalNotification({
+      await notificationsService.createNotification({
         title: directMsgTitle || "Message from DebtProof Support",
         body: directMsgBody.trim(),
         notif_type: "info",
-        user_id: directMsgUser.id,
       });
     } catch (err) {
       console.error("Failed to dispatch local notification:", err);
