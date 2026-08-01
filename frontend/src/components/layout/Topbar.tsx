@@ -48,14 +48,14 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
 
   useEffect(() => {
     const refreshPlan = async () => {
-      if (currentPlan?.name && currentPlan.code !== "free") {
+      if (currentPlan?.name && currentPlan.name.toLowerCase() !== "free" && currentPlan.name.toLowerCase() !== "free plan") {
         let name = currentPlan.name.trim();
         if (!name.toLowerCase().includes("plan")) name = `${name} Plan`;
         setActivePlan(name);
         return;
       }
 
-      if (user?.plan && user.plan.toLowerCase() !== "free") {
+      if (user?.plan && user.plan.toLowerCase() !== "free" && user.plan.toLowerCase() !== "free plan") {
         let p = user.plan.trim();
         if (!p.toLowerCase().includes("plan")) p = `${p} Plan`;
         const formatted = p.charAt(0).toUpperCase() + p.slice(1);
@@ -393,7 +393,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </p>
-              <p className="text-[10px] text-indigo-400 font-bold mt-0.5 truncate max-w-[90px]">{activePlan}</p>
+              <p className="text-[10px] text-indigo-400 font-bold mt-0.5 truncate max-w-[130px]">{activePlan}</p>
             </div>
           </button>
 
