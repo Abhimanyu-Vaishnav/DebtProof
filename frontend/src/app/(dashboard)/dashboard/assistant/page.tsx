@@ -8,6 +8,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import apiClient from "@/services/api";
 import { useToast } from "@/components/ui/Toast";
 import { Topbar } from "@/components/layout/Topbar";
+import { VoiceAssistantStudio } from "@/components/ai/VoiceAssistantStudio";
 
 interface Message {
   id: string;
@@ -221,8 +222,9 @@ export default function AIAssistantPage() {
   return (
     <>
       <Topbar title="AI Financial Coach" subtitle="Unified Strategy Coach & Real-Data Financial Assistant" />
-      <main className="page-content">
-        <div className="max-w-5xl mx-auto space-y-4 animate-fade-in" style={{ height: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
+      <main className="page-content space-y-4">
+        <VoiceAssistantStudio />
+        <div className="max-w-5xl mx-auto space-y-4 animate-fade-in" style={{ display: "flex", flexDirection: "column" }}>
 
           {/* Premium Header Banner */}
           <div className="bg-gradient-to-r from-[var(--color-primary)] via-slate-800 to-[var(--color-primary)] rounded-2xl p-5 text-white shadow-lg flex items-center justify-between flex-wrap gap-4 flex-shrink-0">
