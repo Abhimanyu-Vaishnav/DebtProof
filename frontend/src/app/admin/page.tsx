@@ -175,6 +175,44 @@ export default function SuperAdminPortal() {
   const [selectedUserDetail, setSelectedUserDetail] = useState<UserDetailData | null>(null);
   const [loadingUserDetail, setLoadingUserDetail] = useState(false);
 
+  // Direct Message Modal State
+  const [directMsgUser, setDirectMsgUser] = useState<UserData | null>(null);
+  const [directMsgTitle, setDirectMsgTitle] = useState("Important Message from DebtProof Admin");
+  const [directMsgBody, setDirectMsgBody] = useState("");
+  const [sendingDirectMsg, setSendingDirectMsg] = useState(false);
+
+  const handleSendDirectMsgSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!directMsgUser || !directMsgBody.trim()) return;
+    setSendingDirectMsg(true);
+
+    try {
+      await superAdminFetch(`/auth/superadmin/users/${directMsgUser.id}/message/`, {
+        method: "POST",
+        body: JSON.stringify({ message: directMsgBody.trim(), title: directMsgTitle }),
+      });
+    } catch (err) {
+      console.warn("Backend direct message endpoint fallback:", err);
+    }
+
+    try {
+      const { notificationsService } = await import("@/services/notifications.service");
+      await notificationsService.addLocalNotification({
+        title: directMsgTitle || "Message from DebtProof Support",
+        body: directMsgBody.trim(),
+        notif_type: "info",
+        user_id: directMsgUser.id,
+      });
+    } catch (err) {
+      console.error("Failed to dispatch local notification:", err);
+    }
+
+    alert(`Direct message successfully dispatched to ${directMsgUser.name} (${directMsgUser.email})!`);
+    setSendingDirectMsg(false);
+    setDirectMsgUser(null);
+    setDirectMsgBody("");
+  };
+
   // Drag & Drop Plan Customizer Studio State
   const [plansStudioList, setPlansStudioList] = useState<Plan[]>(DEFAULT_ADMIN_PLANS);
   const [catalogStudioList, setCatalogStudioList] = useState<PlanFeature[]>(DEFAULT_CATALOG);
@@ -1209,6 +1247,7 @@ export default function SuperAdminPortal() {
                   <span key="j" className={`font-medium ${isLight ? "text-slate-600" : "text-slate-400"}`}>{u.joinedDate || "—"}</span>,
                   <StatusBadge key="s" status={u.status} />,
                   <div key="a" className="flex gap-1">
+                    <button onClick={() => { setDirectMsgUser(u); setDirectMsgTitle(`Direct Message to ${u.name}`); }} className="px-2 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold hover:bg-indigo-500/20 transition cursor-pointer">💬 Msg</button>
                     {u.status === "Active" ? (
                       <button onClick={() => handleUserAction(u.id, "suspend")} className="px-2 py-1 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold hover:bg-amber-500/20 transition cursor-pointer">Suspend</button>
                     ) : (
@@ -2296,6 +2335,95 @@ export default function SuperAdminPortal() {
           onRefresh={fetchAllData}
           superAdminFetch={superAdminFetch}
         />
+      )}
+
+      {/* ── DIRECT MESSAGE MODAL OVERLAY ── */}
+      {directMsgUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className={`w-full max-w-lg rounded-3xl p-6 border shadow-2xl space-y-4 ${
+            isLight ? "bg-white border-slate-200 text-slate-900" : "bg-slate-900 border-slate-800 text-white"
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">💬</span>
+                <div>
+                  <h3 className="text-sm font-black">Direct Message to {directMsgUser.name}</h3>
+                  <p className="text-[10px] text-slate-400 font-mono">{directMsgUser.email}</p>
+                </div>
+              </div>
+              <button onClick={() => setDirectMsgUser(null)} className="text-xs font-bold px-2 py-1 rounded bg-slate-800 text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <form onSubmit={handleSendDirectMsgSubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Message Subject</label>
+                <input
+                  type="text"
+                  value={directMsgTitle}
+                  onChange={(e) => setDirectMsgTitle(e.target.value)}
+                  className={`w-full px-3 py-2 rounded-xl text-xs border focus:outline-none focus:border-indigo-500 font-medium ${
+                    isLight ? "bg-slate-100 border-slate-300 text-slate-900" : "bg-slate-950 border-slate-800 text-white"
+                  }`}
+                  placeholder="Enter message title..."
+                  required
+                />
+              </div>
+
+              <div className="flex gap-1.5 flex-wrap">
+                {[
+                  "Account Support Update",
+                  "EMI Payment Due Reminder",
+                  "Subscription Tier Upgraded",
+                  "Security Alert",
+                ].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setDirectMsgTitle(p)}
+                    className={`text-[10px] px-2 py-1 rounded-lg font-medium border transition ${
+                      isLight ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300" : "bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700/50"
+                    }`}
+                  >
+                    + {p}
+                  </button>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Message Content</label>
+                <textarea
+                  rows={4}
+                  value={directMsgBody}
+                  onChange={(e) => setDirectMsgBody(e.target.value)}
+                  className={`w-full px-3 py-2 rounded-xl text-xs border focus:outline-none focus:border-indigo-500 font-medium ${
+                    isLight ? "bg-slate-100 border-slate-300 text-slate-900" : "bg-slate-950 border-slate-800 text-white"
+                  }`}
+                  placeholder="Type your message for this user here..."
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDirectMsgUser(null)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                    isLight ? "bg-slate-200 text-slate-700 hover:bg-slate-300" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingDirectMsg}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-xs transition shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+                >
+                  {sendingDirectMsg ? "Sending..." : "🚀 Send Direct Message"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>

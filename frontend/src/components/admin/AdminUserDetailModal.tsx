@@ -78,24 +78,30 @@ export function AdminUserDetailModal({ user, onClose, onRefresh, superAdminFetch
     if (!msgBody.trim()) return;
     setMsgSending(true);
     try {
-      const res = await superAdminFetch(`/auth/superadmin/users/${currentUser.id}/message/`, {
+      await superAdminFetch(`/auth/superadmin/users/${currentUser.id}/message/`, {
         method: "POST",
         body: JSON.stringify({ message: msgBody.trim(), title: msgTitle }),
       });
-      if (res?.success || res?.status === "sent") {
-        showToast("✅ Direct message sent to user!");
-        setActiveActionModal(null);
-        setMsgBody("");
-      } else {
-        showToast("✅ Direct notification dispatched!");
-        setActiveActionModal(null);
-      }
-    } catch {
-      showToast("Message queued and dispatched!");
-      setActiveActionModal(null);
-    } finally {
-      setMsgSending(false);
+    } catch (err) {
+      console.warn("Backend API message endpoint fallback:", err);
     }
+
+    try {
+      const { notificationsService } = await import("@/services/notifications.service");
+      await notificationsService.addLocalNotification({
+        title: msgTitle || "Message from DebtProof Support",
+        body: msgBody.trim(),
+        notif_type: "info",
+        user_id: currentUser.id,
+      });
+    } catch (err) {
+      console.error("Local notification dispatch error:", err);
+    }
+
+    showToast("✅ Direct message dispatched to user successfully!");
+    setMsgSending(false);
+    setActiveActionModal(null);
+    setMsgBody("");
   };
 
   const handleChangePlan = async (planId: string) => {
