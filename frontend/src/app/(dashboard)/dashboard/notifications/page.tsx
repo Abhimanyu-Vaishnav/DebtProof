@@ -291,6 +291,8 @@ export default function NotificationsPage() {
           <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[10px]">In-App 🔔</span>
           {pushStatus === "granted" && <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px]">Browser Push ✅</span>}
           <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px]">Email 📧</span>
+          <span className="px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 text-[10px]">WhatsApp 💬</span>
+          <span className="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 text-[10px]">Telegram ✈️</span>
         </div>
         <button
           onClick={handleEvaluateReminders}
@@ -299,6 +301,44 @@ export default function NotificationsPage() {
         >
           {evaluating ? "Evaluating..." : "⚡ Run EMI Auto-Check"}
         </button>
+      </div>
+
+      {/* Instant Messenger Webhook Alert Center */}
+      <div className="p-4 rounded-xl border border-teal-500/30 bg-teal-950/20 space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
+            <span>💬 WhatsApp & Telegram EMI Webhooks</span>
+          </h4>
+          <span className="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded font-semibold">Live Integration</span>
+        </div>
+        <p className="text-[11px] text-slate-300">
+          Connect your phone number or Telegram bot token to get instant 1-click repayment links directly on messaging apps.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-1.5">
+            <span className="text-[11px] font-bold text-emerald-400 block">📱 WhatsApp Bot Alert</span>
+            <input
+              type="text"
+              placeholder="+91 98765 43210"
+              className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded text-slate-200 focus:outline-none focus:border-teal-500"
+            />
+            <button className="w-full py-1 text-[11px] font-bold bg-teal-600 hover:bg-teal-500 text-slate-950 rounded transition">
+              Connect WhatsApp Bot
+            </button>
+          </div>
+
+          <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-1.5">
+            <span className="text-[11px] font-bold text-sky-400 block">✈️ Telegram Bot Alert</span>
+            <input
+              type="text"
+              placeholder="Telegram Chat ID or Bot Token"
+              className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded text-slate-200 focus:outline-none focus:border-sky-500"
+            />
+            <button className="w-full py-1 text-[11px] font-bold bg-sky-600 hover:bg-sky-500 text-slate-950 rounded transition">
+              Connect Telegram Bot
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Filter Tabs */}

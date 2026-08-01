@@ -8,6 +8,7 @@ import { formatCurrency } from "@/utils/formatters";
 
 import { PayoffMethodComparisonModal } from "@/components/analytics/PayoffMethodComparisonModal";
 import { MonteCarloDebtFreedomPredictor } from "@/components/analytics/MonteCarloDebtFreedomPredictor";
+import { CreditScoreSimulatorWidget } from "@/components/analytics/CreditScoreSimulatorWidget";
 
 function formatDebtFreeDate(dateStr: string | null) {
   if (!dateStr) return "No active debts!";
@@ -115,6 +116,9 @@ export default function RepaymentSimulatorPage() {
         
         {/* Monte Carlo Risk & AI Debt Freedom Predictor */}
         <MonteCarloDebtFreedomPredictor />
+
+        {/* Credit Score & CIBIL Simulator */}
+        <CreditScoreSimulatorWidget />
 
         {/* Interactive Extra Payment Slider & Custom Input */}
         <div className="card p-4 sm:p-6 border border-[var(--color-border-light)] space-y-4">
