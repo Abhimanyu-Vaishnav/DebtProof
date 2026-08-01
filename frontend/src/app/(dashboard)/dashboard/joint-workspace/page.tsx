@@ -3,6 +3,7 @@
 import React from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { JointWorkspaceStudio } from "@/components/joint-workspace/JointWorkspaceStudio";
+import { JointApprovalWorkflowStudio } from "@/components/joint-workspace/JointApprovalWorkflowStudio";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 export default function JointWorkspacePage() {
@@ -38,6 +39,7 @@ export default function JointWorkspacePage() {
 
         {/* Main Joint Workspace Studio Component */}
         <FeatureGate featureKey="joint_workspace" featureName="Joint Co-Borrower Workspace" description="Joint Workspace & Family Sharing requires a Premium or Business subscription plan. Upgrade to collaborate on co-signed loans with your spouse or family.">
+          <JointApprovalWorkflowStudio />
           <JointWorkspaceStudio />
         </FeatureGate>
       </main>

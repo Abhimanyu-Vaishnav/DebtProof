@@ -3,6 +3,7 @@
 import React from "react";
 import { Topbar } from "@/components/layout/Topbar";
 import { MicroAutoSaverStudio } from "@/components/auto-saver/MicroAutoSaverStudio";
+import { DeFiMicroYieldVaultStudio } from "@/components/auto-saver/DeFiMicroYieldVaultStudio";
 
 export default function AutoSaverPage() {
   return (
@@ -34,6 +35,9 @@ export default function AutoSaverPage() {
             </p>
           </div>
         </div>
+
+        {/* DeFi Yield Vault Studio */}
+        <DeFiMicroYieldVaultStudio />
 
         {/* Main Auto-Saver Studio Component */}
         <MicroAutoSaverStudio />

@@ -12,6 +12,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { ReceiptProofModal } from "@/components/receipts/ReceiptProofModal";
+import { SmartOcrReceiptExtractor } from "@/components/receipts/SmartOcrReceiptExtractor";
 import type { Payment } from "@/types";
 
 export default function ReceiptsPage() {
@@ -43,6 +44,8 @@ export default function ReceiptsPage() {
       />
       
       <main className="page-content space-y-6">
+        {/* Smart Vision OCR Extractor */}
+        <SmartOcrReceiptExtractor />
         {isLoading ? (
           <LoadingSpinner fullPage label="Loading receipts ledger..." />
         ) : receiptPayments.length === 0 ? (
