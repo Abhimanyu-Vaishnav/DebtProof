@@ -7,6 +7,9 @@ import { subscriptionService, Plan, PlanFeature, DEFAULT_ADMIN_PLANS, DEFAULT_CA
 import { useTheme } from "@/contexts/ThemeContext";
 import { AdminCacheStudio } from "@/components/admin/AdminCacheStudio";
 import { AdminUserDetailModal } from "@/components/admin/AdminUserDetailModal";
+import { AdminFraudControlStudio } from "@/components/admin/AdminFraudControlStudio";
+import { AdminBroadcastCampaignStudio } from "@/components/admin/AdminBroadcastCampaignStudio";
+import { AdminBackupExportStudio } from "@/components/admin/AdminBackupExportStudio";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "RiskAuditor" | "Web3Governor";
@@ -1301,46 +1304,7 @@ export default function SuperAdminPortal() {
 
           {/* ══════════ TAB 4: PUSH NOTIFICATIONS ══════════ */}
           {activeTab === "push" && (
-            <div className="max-w-2xl space-y-6">
-              <SectionHeader icon="📣" title="Broadcast Notifications" sub="Send announcements to all or targeted users" />
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-                <form onSubmit={handleSendPushNotification} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notification Title *</label>
-                      <input value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="e.g. EMI Reminder: July" required className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Message Body (HTML supported)</label>
-                      <textarea value={pushBody} onChange={e => setPushBody(e.target.value)} rows={4} placeholder="Type your message here... <b>Bold</b>, <i>italic</i> supported" className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none resize-none" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Image URL (optional)</label>
-                      <input value={pushImageUrl} onChange={e => setPushImageUrl(e.target.value)} placeholder="https://..." className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CTA Button Text</label>
-                      <input value={pushActionText} onChange={e => setPushActionText(e.target.value)} placeholder="Learn More" className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CTA URL</label>
-                      <input value={pushActionUrl} onChange={e => setPushActionUrl(e.target.value)} placeholder="https://..." className="w-full mt-1 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Audience</label>
-                    <div className="flex gap-2 mt-1.5 flex-wrap">
-                      {(["All", "Enterprise", "Pro", "Free"] as const).map(a => (
-                        <button key={a} type="button" onClick={() => setTargetAudience(a)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${targetAudience === a ? "bg-rose-500 text-white" : "bg-slate-800 text-slate-400 hover:text-white"}`}>{a === "All" ? "🌍 All Users" : a === "Enterprise" ? "⭐ Enterprise" : a === "Pro" ? "💎 Pro" : "🆓 Free"}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <button type="submit" disabled={!pushTitle.trim()} className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-black text-xs shadow-lg hover:from-rose-500 hover:to-rose-400 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer">
-                    📢 Broadcast Notification
-                  </button>
-                </form>
-              </div>
-            </div>
+            <AdminBroadcastCampaignStudio />
           )}
 
           {/* ══════════ TAB 5: STAFF & TEAM ══════════ */}
@@ -1800,140 +1764,12 @@ export default function SuperAdminPortal() {
 
           {/* ── TAB: FRAUD CENTER ── */}
           {activeTab === "fraud" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-black text-white flex items-center gap-2">
-                    <span>🚨</span> Automated Fraud & Anomaly Detection Center
-                  </h3>
-                  <p className="text-xs text-slate-400">Heuristic monitoring for high loan values, duplicate hashes, and rapid payment retries</p>
-                </div>
-                <button
-                  onClick={() => fetchAllData()}
-                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold hover:bg-rose-500/20 transition cursor-pointer"
-                >
-                  🔄 Scan Now
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Active Anomaly Flags</p>
-                  <p className="text-xl font-black text-rose-400 mt-1">{fraudAlerts.length}</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Scanner Status</p>
-                  <p className="text-xl font-black text-emerald-400 mt-1">🟢 100% Operational</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Hash Verification Engine</p>
-                  <p className="text-xl font-black text-blue-400 mt-1">Monad SHA-256</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {fraudAlerts.length === 0 ? (
-                  <div className="p-8 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 text-xs">
-                    No fraud alerts detected. System is running cleanly.
-                  </div>
-                ) : (
-                  fraudAlerts.map((fa: any) => (
-                    <div key={fa.id} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${fa.severity === "urgent" ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse" : fa.severity === "high" ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "bg-amber-500/20 text-amber-400 border border-amber-500/30"}`}>
-                            {fa.severity}
-                          </span>
-                          <p className="text-xs font-bold text-white">{fa.type}</p>
-                        </div>
-                        <p className="text-xs text-slate-300">{fa.message}</p>
-                        <p className="text-[10px] text-slate-400">User: <b className="text-slate-200">{fa.user_name} ({fa.user_email})</b> • {fa.created_at}</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => alert(`Investigating alert ${fa.id}`)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold transition cursor-pointer"
-                        >
-                          Investigate
-                        </button>
-                        <button
-                          onClick={() => setFraudAlerts(prev => prev.filter(x => x.id !== fa.id))}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition cursor-pointer"
-                        >
-                          Resolve Alert
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            <AdminFraudControlStudio />
           )}
 
           {/* ── TAB: BACKUP STUDIO ── */}
           {activeTab === "backups" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-black text-white flex items-center gap-2">
-                    <span>💾</span> System Backup & Database Export Studio
-                  </h3>
-                  <p className="text-xs text-slate-400">Create 1-click JSON/SQL database snapshots and manage automated schedule</p>
-                </div>
-                <button
-                  onClick={async () => {
-                    const res = await superAdminFetch("/auth/superadmin/backups/create/", { method: "POST" });
-                    if (res?.success && res.backup) {
-                      alert(`Backup snapshot '${res.backup.filename}' created successfully!`);
-                      setBackupList(prev => [res.backup, ...prev]);
-                    } else alert("Failed to create backup snapshot.");
-                  }}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-500/20 hover:from-emerald-500 hover:to-emerald-400 transition cursor-pointer flex items-center gap-2"
-                >
-                  ⚡ Create 1-Click Backup Snapshot
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Total Snapshots</p>
-                  <p className="text-xl font-black text-white mt-1">{backupList.length}</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Auto-Backup Schedule</p>
-                  <p className="text-xl font-black text-emerald-400 mt-1">Daily (00:00 UTC)</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Export Format</p>
-                  <p className="text-xl font-black text-blue-400 mt-1">Encrypted JSON & CSV</p>
-                </div>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
-                <h4 className="text-xs font-black text-white uppercase tracking-wider">Available Backup Snapshots</h4>
-                <div className="space-y-2">
-                  {backupList.map((b: any) => (
-                    <div key={b.id} className="flex justify-between items-center p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-                      <div>
-                        <p className="text-xs font-bold text-white font-mono">{b.filename}</p>
-                        <p className="text-[10px] text-slate-400">{b.size_mb} MB • {b.total_records} Records • Created: {b.created_at}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">READY</span>
-                        <a
-                          href={`http://localhost:8000${b.download_url}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/20 transition"
-                        >
-                          ⬇️ Download Snapshot
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <AdminBackupExportStudio />
           )}
 
           {/* ── TAB: MONAD ESCROW ── */}
