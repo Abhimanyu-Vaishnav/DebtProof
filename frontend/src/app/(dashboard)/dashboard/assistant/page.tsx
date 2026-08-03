@@ -34,7 +34,8 @@ import {
   HelpCircle,
   Brain,
   Layers,
-  ArrowRight
+  ArrowRight,
+  ChevronRight
 } from "lucide-react";
 
 interface Message {

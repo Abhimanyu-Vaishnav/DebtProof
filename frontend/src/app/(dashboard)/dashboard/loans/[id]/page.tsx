@@ -54,7 +54,7 @@ function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[]
     runningBalance = Math.max(0, runningBalance - pComp);
   });
 
-  const isClosed = loan.status === "closed" || loan.status === "Closed" || parseFloat(loan.outstanding_amount || "1") <= 0;
+  const isClosed = (loan.status as string) === "closed" || (loan.status as string) === "Closed" || parseFloat(loan.outstanding_amount || "1") <= 0;
 
   const paid = isClosed ? principal : calculatedPrincipalPaid;
   const interestPaid = calculatedInterestPaid;
@@ -184,7 +184,7 @@ function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[]
 // ── Amortization Repayment Schedule Component ─────────────────────────────────────
 function RepaymentScheduleTable({ loan, payments }: { loan: Loan; payments: Payment[] }) {
   const [viewingReceipt, setViewingReceipt] = useState<Payment | null>(null);
-  const isClosed = loan.status === "closed" || loan.status === "Closed" || parseFloat(loan.outstanding_amount || "1") <= 0;
+  const isClosed = (loan.status as string) === "closed" || (loan.status as string) === "Closed" || parseFloat(loan.outstanding_amount || "1") <= 0;
 
   const emiAmount = parseFloat(loan.monthly_emi) || 1000;
   const principalAmount = parseFloat(loan.principal_amount) || 0;

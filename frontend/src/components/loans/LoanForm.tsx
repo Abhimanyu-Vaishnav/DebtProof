@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/Toast";
 import { loansService } from "@/services/loans.service";
+import { paymentsService } from "@/services/payments.service";
 import { useWallet } from "@/hooks/useWallet";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { formatCurrency } from "@/utils/formatters";
@@ -242,8 +243,7 @@ export function LoanForm({ initialData, isEdit = false }: LoanFormProps) {
       if (paidRows.length > 0) {
         for (const row of paidRows) {
           try {
-            await loansService.createPayment({
-              loan: createdLoan.id,
+            await paymentsService.createPayment(createdLoan.id, {
               amount: row.emiAmount.toString(),
               payment_date: row.dueDate,
               payment_method: "auto_debit",

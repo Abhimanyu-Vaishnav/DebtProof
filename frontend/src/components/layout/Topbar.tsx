@@ -55,8 +55,9 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
         return;
       }
 
-      if (user?.plan && user.plan.toLowerCase() !== "free" && user.plan.toLowerCase() !== "free plan") {
-        let p = user.plan.trim();
+      const u = user as any;
+      if (u?.plan && u.plan.toLowerCase() !== "free" && u.plan.toLowerCase() !== "free plan") {
+        let p = u.plan.trim();
         if (!p.toLowerCase().includes("plan")) p = `${p} Plan`;
         const formatted = p.charAt(0).toUpperCase() + p.slice(1);
         setActivePlan(formatted);
