@@ -8,6 +8,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Topbar } from "@/components/layout/Topbar";
 import { supportService, type SupportTicketItem, type TicketMessageItem } from "@/services/support.service";
+import { COMPREHENSIVE_50_FAQS, searchFAQS, type FAQItem } from "@/services/faqData";
 import { useToast } from "@/components/ui/Toast";
 import { 
   Headphones, 
@@ -671,17 +672,58 @@ export default function SupportHelpPage() {
           </div>
         )}
 
-        {/* TAB 4: FREQUENTLY ASKED QUESTIONS (FAQS) */}
+        {/* TAB 4: FREQUENTLY ASKED QUESTIONS (FAQS — 50+ INDEXED ITEMS) */}
         {activeTab === "faq" && (
-          <div className="max-w-3xl mx-auto space-y-4">
-            {FAQS.map((faq, idx) => (
-              <div key={idx} className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-2 shadow-lg">
-                <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-purple-400 shrink-0" /> {faq.q}
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed font-medium pl-6">{faq.a}</p>
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Search Box & Category Filters */}
+            <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+              <div className="flex items-center gap-2 bg-slate-950 px-4 py-3 rounded-2xl border border-slate-800 focus-within:border-purple-500 transition">
+                <Search className="w-5 h-5 text-purple-400 shrink-0" />
+                <input
+                  type="text"
+                  className="w-full bg-transparent text-xs text-slate-100 placeholder-slate-500 focus:outline-none font-medium"
+                  placeholder="Search 50+ FAQs (e.g. foreclosure, monad, hindi ai, cibil, dti, tax)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-            ))}
+
+              <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+                <span className="font-mono text-purple-400 font-bold">
+                  Showing {searchFAQS(searchQuery).length} of {COMPREHENSIVE_50_FAQS.length} Indexed FAQs
+                </span>
+                <span className="text-[10px] text-slate-500">💡 AI Assistant has direct access to all 50+ FAQ items</span>
+              </div>
+            </div>
+
+            {/* FAQs List Accordion / Grid */}
+            <div className="space-y-4">
+              {searchFAQS(searchQuery).map((faq) => (
+                <div
+                  key={faq.id}
+                  className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl space-y-3 shadow-lg hover:border-purple-500/30 transition"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2">
+                      <HelpCircle className="w-4 h-4 text-purple-400 shrink-0" /> {faq.q}
+                    </h3>
+                    <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0">
+                      {faq.category}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-300 leading-relaxed font-medium pl-6">{faq.a}</p>
+
+                  <div className="pt-2 flex flex-wrap gap-1.5 pl-6">
+                    {faq.tags.map((t) => (
+                      <span key={t} className="text-[9px] font-bold text-slate-400 bg-slate-950 border border-slate-800 px-2 py-0.5 rounded-md font-mono">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </main>

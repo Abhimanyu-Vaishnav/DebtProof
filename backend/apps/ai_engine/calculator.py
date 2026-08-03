@@ -32,7 +32,8 @@ class AIFinancialEngine:
         "reports": ["report", "pdf", "statement", "export", "download pdf", "certificate"],
         "p2p": ["p2p", "peer to peer", "monad", "escrow", "lending market"],
         "verify": ["verify", "receipt proof", "hash", "sha256", "blockchain proof"],
-        "summary": ["summary", "overview", "report", "status", "everything", "financial health", "help", "faq", "how to use", "sab batao", "mera account", "account details"],
+        "faq": ["faq", "help", "about", "guide", "how to use", "feature", "documentation", "support", "manual", "kya hai", "kaise kare", "rules", "what is"],
+        "summary": ["summary", "overview", "report", "status", "everything", "financial health", "sab batao", "mera account", "account details"],
     }
 
     def _is_hindi(self, q: str) -> bool:
@@ -62,6 +63,7 @@ class AIFinancialEngine:
             "reports": lambda: self._explain_reports(is_hi),
             "p2p": lambda: self._explain_p2p(is_hi),
             "verify": lambda: self._explain_verify(is_hi),
+            "faq": lambda: self._answer_faq_knowledge(q_lower, is_hi),
         }
 
         handler = handlers.get(intent, lambda: self._financial_summary(is_hi))
@@ -379,6 +381,57 @@ class AIFinancialEngine:
             ),
             "data": {},
             "intent": "reports",
+        }
+
+    def _answer_faq_knowledge(self, query: str, is_hi: bool = False) -> dict:
+        """Knowledgebase AI responder using platform FAQs & App Manual documentation."""
+        if "monad" in query or "blockchain" in query or "proof" in query:
+            ans = (
+                "🛡️ **Monad Blockchain Anchoring Knowledge**:\n"
+                "DebtProof generates a SHA-256 cryptographic hash for your payment receipts and records it on the Monad Testnet blockchain. "
+                "This guarantees tamper-proof proof of payment that lenders or banks cannot deny."
+                if not is_hi else
+                "🛡️ **Monad Blockchain Anchoring Ki Jankari**:\n"
+                "DebtProof aapke payment receipts ka SHA-256 cryptographic hash banakar Monad Testnet blockchain par record karta hai. "
+                "Isse aapka payment proof 100% legal aur tamper-proof ho jata hai jise koi bank jhutha nahi thahra sakta."
+            )
+        elif "foreclose" in query or "prepay" in query or "band" in query:
+            ans = (
+                "⚡ **Loan Foreclosure & Prepayment Guide**:\n"
+                "1. Go to My Loans -> Open Loan Details page.\n"
+                "2. Click '⚡ Foreclose / Prepay Loan'.\n"
+                "3. Enter prepayment amount. System recalculates future EMIs and shows instant interest savings!"
+                if not is_hi else
+                "⚡ **Loan Foreclose Karne Ka Tarika**:\n"
+                "1. My Loans me ja kar apna loan open karein.\n"
+                "2. '⚡ Foreclose / Prepay Loan' button dabaayein.\n"
+                "3. Foreclosure amount enter karein. System turant baaki schedule update karke 100% Repaid status aur interest savings dikha dega!"
+            )
+        elif "support" in query or "ticket" in query or "contact" in query:
+            ans = (
+                "🎧 **Multi-Tier Customer Support System**:\n"
+                "You can file support tickets under Help Center (/dashboard/help). Level-1 Support responds within 15 minutes. "
+                "If your problem requires account modifications, it escalates to Support Manager or SuperAdmin."
+                if not is_hi else
+                "🎧 **Multi-Tier Customer Support Ki Jankari**:\n"
+                "Aap Help Center (/dashboard/help) me ja kar ticket raise kar sakte hain. Level-1 Support 15 min me jawab deta hai. "
+                "Agar account me kuch major changes karne hain to ticket automatic Support Manager ya SuperAdmin ko escalate ho jata hai."
+            )
+        else:
+            ans = (
+                "📖 **DebtProof Complete Financial Platform Guide**:\n"
+                "DebtProof includes 10 core modules: Dashboard, Bilingual AI Coach, My Loans & Interactive Schedules, Credit Cards, Budget Planner, Compound Wealth Predictor, Chart Analytics Studio, Monad Receipt Vault, Repayment Simulator, and Bank-Grade PDF Reports.\n\n"
+                "Explore all 50+ FAQs & step-by-step guides directly at `/dashboard/help`!"
+                if not is_hi else
+                "📖 **DebtProof Complete App Guide**:\n"
+                "DebtProof me 10 main modules hain: Dashboard, Hindi/English AI Coach, Loans & Schedules, Credit Cards, Budget Planner, Investments, Analytics Studio, Monad Receipt Vault, Repayment Simulator, aur PDF Reports.\n\n"
+                "Sabhi 50+ FAQs aur complete manuals ke liye `/dashboard/help` page check karein!"
+            )
+
+        return {
+            "answer": ans,
+            "data": {"query": query, "knowledgebase": "50_FAQS_MANUAL"},
+            "intent": "faq",
         }
 
     def _explain_p2p(self) -> dict:
