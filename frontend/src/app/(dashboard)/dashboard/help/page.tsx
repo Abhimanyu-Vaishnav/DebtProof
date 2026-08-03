@@ -522,11 +522,79 @@ export default function SupportHelpPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                          Tier: {selectedTicket.tier_level}
-                        </span>
+                        {selectedTicket.status === "resolved" ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                const reason = prompt("Enter reason for reopening ticket:");
+                                if (reason) {
+                                  supportService.reopenTicket(selectedTicket.id, reason);
+                                  showToast("Ticket reopened!", "info");
+                                  loadTickets();
+                                }
+                              }}
+                              className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-white transition cursor-pointer"
+                            >
+                              🔄 Reopen Ticket
+                            </button>
+                            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                              ✓ Resolved
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                const notes = prompt("Enter resolution notes:");
+                                if (notes) {
+                                  supportService.resolveTicket(selectedTicket.id, notes, "customer_support", "Client Verified Resolution");
+                                  showToast("Ticket marked as resolved!", "success");
+                                  loadTickets();
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition cursor-pointer"
+                            >
+                              ✓ Mark as Resolved
+                            </button>
+                            <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                              Tier: {selectedTicket.tier_level}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    {/* Star Rating Widget for Resolved Tickets */}
+                    {selectedTicket.status === "resolved" && (
+                      <div className="p-3 bg-purple-950/30 rounded-2xl border border-purple-500/30 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-200">Rate Customer Support Representative:</span>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                onClick={() => {
+                                  const feedback = prompt("Optional feedback for representative:");
+                                  supportService.rateTicketExperience(selectedTicket.id, star, feedback || "Great support experience!");
+                                  showToast(`Thank you! Submitted ${star} Star rating.`, "success");
+                                  loadTickets();
+                                }}
+                                className={`text-base cursor-pointer transition ${
+                                  (selectedTicket.user_rating || 0) >= star ? "text-amber-400 scale-110" : "text-slate-600 hover:text-amber-300"
+                                }`}
+                              >
+                                ★
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {selectedTicket.user_rating && (
+                          <span className="text-[11px] text-amber-300 font-bold font-mono">
+                            ★ {selectedTicket.user_rating}/5 Rated ({selectedTicket.user_feedback || "Verified"})
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
                       <div className="flex items-center gap-2">
@@ -579,7 +647,7 @@ export default function SupportHelpPage() {
                     <input
                       type="text"
                       className="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:border-purple-500 focus:outline-none"
-                      placeholder="Type your response to support agent..."
+                      placeholder={selectedTicket.status === "resolved" ? "Ticket is resolved. Type to auto-reopen..." : "Type your response to support agent..."}
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSendReply()}

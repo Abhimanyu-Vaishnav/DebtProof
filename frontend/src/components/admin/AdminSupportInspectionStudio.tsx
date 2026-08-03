@@ -42,6 +42,8 @@ export function AdminSupportInspectionStudio() {
     department: "Level 1 Support",
     queries_resolved: 42,
     avg_rating: 4.8,
+    total_ratings_received: 38,
+    calculated_monthly_salary_inr: 45000,
     can_view_user_loans: true,
     can_view_user_payments: true,
     can_view_user_credit_cards: true,
@@ -184,6 +186,19 @@ export function AdminSupportInspectionStudio() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        const notes = prompt("Enter resolution notes:");
+                        if (notes) {
+                          await supportService.resolveTicket(selectedTicket.id, notes, inspectorRole.toLowerCase() as any, inspectorRole);
+                          loadData();
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Mark as Resolved
+                    </button>
+
                     {(inspectorRole === "SuperAdmin" || inspectorRole === "AdminManager") && (
                       <button
                         onClick={() => setShowEscalateModal(true)}
@@ -195,13 +210,23 @@ export function AdminSupportInspectionStudio() {
                   </div>
                 </div>
 
-                {/* Client Profile Details */}
+                {/* Client Profile Details & Rating Inspection */}
                 <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-300 gap-3">
                   <div>
                     <span className="text-slate-400">Client:</span> <strong>{selectedTicket.user_name}</strong> ({selectedTicket.user_email})
                   </div>
                   <div>
                     <span className="text-slate-400">Assigned Agent:</span> <strong>{selectedTicket.assigned_staff_name || "Support Rep Level 1"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Client Rating:</span>{" "}
+                    {selectedTicket.user_rating ? (
+                      <span className="text-amber-400 font-bold font-mono">
+                        ★ {selectedTicket.user_rating}/5 ({selectedTicket.user_feedback || "Satisfied"})
+                      </span>
+                    ) : (
+                      <span className="text-slate-500 italic">Not rated yet</span>
+                    )}
                   </div>
                   <div>
                     <span className="text-slate-400">Tier:</span> <strong className="text-purple-400">{selectedTicket.tier_level}</strong>

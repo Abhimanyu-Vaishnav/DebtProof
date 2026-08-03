@@ -1,6 +1,6 @@
 /**
  * DebtProof — Multi-Layer Support & Ticket Chat Service
- * Handles user ticket creation, live chat messages, manager escalations, and admin staff management with demo fallbacks.
+ * Handles user ticket creation, live chat messages, manager escalations, resolution, reopen, ratings & performance benchmarks.
  */
 
 import apiClient from "./api";
@@ -14,12 +14,16 @@ export interface SupportTicketItem {
   subject: string;
   message: string;
   priority: "urgent" | "high" | "normal" | "low";
-  status: "open" | "in_progress" | "escalated" | "resolved" | "closed";
+  status: "open" | "in_progress" | "escalated" | "resolved" | "reopened" | "closed";
   tier_level: "CustomerSupport" | "AdminManager" | "SuperAdmin";
   assigned_staff_id?: string;
   assigned_staff_name?: string;
   assigned_staff_role?: string;
   resolution_notes?: string;
+  resolved_by_role?: string;
+  resolved_at?: string;
+  user_rating?: number; // 1 to 5 stars
+  user_feedback?: string;
   created_at: string;
   updated_at: string;
   chat_messages?: TicketMessageItem[];
@@ -44,7 +48,9 @@ export interface SupportStaffConfig {
   role: "CustomerSupport" | "AdminManager" | "SuperAdmin";
   department: string;
   queries_resolved: number;
-  avg_rating: number;
+  avg_rating: number; // e.g. 4.9 out of 5
+  total_ratings_received: number;
+  calculated_monthly_salary_inr: number; // Computed bonus/salary metric for Admin
   can_view_user_loans: boolean;
   can_view_user_payments: boolean;
   can_view_user_credit_cards: boolean;
@@ -100,12 +106,16 @@ const MOCK_TICKETS: SupportTicketItem[] = [
     subject: "Section 24(b) Tax Certificate Export Error",
     message: "Generating PDF report for Home Loan interest is showing an empty zero value. Kindly recalculate FY 2025-26 tax certificate.",
     priority: "urgent",
-    status: "escalated",
+    status: "resolved",
     tier_level: "AdminManager",
     assigned_staff_id: "staff-2",
     assigned_staff_name: "Neha Gupta (Support Manager)",
     assigned_staff_role: "AdminManager",
-    escalation_reason: "Requires backend tax calculation override. Customer support escalated to Manager level.",
+    resolution_notes: "Recalculated Home Loan FY 2025-26 tax deduction matrix. PDF re-generated.",
+    resolved_by_role: "AdminManager",
+    resolved_at: new Date(Date.now() - 3600000 * 1).toISOString(),
+    user_rating: 5,
+    user_feedback: "Super fast resolution by Manager Neha! Verified my Section 24(b) tax certificate.",
     created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
     updated_at: new Date().toISOString(),
     chat_messages: [
@@ -236,6 +246,104 @@ export const supportService = {
     } catch {}
 
     return newMsg;
+  },
+
+  // Mark Ticket as Resolved (Executable by Agent, Manager, or Admin)
+  resolveTicket: async (
+    ticketId: string, 
+    resolutionNotes: string,
+    resolvedByRole: "customer_support" | "manager" | "admin" = "customer_support",
+    resolvedByName: string = "Support Executive"
+  ): Promise<SupportTicketItem> => {
+    const current = getStoredTickets();
+    const tkt = current.find((t) => t.id === ticketId);
+
+    if (tkt) {
+      tkt.status = "resolved";
+      tkt.resolution_notes = resolutionNotes;
+      tkt.resolved_by_role = resolvedByRole;
+      tkt.resolved_at = new Date().toISOString();
+      tkt.updated_at = new Date().toISOString();
+
+      if (!tkt.chat_messages) tkt.chat_messages = [];
+      tkt.chat_messages.push({
+        id: `msg-res-${Date.now()}`,
+        ticket_id: ticketId,
+        sender_name: `System Resolution (${resolvedByName})`,
+        sender_role: resolvedByRole as any,
+        message: `✅ **Ticket Marked as RESOLVED by ${resolvedByName}**\nResolution Note: ${resolutionNotes}`,
+        is_internal_note: true,
+        created_at: new Date().toISOString(),
+      });
+
+      setStoredTickets(current);
+    }
+
+    try {
+      await apiClient.post(`/auth/superadmin/tickets/${ticketId}/resolved/`, { resolution_notes: resolutionNotes });
+    } catch {}
+
+    return tkt || MOCK_TICKETS[0];
+  },
+
+  // Reopen Ticket (Executable by Client if not satisfied)
+  reopenTicket: async (ticketId: string, reopenReason: string): Promise<SupportTicketItem> => {
+    const current = getStoredTickets();
+    const tkt = current.find((t) => t.id === ticketId);
+
+    if (tkt) {
+      tkt.status = "reopened";
+      tkt.updated_at = new Date().toISOString();
+
+      if (!tkt.chat_messages) tkt.chat_messages = [];
+      tkt.chat_messages.push({
+        id: `msg-reopen-${Date.now()}`,
+        ticket_id: ticketId,
+        sender_name: "Client (You)",
+        sender_role: "user",
+        message: `🔄 **Ticket REOPENED by Client**\nReason for Reopen: ${reopenReason}`,
+        created_at: new Date().toISOString(),
+      });
+
+      setStoredTickets(current);
+    }
+
+    try {
+      await apiClient.post(`/auth/superadmin/tickets/${ticketId}/reopen/`, { reason: reopenReason });
+    } catch {}
+
+    return tkt || MOCK_TICKETS[0];
+  },
+
+  // Rate Support Experience & Representative Performance
+  rateTicketExperience: async (ticketId: string, rating: number, feedback: string): Promise<SupportTicketItem> => {
+    const current = getStoredTickets();
+    const tkt = current.find((t) => t.id === ticketId);
+
+    if (tkt) {
+      tkt.user_rating = rating;
+      tkt.user_feedback = feedback;
+      tkt.updated_at = new Date().toISOString();
+
+      if (!tkt.chat_messages) tkt.chat_messages = [];
+      tkt.chat_messages.push({
+        id: `msg-rating-${Date.now()}`,
+        ticket_id: ticketId,
+        sender_name: "Client Rating Submission",
+        sender_role: "user",
+        message: `⭐ **Client Rating: ${rating}/5 Stars**\nFeedback: "${feedback}"`,
+        is_internal_note: true,
+        created_at: new Date().toISOString(),
+      });
+
+      setStoredTickets(current);
+    }
+
+    try {
+      await apiClient.post(`/auth/superadmin/tickets/${ticketId}/rate/`, { rating, feedback });
+    } catch {}
+
+    return tkt || MOCK_TICKETS[0];
   },
 
   // Escalate ticket tier (Support -> Manager -> Admin)
