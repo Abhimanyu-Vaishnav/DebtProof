@@ -10,6 +10,7 @@ import { AdminUserDetailModal } from "@/components/admin/AdminUserDetailModal";
 import { AdminFraudControlStudio } from "@/components/admin/AdminFraudControlStudio";
 import { AdminBroadcastCampaignStudio } from "@/components/admin/AdminBroadcastCampaignStudio";
 import { AdminBackupExportStudio } from "@/components/admin/AdminBackupExportStudio";
+import { AdminSupportInspectionStudio } from "@/components/admin/AdminSupportInspectionStudio";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type RoleType = "SuperAdmin" | "AdminManager" | "CustomerSupport" | "BillingFinance" | "RiskAuditor" | "Web3Governor";
@@ -1374,58 +1375,9 @@ export default function SuperAdminPortal() {
             </div>
           )}
 
-          {/* ══════════ TAB 6: SUPPORT SLA ══════════ */}
+          {/* ══════════ TAB 6: SUPPORT SLA & LIVE CHAT INSPECTION ══════════ */}
           {activeTab === "support" && (
-            <div className="space-y-4">
-              <SectionHeader icon="🎧" title="Customer Support SLA (Django Database)" sub={`${ticketList.filter(q => q.status !== "resolved").length} open tickets`}
-                action={<button onClick={() => setShowAddTicketModal(true)} className="px-3 py-2 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-400 transition cursor-pointer">+ File Ticket</button>} />
-              <div className="grid grid-cols-3 gap-3 mb-2">
-                <KpiCard icon="🔴" label="Urgent" value={ticketList.filter(q => q.priority === "urgent").length} color="rose" />
-                <KpiCard icon="🟡" label="High" value={ticketList.filter(q => q.priority === "high").length} color="amber" />
-                <KpiCard icon="✅" label="Resolved" value={ticketList.filter(q => q.status === "resolved").length} color="emerald" />
-              </div>
-              <DataTable
-                columns={["User", "Priority", "Subject", "Assigned To", "Status", "Actions"]}
-                rows={ticketList.map(q => [
-                  <div key="u"><p className="font-bold text-xs text-white">{q.user_name}</p><p className="text-[10px] text-slate-400">{q.user_email}</p></div>,
-                  <span key="pr" className={`text-[10px] font-black uppercase ${q.priority === "urgent" ? "text-red-400" : q.priority === "high" ? "text-amber-400" : "text-slate-400"}`}>{q.priority}</span>,
-                  <div key="s"><p className="text-xs font-bold text-white">{q.subject}</p><p className="text-[10px] text-slate-400 line-clamp-1">{q.message}</p></div>,
-                  <span key="a" className="text-[10px] text-blue-400">{q.assigned_name}</span>,
-                  <StatusBadge key="st" status={q.status} />,
-                  <div key="act" className="flex gap-1">
-                    {q.status !== "resolved" && (
-                      <button onClick={() => handleResolveTicket(q.id)} className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold hover:bg-emerald-500/20 transition cursor-pointer">Resolve</button>
-                    )}
-                    <button onClick={() => handleAssignTicket(q.id)} className="px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-400 text-[10px] font-bold hover:bg-blue-500/20 transition cursor-pointer">Assign</button>
-                  </div>
-                ])}
-              />
-
-              {/* Create Ticket Modal */}
-              {showAddTicketModal && (
-                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                  <form onSubmit={handleCreateTicket} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-sm space-y-4">
-                    <h3 className="text-sm font-black text-white">File Support Ticket</h3>
-                    <input placeholder="User Email (optional)" value={newTicketEmail} onChange={e => setNewTicketEmail(e.target.value)} className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
-                    <input placeholder="Subject *" value={newTicketSubject} onChange={e => setNewTicketSubject(e.target.value)} required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
-                    <textarea placeholder="Message details..." value={newTicketMessage} onChange={e => setNewTicketMessage(e.target.value)} rows={3} className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:border-rose-500 focus:outline-none" />
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Priority</label>
-                      <select value={newTicketPriority} onChange={e => setNewTicketPriority(e.target.value)} className="w-full mt-1 p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white">
-                        <option value="urgent">🔴 Urgent</option>
-                        <option value="high">🟡 High</option>
-                        <option value="normal">🔵 Normal</option>
-                        <option value="low">🟢 Low</option>
-                      </select>
-                    </div>
-                    <div className="flex gap-2">
-                      <button type="submit" className="flex-1 py-2 rounded-xl bg-rose-500 text-white text-xs font-black hover:bg-rose-400 transition cursor-pointer">Submit Ticket</button>
-                      <button type="button" onClick={() => setShowAddTicketModal(false)} className="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold transition cursor-pointer">Cancel</button>
-                    </div>
-                  </form>
-                </div>
-              )}
-            </div>
+            <AdminSupportInspectionStudio />
           )}
 
           {/* ══════════ TAB 7: RISK ENGINE ══════════ */}
