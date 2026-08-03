@@ -54,10 +54,12 @@ function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[]
     runningBalance = Math.max(0, runningBalance - pComp);
   });
 
-  const paid = calculatedPrincipalPaid;
+  const isClosed = loan.status === "closed" || loan.status === "Closed" || parseFloat(loan.outstanding_amount || "1") <= 0;
+
+  const paid = isClosed ? principal : calculatedPrincipalPaid;
   const interestPaid = calculatedInterestPaid;
-  const outstanding = Math.max(0, principal - paid);
-  const progress = Math.min(100, Math.round((paid / principal) * 100));
+  const outstanding = isClosed ? 0 : Math.max(0, principal - paid);
+  const progress = isClosed ? 100 : Math.min(100, Math.round((paid / principal) * 100));
 
   // Ring chart
   const R = 54; const C = 2 * Math.PI * R;
@@ -65,6 +67,7 @@ function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[]
 
   // motivational messages
   const msg =
+    isClosed || progress >= 100 ? "🎉 Congratulations! This loan is 100% Closed & Fully Paid!" :
     progress >= 90 ? "🏆 Almost there! You're in the final stretch!" :
     progress >= 70 ? "🔥 Great momentum! Over 70% done!" :
     progress >= 50 ? "⚡ Halfway milestone reached! Keep going!" :
@@ -119,7 +122,7 @@ function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[]
           <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
             <p className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400">Still Outstanding</p>
             <p className="text-lg font-black text-rose-700 dark:text-rose-400 mt-1">{formatCurrency(outstanding)}</p>
-            <p className="text-[10px] font-medium text-rose-700/70 dark:text-rose-400/70 mt-0.5">{loan.next_emi_date ? `Next EMI: ${formatDate(loan.next_emi_date)}` : "No upcoming EMI"}</p>
+            <p className="text-[10px] font-medium text-rose-700/70 dark:text-rose-400/70 mt-0.5">{isClosed ? "Loan Fully Settled" : loan.next_emi_date ? `Next EMI: ${formatDate(loan.next_emi_date)}` : "No upcoming EMI"}</p>
           </div>
           <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
             <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">Interest Paid</p>
@@ -142,7 +145,7 @@ function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[]
         </div>
         <div className="h-4 w-full rounded-full overflow-hidden flex bg-[var(--color-surface-tertiary)] border border-[var(--color-border)]">
           <div className="h-full bg-emerald-500 transition-all duration-700 rounded-l-full" style={{ width: `${Math.max(2, (paid / principal) * 100)}%` }} />
-          <div className="h-full bg-rose-500/70 flex-1 rounded-r-full" />
+          <div className="h-full bg-rose-500/70 flex-1 rounded-r-full" style={{ display: isClosed ? "none" : "block" }} />
         </div>
       </div>
 
@@ -181,6 +184,7 @@ function LoanRepaymentCard({ loan, payments }: { loan: Loan; payments: Payment[]
 // ── Amortization Repayment Schedule Component ─────────────────────────────────────
 function RepaymentScheduleTable({ loan, payments }: { loan: Loan; payments: Payment[] }) {
   const [viewingReceipt, setViewingReceipt] = useState<Payment | null>(null);
+  const isClosed = loan.status === "closed" || loan.status === "Closed" || parseFloat(loan.outstanding_amount || "1") <= 0;
 
   const emiAmount = parseFloat(loan.monthly_emi) || 1000;
   const principalAmount = parseFloat(loan.principal_amount) || 0;
@@ -215,21 +219,12 @@ function RepaymentScheduleTable({ loan, payments }: { loan: Loan; payments: Paym
     let paidForThisInst = 0;
     let matchedPayments: Payment[] = [];
 
-    // 1. First check if any payment explicitly matches this monthKey and has remaining balance in pool
-    for (const poolItem of paymentPool) {
-      if (poolItem.remainingAmount > 0 && poolItem.payment_date && poolItem.payment_date.slice(0, 7) === monthKey) {
-        const needed = emiAmount - paidForThisInst;
-        const take = Math.min(needed, poolItem.remainingAmount);
-        paidForThisInst += take;
-        poolItem.remainingAmount -= take;
-        matchedPayments.push(poolItem);
-      }
-    }
-
-    // 2. If installment is still not full, fill sequentially from remaining payment pool
-    if (paidForThisInst < emiAmount) {
+    if (isClosed) {
+      paidForThisInst = emiAmount;
+    } else {
+      // 1. First check if any payment explicitly matches this monthKey and has remaining balance in pool
       for (const poolItem of paymentPool) {
-        if (poolItem.remainingAmount > 0 && paidForThisInst < emiAmount) {
+        if (poolItem.remainingAmount > 0 && poolItem.payment_date && poolItem.payment_date.slice(0, 7) === monthKey) {
           const needed = emiAmount - paidForThisInst;
           const take = Math.min(needed, poolItem.remainingAmount);
           paidForThisInst += take;
@@ -237,14 +232,28 @@ function RepaymentScheduleTable({ loan, payments }: { loan: Loan; payments: Paym
           matchedPayments.push(poolItem);
         }
       }
+
+      // 2. If installment is still not full, fill sequentially from remaining payment pool
+      if (paidForThisInst < emiAmount) {
+        for (const poolItem of paymentPool) {
+          if (poolItem.remainingAmount > 0 && paidForThisInst < emiAmount) {
+            const needed = emiAmount - paidForThisInst;
+            const take = Math.min(needed, poolItem.remainingAmount);
+            paidForThisInst += take;
+            poolItem.remainingAmount -= take;
+            matchedPayments.push(poolItem);
+          }
+        }
+      }
     }
 
     let status: "full" | "partial" | "pending" = "pending";
     let remainingDue = emiAmount;
 
-    if (paidForThisInst >= emiAmount - 1) { // 1 rupee float margin
+    if (isClosed || paidForThisInst >= emiAmount - 1) { // 1 rupee float margin or closed
       status = "full";
       remainingDue = 0;
+      paidForThisInst = emiAmount;
     } else if (paidForThisInst > 0) {
       status = "partial";
       remainingDue = emiAmount - paidForThisInst;

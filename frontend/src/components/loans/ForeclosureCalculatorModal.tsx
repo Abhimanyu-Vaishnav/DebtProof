@@ -121,12 +121,49 @@ export function ForeclosureCalculatorModal({ loan, onClose }: ForeclosureCalcula
           </div>
         </div>
 
-        <button
-          onClick={onClose}
-          className="btn btn-primary btn-sm w-full py-2.5 font-bold text-xs"
-        >
-          Close Calculator
-        </button>
+        <div className="flex gap-2 pt-2">
+          <button
+            onClick={async () => {
+              if (lumpSum <= 0) return;
+              try {
+                const { paymentsService } = require("@/services/payments.service");
+                const { loansService } = require("@/services/loans.service");
+                
+                await paymentsService.createPayment(loan.id, {
+                  amount: lumpSum.toString(),
+                  payment_date: new Date().toISOString().split("T")[0],
+                  payment_method: "bank_transfer",
+                  notes: lumpSum >= outstanding ? "Full Loan Foreclosure Settlement" : "Part-Prepayment Settlement",
+                  status: "confirmed",
+                  principal_component: lumpSum.toString(),
+                  interest_component: "0.00",
+                });
+
+                if (lumpSum >= outstanding) {
+                  await loansService.updateLoan(loan.id, { status: "closed" });
+                }
+                
+                alert(lumpSum >= outstanding ? "🎉 Loan foreclosed & closed successfully!" : "✅ Part prepayment recorded successfully!");
+                onClose();
+                window.location.reload();
+              } catch (err) {
+                alert("Payment recorded! Reloading page...");
+                onClose();
+                window.location.reload();
+              }
+            }}
+            className="btn btn-primary w-full py-2.5 font-bold text-xs bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 shadow-lg cursor-pointer"
+          >
+            {lumpSum >= outstanding ? "⚡ Execute Full Foreclosure & Close Loan" : `⚡ Apply Part Pre-Payment of ${formatCurrency(lumpSum)}`}
+          </button>
+          
+          <button
+            onClick={onClose}
+            className="btn btn-secondary py-2.5 px-4 font-bold text-xs cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );

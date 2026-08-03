@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from "react";
 import EMIReminderPopup from "@/components/ui/EMIReminderPopup";
 import InstallPWABanner from "@/components/ui/InstallPWABanner";
-import AIDebtPayoffAssistant from "@/components/dashboard/AIDebtPayoffAssistant";
+import { FloatingAICoachWidget } from "@/components/ai/FloatingAICoachWidget";
 
 export function GlobalFloatingUI() {
   const [mounted, setMounted] = useState(false);
@@ -21,7 +21,7 @@ export function GlobalFloatingUI() {
     <>
       <EMIReminderPopup />
       <InstallPWABanner />
-      <AIDebtPayoffAssistant />
+      <FloatingAICoachWidget />
     </>
   );
 }

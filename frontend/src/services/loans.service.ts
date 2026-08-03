@@ -371,12 +371,13 @@ export const loansService = {
   },
 
   /**
-   * Get a single loan by ID.
+   * Get single loan by ID.
    */
   getLoan: async (id: string): Promise<Loan> => {
     try {
-      const { data } = await apiClient.get<{ success: boolean; loan: Loan }>(`/loans/${id}/`);
-      return syncLoanWithPayments(data.loan);
+      const { data } = await apiClient.get<any>(`/loans/${id}/`);
+      const rawLoan = data.loan ? data.loan : data;
+      return syncLoanWithPayments(rawLoan);
     } catch {
       const localLoans = getStoredLoans();
       const found = localLoans.find((l) => l.id === id) ?? localLoans[0];
