@@ -526,7 +526,7 @@ export default function SupportHelpPage() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
-                                const reason = prompt("Enter reason for reopening ticket:");
+                                const reason = typeof window !== "undefined" ? window.prompt("Enter reason for reopening ticket:") : null;
                                 if (reason) {
                                   supportService.reopenTicket(selectedTicket.id, reason);
                                   showToast("Ticket reopened!", "info");
@@ -545,7 +545,7 @@ export default function SupportHelpPage() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => {
-                                const notes = prompt("Enter resolution notes:");
+                                const notes = typeof window !== "undefined" ? window.prompt("Enter resolution notes:") : null;
                                 if (notes) {
                                   supportService.resolveTicket(selectedTicket.id, notes, "customer_support", "Client Verified Resolution");
                                   showToast("Ticket marked as resolved!", "success");
@@ -574,7 +574,7 @@ export default function SupportHelpPage() {
                               <button
                                 key={star}
                                 onClick={() => {
-                                  const feedback = prompt("Optional feedback for representative:");
+                                  const feedback = typeof window !== "undefined" ? window.prompt("Optional feedback for representative:") : null;
                                   supportService.rateTicketExperience(selectedTicket.id, star, feedback || "Great support experience!");
                                   showToast(`Thank you! Submitted ${star} Star rating.`, "success");
                                   loadTickets();

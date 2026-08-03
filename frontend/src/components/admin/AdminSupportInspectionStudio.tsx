@@ -188,7 +188,7 @@ export function AdminSupportInspectionStudio() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={async () => {
-                        const notes = prompt("Enter resolution notes:");
+                        const notes = typeof window !== "undefined" ? window.prompt("Enter resolution notes:") : null;
                         if (notes) {
                           await supportService.resolveTicket(selectedTicket.id, notes, inspectorRole.toLowerCase() as any, inspectorRole);
                           loadData();
