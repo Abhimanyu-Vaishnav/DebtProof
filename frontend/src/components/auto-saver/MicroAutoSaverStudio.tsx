@@ -28,6 +28,10 @@ export function MicroAutoSaverStudio() {
   const [isRuleActive, setIsRuleActive] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [anchoring, setAnchoring] = useState<boolean>(false);
+  const [simulatedLogs, setSimulatedLogs] = useState<string[]>([
+    "☕ Starbucks Coffee: spent ₹242 → ₹8 spare change rounded up to ₹250",
+    "🛒 Groceries Mart: spent ₹865 → ₹35 spare change rounded up to ₹900",
+  ]);
 
   useEffect(() => {
     async function fetchLoans() {
@@ -374,6 +378,37 @@ export function MicroAutoSaverStudio() {
                   Total Interest: {formatCurrency(accelerated.totalInt)}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Daily Card Round-Up Transaction Simulator */}
+          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-400">💳 Daily Card Round-Up Log</span>
+              <button
+                onClick={() => {
+                  const Merchants = [
+                    { name: "⚡ Swiggy Food Delivery", amount: 312, round: 350, diff: 38 },
+                    { name: "⛽ Petrol Pump Refill", amount: 460, round: 500, diff: 40 },
+                    { name: "🎬 PVR Cinema Ticket", amount: 265, round: 300, diff: 35 },
+                  ];
+                  const m = Merchants[Math.floor(Math.random() * Merchants.length)];
+                  const entry = `${m.name}: spent ₹${m.amount} → ₹${m.diff} rounded up to ₹${m.round}`;
+                  setSimulatedLogs((prev) => [entry, ...prev.slice(0, 4)]);
+                  playSuccessSound();
+                }}
+                className="px-3 py-1 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white text-[11px] font-bold transition cursor-pointer"
+              >
+                + Simulate Round-Up Tx
+              </button>
+            </div>
+
+            <div className="space-y-1.5 font-mono text-[11px]">
+              {simulatedLogs.map((log, idx) => (
+                <div key={idx} className="p-2 rounded bg-slate-900 border border-slate-800 text-slate-300">
+                  {log}
+                </div>
+              ))}
             </div>
           </div>
 

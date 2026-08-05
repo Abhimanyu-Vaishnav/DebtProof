@@ -84,6 +84,8 @@ export default function NotificationsPage() {
   ];
 
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState("+91 98765 43210");
   const router = useRouter();
 
   // Swipe gesture touch refs
@@ -316,14 +318,19 @@ export default function NotificationsPage() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-1.5">
-            <span className="text-[11px] font-bold text-emerald-400 block">📱 WhatsApp Bot Alert</span>
+            <span className="text-[11px] font-bold text-emerald-400 block">📱 WhatsApp & SMS Automated EMI Bot</span>
             <input
               type="text"
+              value={whatsappPhone}
+              onChange={(e) => setWhatsappPhone(e.target.value)}
               placeholder="+91 98765 43210"
-              className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded text-slate-200 focus:outline-none focus:border-teal-500"
+              className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded text-slate-200 focus:outline-none focus:border-teal-500 font-mono"
             />
-            <button className="w-full py-1 text-[11px] font-bold bg-teal-600 hover:bg-teal-500 text-slate-950 rounded transition">
-              Connect WhatsApp Bot
+            <button
+              onClick={() => setShowWhatsAppModal(true)}
+              className="w-full py-1.5 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded transition shadow-md cursor-pointer flex items-center justify-center gap-1"
+            >
+              <span>📲 Test Send WhatsApp EMI Reminder</span>
             </button>
           </div>
 
@@ -535,6 +542,62 @@ export default function NotificationsPage() {
                   Delete
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      {/* WhatsApp EMI Reminder Preview Modal */}
+      {showWhatsAppModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md space-y-4 text-slate-100 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <span>📲 WhatsApp EMI Alert Simulation</span>
+              </h3>
+              <button onClick={() => setShowWhatsAppModal(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <p className="text-xs text-slate-300">
+              Automated 3-day pre-EMI WhatsApp & SMS reminder message sent to <strong>{whatsappPhone}</strong>:
+            </p>
+
+            {/* WhatsApp Chat Bubble Mockup */}
+            <div className="bg-[#0b141a] p-4 rounded-2xl border border-emerald-900/50 space-y-2">
+              <div className="flex items-center gap-2 text-[10px] text-emerald-400 font-mono font-bold">
+                <span>🟢 DebtProof Official WhatsApp Gateway</span>
+                <span>• Just now</span>
+              </div>
+              <div className="p-3 bg-[#005c4b] text-white rounded-2xl rounded-tl-none text-xs leading-relaxed font-sans space-y-2">
+                <p>
+                  📅 <strong>DebtProof Automated EMI Reminder</strong>
+                </p>
+                <p>
+                  Hello! Your <strong>HDFC Home Loan EMI of ₹24,500</strong> is due in 3 days (Aug 8, 2026).
+                </p>
+                <p>
+                  Pay early to avoid bank penalty fees and maintain your <strong>785 CIBIL Score</strong>.
+                </p>
+                <div className="p-2 rounded-xl bg-black/30 text-[10px] font-mono border border-white/10">
+                  🔗 1-Click Pay: <span className="underline text-emerald-200">https://debtproof.io/pay/emi-9012</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => {
+                  alert(`WhatsApp & SMS EMI reminder successfully dispatched to ${whatsappPhone}!`);
+                  setShowWhatsAppModal(false);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg cursor-pointer"
+              >
+                Dispatch Test WhatsApp Alert
+              </button>
+              <button
+                onClick={() => setShowWhatsAppModal(false)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-700 transition"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
