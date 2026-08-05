@@ -13,8 +13,17 @@ export interface SharedChatMessage {
   pageContext?: string;
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: SharedChatMessage[];
+  created_at: string;
+}
+
 const GLOBAL_CHAT_STORAGE_KEY = "debtproof_shared_ai_messages_v2";
+const SESSIONS_STORAGE_KEY = "debtproof_saved_ai_sessions_v1";
 const LISTENERS: Set<(messages: SharedChatMessage[]) => void> = new Set();
+const SESSION_LISTENERS: Set<(sessions: ChatSession[]) => void> = new Set();
 
 const DEFAULT_WELCOME: SharedChatMessage = {
   id: "welcome-shared",
@@ -22,6 +31,80 @@ const DEFAULT_WELCOME: SharedChatMessage = {
   content: "Namaste! 👋 I am your **DebtProof Unified AI Strategy Coach**.\n\nI am synchronized across your entire workspace! Ask me anything about your current page, active loans, interest savings, or credit score optimization.",
   created_at: new Date().toISOString(),
 };
+
+export function getSavedSessions(): ChatSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(SESSIONS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+export function saveSession(messages: SharedChatMessage[], existingId?: string, customTitle?: string): ChatSession | null {
+  if (typeof window === "undefined") return null;
+  const userMsgs = messages.filter(m => m.role === "user");
+  if (userMsgs.length === 0) return null;
+
+  try {
+    const sessions = getSavedSessions();
+    const sessionId = existingId || `session-${Date.now()}`;
+    const firstUserMsg = userMsgs[0].content.substring(0, 45);
+    const title = customTitle || (firstUserMsg ? `"${firstUserMsg}..."` : "Strategy Session");
+    
+    const newSession: ChatSession = {
+      id: sessionId,
+      title: title,
+      messages: [...messages],
+      created_at: new Date().toISOString(),
+    };
+
+    const existingIdx = sessions.findIndex(s => s.id === sessionId);
+    let updated: ChatSession[];
+    if (existingIdx >= 0) {
+      updated = [...sessions];
+      updated[existingIdx] = newSession;
+    } else {
+      updated = [newSession, ...sessions];
+    }
+
+    localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(updated));
+    SESSION_LISTENERS.forEach(cb => cb([...updated]));
+    window.dispatchEvent(new CustomEvent("debtproof_sessions_update", { detail: updated }));
+    return newSession;
+  } catch {}
+  return null;
+}
+
+export function deleteSession(id: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const sessions = getSavedSessions().filter(s => s.id !== id);
+    localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
+    SESSION_LISTENERS.forEach(cb => cb([...sessions]));
+    window.dispatchEvent(new CustomEvent("debtproof_sessions_update", { detail: sessions }));
+  } catch {}
+}
+
+export function subscribeToSessions(callback: (sessions: ChatSession[]) => void): () => void {
+  SESSION_LISTENERS.add(callback);
+  const handleCustomEvent = (e: Event) => {
+    const custom = e as CustomEvent;
+    if (custom.detail) callback(custom.detail);
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("debtproof_sessions_update", handleCustomEvent);
+  }
+  return () => {
+    SESSION_LISTENERS.delete(callback);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("debtproof_sessions_update", handleCustomEvent);
+    }
+  };
+}
 
 export function getSharedChatMessages(): SharedChatMessage[] {
   if (typeof window === "undefined") return [DEFAULT_WELCOME];
@@ -40,6 +123,8 @@ export function setSharedChatMessages(messages: SharedChatMessage[]): void {
   try {
     localStorage.setItem(GLOBAL_CHAT_STORAGE_KEY, JSON.stringify(messages));
     LISTENERS.forEach((listener) => listener([...messages]));
+    // Automatically auto-save session history when user talks
+    saveSession(messages);
     // Dispatch custom event for same-window component updates
     window.dispatchEvent(new CustomEvent("debtproof_chat_update", { detail: messages }));
   } catch {}

@@ -13,7 +13,12 @@ import { formatCurrency } from "@/utils/formatters";
 import { 
   getSharedChatMessages, 
   setSharedChatMessages, 
-  subscribeToChatMessages 
+  subscribeToChatMessages,
+  getSavedSessions,
+  saveSession,
+  deleteSession,
+  subscribeToSessions,
+  type ChatSession
 } from "@/services/chatStore";
 import { 
   Bot, 
@@ -81,13 +86,18 @@ export default function AIAssistantPage() {
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"copilot" | "insights">("copilot");
 
-  // Subscribe to shared global chat state
+  // Subscribe to shared global chat state & sessions
   useEffect(() => {
-    const { subscribeToChatMessages } = require("@/services/chatStore");
-    const unsubscribe = subscribeToChatMessages((newMsgs: any) => {
+    const unsubChat = subscribeToChatMessages((newMsgs: any) => {
       setMessages(newMsgs);
     });
-    return () => unsubscribe();
+    const unsubSessions = subscribeToSessions(() => {
+      loadConversations();
+    });
+    return () => {
+      unsubChat();
+      unsubSessions();
+    };
   }, []);
 
   // Voice & Speech Recognition State
@@ -144,13 +154,30 @@ export default function AIAssistantPage() {
     }
   }, []);
 
-  // Load Conversations History
+  // Load Conversations History (combines local saved sessions + API conversations)
   const loadConversations = useCallback(async () => {
+    const localSessions = getSavedSessions();
+    const formattedLocal: Conversation[] = localSessions.map((s: ChatSession) => ({
+      id: s.id,
+      title: s.title,
+      is_active: false,
+      messages: s.messages as any,
+      created_at: s.created_at
+    }));
+
     try {
       const res = await apiClient.get("/ai/conversations/");
       const data = Array.isArray(res.data) ? res.data : res.data.results || [];
-      setConversations(data);
-    } catch {}
+      // Combine API and local sessions without duplicates
+      const ids = new Set(formattedLocal.map(l => l.id));
+      const combined = [...formattedLocal];
+      for (const apiConv of data) {
+        if (!ids.has(apiConv.id)) combined.push(apiConv);
+      }
+      setConversations(combined);
+    } catch {
+      setConversations(formattedLocal);
+    }
   }, []);
 
   useEffect(() => {
@@ -158,18 +185,23 @@ export default function AIAssistantPage() {
     loadConversations();
   }, [loadInsights, loadConversations]);
 
-  // Reset to Welcome
+  // Reset to Welcome (saves current active session first if it has user messages)
   const resetToWelcomeMessage = useCallback(() => {
+    const currentMsgs = getSharedChatMessages();
+    saveSession(currentMsgs);
+    loadConversations();
+
     setConversationId(null);
-    setMessages([
+    const freshWelcome: Message[] = [
       {
         id: "welcome",
         role: "assistant",
         content: `Namaste! 👋 I am your **DebtProof Unified AI Financial Strategy Coach**.\n\nI combine real-time backend analytics from your active loans, payment history, and budget to give you hyper-personalized financial guidance.\n\n🎤 You can **speak to me** using the microphone or type any question below!`,
         created_at: new Date().toISOString(),
       },
-    ]);
-  }, []);
+    ];
+    setSharedChatMessages(freshWelcome as any);
+  }, [loadConversations]);
 
   useEffect(() => {
     resetToWelcomeMessage();
@@ -541,25 +573,46 @@ export default function AIAssistantPage() {
                   <span className="text-[10px] text-slate-500 font-mono">{conversations.length} saved</span>
                 </div>
 
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                   {conversations.length === 0 ? (
-                    <p className="text-xs text-slate-500 italic py-2">No past chat history</p>
+                    <p className="text-xs text-slate-500 italic py-2 text-center">No past chat history</p>
                   ) : (
                     conversations.map((c) => (
                       <div
                         key={c.id}
                         onClick={() => {
                           setConversationId(c.id);
-                          if (c.messages?.length) setMessages(c.messages);
+                          if (c.messages?.length) {
+                            setSharedChatMessages(c.messages as any);
+                          }
                         }}
-                        className={`p-3 rounded-xl border transition cursor-pointer text-xs flex items-center justify-between ${
+                        className={`p-3 rounded-xl border transition cursor-pointer text-xs flex items-center justify-between group ${
                           conversationId === c.id
-                            ? "bg-purple-950/40 border-purple-500/40 text-purple-300"
-                            : "bg-slate-950 border-slate-800 hover:bg-slate-800/50 text-slate-300"
+                            ? "bg-purple-950/60 border-purple-500/50 text-purple-200 font-bold"
+                            : "bg-slate-950 border-slate-800 hover:bg-slate-800/60 text-slate-300"
                         }`}
                       >
-                        <span className="truncate max-w-[150px] font-medium">{c.title || "Strategy Session"}</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                        <div className="flex flex-col min-w-0 pr-2">
+                          <span className="truncate max-w-[170px] font-medium leading-tight">{c.title || "Strategy Session"}</span>
+                          <span className="text-[9px] text-slate-500 font-mono mt-0.5">
+                            {c.messages?.length || 0} messages
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteSession(c.id);
+                              loadConversations();
+                            }}
+                            className="p-1 rounded hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 transition"
+                            title="Delete session history"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-purple-400 transition" />
+                        </div>
                       </div>
                     ))
                   )}
