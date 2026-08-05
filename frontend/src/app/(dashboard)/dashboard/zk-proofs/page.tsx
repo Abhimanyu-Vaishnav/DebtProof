@@ -5,6 +5,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { ZkCreditProofStudio } from "@/components/zk-proofs/ZkCreditProofStudio";
 import { OnChainBadgeGallery } from "@/components/zk-proofs/OnChainBadgeGallery";
 import { MonadSmartContractDeploymentStudio } from "@/components/zk-proofs/MonadSmartContractDeploymentStudio";
+import CreditScoreRegistryStudio from "@/components/zk-proofs/CreditScoreRegistryStudio";
 
 export default function ZkProofsPage() {
   return (
@@ -54,6 +55,9 @@ export default function ZkProofsPage() {
 
         {/* Monad On-Chain Smart Contract Deployment Studio */}
         <MonadSmartContractDeploymentStudio />
+
+        {/* Monad On-Chain Credit Score Registry */}
+        <CreditScoreRegistryStudio />
 
         {/* Main Studio Component */}
         <ZkCreditProofStudio />

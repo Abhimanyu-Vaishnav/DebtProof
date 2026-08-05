@@ -6,6 +6,8 @@ import { RefinanceSavingsStudio } from "@/components/refinance/RefinanceSavingsS
 import { MultiLenderRefinanceMatrix } from "@/components/refinance/MultiLenderRefinanceMatrix";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 
+import AIRefinanceDisputeGenerator from "@/components/refinance/AIRefinanceDisputeGenerator";
+
 export default function RefinancePage() {
   return (
     <>
@@ -17,6 +19,9 @@ export default function RefinancePage() {
       <main className="page-content space-y-6 pb-12">
         {/* Multi-Lender Matrix */}
         <MultiLenderRefinanceMatrix />
+
+        {/* AI Letter Generator */}
+        <AIRefinanceDisputeGenerator />
 
         {/* Top Banner */}
         <div className="card bg-[var(--color-surface)] border border-[var(--color-border-light)] p-6 md:p-8 rounded-2xl shadow-xl relative overflow-hidden">

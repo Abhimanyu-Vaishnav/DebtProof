@@ -72,6 +72,114 @@
       "artifacts": [
         "DebtProofEscrow"
       ]
+    },
+    "C:\\Users\\abhim\\Desktop\\Project\\DebtProof\\blockchain\\contracts\\DebtProofCreditScore.sol": {
+      "lastModificationDate": 1785918227475,
+      "contentHash": "3540af3d02a1e30a70357b3bbda77a3c",
+      "sourceName": "contracts/DebtProofCreditScore.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DebtProofCreditScore"
+      ]
+    },
+    "C:\\Users\\abhim\\Desktop\\Project\\DebtProof\\blockchain\\contracts\\DebtProofEscrowVault.sol": {
+      "lastModificationDate": 1785918232035,
+      "contentHash": "98817872b5b02b06219db1c1cca5da9e",
+      "sourceName": "contracts/DebtProofEscrowVault.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DebtProofEscrowVault"
+      ]
+    },
+    "C:\\Users\\abhim\\Desktop\\Project\\DebtProof\\blockchain\\contracts\\DebtProofSoulbound.sol": {
+      "lastModificationDate": 1785562531336,
+      "contentHash": "87eb962770dbfc36cadbafe73aade7b7",
+      "sourceName": "contracts/DebtProofSoulbound.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "DebtProofSoulbound"
+      ]
     }
   }
 }

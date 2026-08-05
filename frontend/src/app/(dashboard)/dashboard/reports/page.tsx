@@ -5,6 +5,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { ReportsClient } from "@/components/reports/ReportsClient";
 import { CustomCSVExcelExportEngine } from "@/components/reports/CustomCSVExcelExportEngine";
 import { NoDuesCertificateGenerator } from "@/components/reports/NoDuesCertificateGenerator";
+import TaxExportStudio from "@/components/reports/TaxExportStudio";
 
 export default function ReportsPage() {
   return (
@@ -12,6 +13,7 @@ export default function ReportsPage() {
       <Topbar title="Reports & Export" subtitle="Download structured CSV/JSON logs of your debts and payment history" />
       <main className="page-content space-y-6">
         <NoDuesCertificateGenerator />
+        <TaxExportStudio />
         
         {/* Section 24(b) Home Loan Income Tax Certificate Generator */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl text-slate-100 space-y-4">

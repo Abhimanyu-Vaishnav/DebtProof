@@ -11,6 +11,7 @@ import { TenantSwitcher } from "@/components/tenant/TenantSwitcher";
 import { THEME_PRESETS, applyGlobalTheme } from "@/utils/theme";
 import { Web3WalletConnect } from "@/components/layout/Web3WalletConnect";
 import { useSubscription } from "@/context/SubscriptionContext";
+import BiometricLockModal from "@/components/ui/BiometricLockModal";
 
 interface TopbarProps {
   title?: string;
@@ -41,6 +42,7 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
   const [theme, setTheme]                       = useState("system");
   const [soundMuted, setSoundMuted]             = useState(false);
   const [activePlan, setActivePlan]             = useState<string>("Free Plan");
+  const [isLockOpen, setIsLockOpen]             = useState(false);
 
   const { user } = useAuth();
   const sub = useSubscription();
@@ -251,6 +253,18 @@ export function Topbar({ title = "Dashboard", subtitle }: TopbarProps) {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
           )}
         </button>
+
+        {/* Biometric Lock Button */}
+        <button
+          onClick={() => setIsLockOpen(true)}
+          className="topbar-icon-btn text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20"
+          title="Vault Security Lock"
+        >
+          🛡️
+        </button>
+
+        {/* Biometric Lock Modal */}
+        <BiometricLockModal isOpen={isLockOpen} onClose={() => setIsLockOpen(false)} />
 
         {/* Web3 Wallet */}
         <Web3WalletConnect />

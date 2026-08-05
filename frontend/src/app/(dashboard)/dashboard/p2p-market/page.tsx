@@ -11,6 +11,7 @@ import type { Loan } from "@/types";
 
 import { Web3EscrowStudio } from "@/components/p2p/Web3EscrowStudio";
 import { SocialP2PStakingPools } from "@/components/p2p/SocialP2PStakingPools";
+import EscrowVaultStudio from "@/components/p2p/EscrowVaultStudio";
 
 export default function P2PMarketplacePage() {
   const [activeTab, setActiveTab] = useState<"my_agreements" | "marketplace">("my_agreements");
@@ -154,6 +155,9 @@ export default function P2PMarketplacePage() {
 
         {/* Monad Web3 Smart Contract Escrow Hub */}
         <Web3EscrowStudio />
+
+        {/* Monad Automated EMI Escrow Vault */}
+        <EscrowVaultStudio />
 
         {/* Social P2P Debt Payoff Staking Pools */}
         <SocialP2PStakingPools />

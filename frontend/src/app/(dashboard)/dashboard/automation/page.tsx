@@ -1,13 +1,10 @@
-/**
- * DebtProof — Automation Engine Page
- * IF/THEN rule builder for automated financial workflows.
- */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import apiClient from "@/services/api";
 import { useToast } from "@/components/ui/Toast";
 import { Topbar } from "@/components/layout/Topbar";
+import WhatsAppTelegramWebhookStudio from "@/components/automation/WhatsAppTelegramWebhookStudio";
 
 type ConditionType =
   | "emi_due_in_days"
@@ -311,6 +308,9 @@ export default function AutomationPage() {
       <Topbar title="Automation Engine" subtitle="Set up smart financial IF/THEN rules" />
       <main className="page-content">
         <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+          {/* Messaging Webhook Studio */}
+          <WhatsAppTelegramWebhookStudio />
+
           {/* Premium Header Banner */}
           <div className="bg-gradient-to-r from-[var(--color-primary)] via-slate-800 to-[var(--color-primary)] rounded-2xl p-5 text-white shadow-lg flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
