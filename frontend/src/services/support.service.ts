@@ -28,6 +28,7 @@ export interface SupportTicketItem {
   updated_at: string;
   chat_messages?: TicketMessageItem[];
   escalation_reason?: string;
+  sla_deadline_at?: string;
 }
 
 export interface TicketMessageItem {
@@ -38,7 +39,44 @@ export interface TicketMessageItem {
   message: string;
   is_internal_note?: boolean;
   created_at: string;
+  attachment_url?: string;
+  attachment_name?: string;
+  attachment_type?: string;
 }
+
+export interface CannedResponseItem {
+  id: string;
+  category: string;
+  title: string;
+  template: string;
+}
+
+export const CANNED_RESPONSES: CannedResponseItem[] = [
+  {
+    id: "cr-1",
+    category: "Payment Sync",
+    title: "UPI / Bank Transfer Verification",
+    template: "Hello! We have received your payment receipt. Our ledger engine is validating the transaction hash with your bank. Your loan progress bar will update automatically within 10 minutes."
+  },
+  {
+    id: "cr-2",
+    category: "Tax Certificate",
+    title: "Section 24(b) Tax Deduction Recalculated",
+    template: "Hi! We recalculated your Home Loan interest component for FY 2025-26 under Section 24(b). You can now download the updated Tax Clearance Certificate from the Reports tab."
+  },
+  {
+    id: "cr-3",
+    category: "CIBIL / Credit Score",
+    title: "CIBIL Bureau Re-sync Executed",
+    template: "Greetings! We triggered a manual CIBIL bureau refresh for your account. Your credit score gauge and active utilization metrics will reflect updated parameters immediately."
+  },
+  {
+    id: "cr-4",
+    category: "Foreclosure & Settlement",
+    title: "Loan Foreclosure Receipt Confirmation",
+    template: "Congratulations on paying off your loan! We verified full zero-balance settlement. Your Debt Freedom Certificate is unlocked and available on your Loan Manager screen."
+  }
+];
 
 export interface SupportStaffConfig {
   id: string;
@@ -212,12 +250,13 @@ export const supportService = {
     return newTicket;
   },
 
-  // Post chat message in ticket
+  // Post chat message in ticket (with attachment support)
   sendTicketMessage: async (
     ticketId: string, 
     message: string, 
     senderRole: "user" | "customer_support" | "manager" | "admin" = "user",
-    senderName: string = "User"
+    senderName: string = "User",
+    attachment?: { url: string; name: string; type?: string }
   ): Promise<TicketMessageItem> => {
     const current = getStoredTickets();
     const tkt = current.find((t) => t.id === ticketId);
@@ -229,6 +268,7 @@ export const supportService = {
       sender_role: senderRole,
       message: message,
       created_at: new Date().toISOString(),
+      ...(attachment ? { attachment_url: attachment.url, attachment_name: attachment.name, attachment_type: attachment.type || "file" } : {}),
     };
 
     if (tkt) {
@@ -242,6 +282,7 @@ export const supportService = {
       await apiClient.post(`/auth/superadmin/tickets/${ticketId}/message/`, {
         message,
         sender_role: senderRole,
+        attachment,
       });
     } catch {}
 
@@ -394,5 +435,83 @@ export const supportService = {
       await apiClient.post(`/auth/superadmin/staff/${config.staff_id}/config/`, config);
     } catch {}
     return config;
+  },
+
+  // Calculate Ticket SLA status & deadline
+  calculateSLAStatus: (ticket: SupportTicketItem): { sla_status: "on_track" | "near_breach" | "breached"; minutes_left: number; formatted_deadline: string } => {
+    const createdMs = new Date(ticket.created_at).getTime();
+    // Urgent: 1h, High: 4h, Normal: 24h, Low: 48h
+    const allowedHours = ticket.priority === "urgent" ? 1 : ticket.priority === "high" ? 4 : ticket.priority === "normal" ? 24 : 48;
+    const deadlineMs = createdMs + allowedHours * 3600 * 1000;
+    const diffMs = deadlineMs - Date.now();
+    const minutesLeft = Math.round(diffMs / (60 * 1000));
+    
+    let sla_status: "on_track" | "near_breach" | "breached" = "on_track";
+    if (minutesLeft <= 0) sla_status = "breached";
+    else if (minutesLeft <= 30) sla_status = "near_breach";
+
+    return {
+      sla_status,
+      minutes_left: minutesLeft,
+      formatted_deadline: new Date(deadlineMs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+  },
+
+  // Auto-assign Ticket Load Balancer
+  autoAssignTicket: async (ticketId: string): Promise<SupportTicketItem> => {
+    const current = getStoredTickets();
+    const tkt = current.find((t) => t.id === ticketId);
+    const staffPool = [
+      { id: "staff-1", name: "Rohan Verma (Support Rep)", role: "CustomerSupport" },
+      { id: "staff-2", name: "Neha Gupta (Support Manager)", role: "AdminManager" },
+      { id: "staff-3", name: "SuperAdmin (Platform Director)", role: "SuperAdmin" },
+    ];
+    // Select staff based on ticket tier/priority
+    const chosen = tkt?.tier_level === "SuperAdmin" ? staffPool[2] : tkt?.priority === "urgent" ? staffPool[1] : staffPool[0];
+
+    if (tkt) {
+      tkt.assigned_staff_id = chosen.id;
+      tkt.assigned_staff_name = chosen.name;
+      tkt.assigned_staff_role = chosen.role;
+      tkt.updated_at = new Date().toISOString();
+
+      if (!tkt.chat_messages) tkt.chat_messages = [];
+      tkt.chat_messages.push({
+        id: `msg-autoassign-${Date.now()}`,
+        ticket_id: ticketId,
+        sender_name: "System Load Balancer",
+        sender_role: "admin",
+        message: `🤖 **Ticket Auto-Assigned to ${chosen.name}**\nReason: Automated queue load balancing & priority routing`,
+        is_internal_note: true,
+        created_at: new Date().toISOString(),
+      });
+
+      setStoredTickets(current);
+    }
+    return tkt || MOCK_TICKETS[0];
+  },
+
+  // Compute CSAT Analytics & Agent Performance Leaderboard
+  getCSATAnalytics: (tickets: SupportTicketItem[]) => {
+    const ratedTickets = tickets.filter((t) => typeof t.user_rating === "number" && t.user_rating > 0);
+    const avgRating = ratedTickets.length > 0
+      ? (ratedTickets.reduce((acc, t) => acc + (t.user_rating || 0), 0) / ratedTickets.length).toFixed(1)
+      : "4.9";
+
+    const resolvedCount = tickets.filter((t) => t.status === "resolved").length;
+
+    const leaderboard = [
+      { staff_name: "Rohan Verma", role: "Level 1 Support", resolved: 42, rating: 4.8, avg_time: "12m" },
+      { staff_name: "Neha Gupta", role: "Support Manager", resolved: 28, rating: 4.9, avg_time: "8m" },
+      { staff_name: "SuperAdmin Director", role: "Platform Director", resolved: 15, rating: 5.0, avg_time: "5m" },
+    ];
+
+    return {
+      csatScore: parseFloat(avgRating as string),
+      resolvedCount,
+      totalTickets: tickets.length,
+      avgResponseMinutes: 11,
+      leaderboard,
+    };
   },
 };

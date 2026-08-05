@@ -30,7 +30,8 @@ import {
   Search,
   Zap,
   Info,
-  ShieldCheck
+  ShieldCheck,
+  Paperclip
 } from "lucide-react";
 
 interface FeatureGuide {
@@ -228,6 +229,7 @@ export default function SupportHelpPage() {
 
   // Live Chat Reply State
   const [replyText, setReplyText] = useState("");
+  const [attachmentName, setAttachmentName] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
   const { showToast } = useToast();
@@ -268,13 +270,21 @@ export default function SupportHelpPage() {
   };
 
   const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedTicket || chatLoading) return;
+    if ((!replyText.trim() && !attachmentName) || !selectedTicket || chatLoading) return;
 
     setChatLoading(true);
     try {
-      await supportService.sendTicketMessage(selectedTicket.id, replyText, "user", "You (Client)");
+      const attachObj = attachmentName ? { url: "#", name: attachmentName, type: "document" } : undefined;
+      await supportService.sendTicketMessage(
+        selectedTicket.id, 
+        replyText || "Attached document receipt.", 
+        "user", 
+        "You (Client)", 
+        attachObj
+      );
       setReplyText("");
-      showToast("Message sent to support team.", "success");
+      setAttachmentName("");
+      showToast("Message & attachment sent to support team.", "success");
       await loadTickets();
     } catch {
       showToast("Failed to send message.", "error");
@@ -637,13 +647,42 @@ export default function SupportHelpPage() {
                           }`}
                         >
                           <p className="whitespace-pre-line">{msg.message}</p>
+                          {msg.attachment_name && (
+                            <div className="mt-2 p-2 rounded-xl bg-black/40 border border-white/10 text-[10px] flex items-center gap-2">
+                              <Paperclip className="w-3.5 h-3.5 text-purple-300" />
+                              <span className="font-mono text-purple-200 underline">{msg.attachment_name}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
 
+                  {/* Attachment Tag Indicator */}
+                  {attachmentName && (
+                    <div className="px-3 py-1.5 rounded-xl bg-purple-950/60 border border-purple-500/40 text-xs text-purple-200 flex items-center justify-between font-mono">
+                      <span className="flex items-center gap-1.5">
+                        <Paperclip className="w-3.5 h-3.5 text-purple-400" /> Attachment attached: <strong>{attachmentName}</strong>
+                      </span>
+                      <button onClick={() => setAttachmentName("")} className="text-slate-400 hover:text-white font-bold text-xs">✕</button>
+                    </div>
+                  )}
+
                   {/* Reply Input Box */}
                   <div className="pt-3 border-t border-slate-800 flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const fakeFiles = ["UPI_Payment_Receipt_350k.pdf", "Section24b_Tax_Interest_Statement.pdf", "CIBIL_Report_June_2026.pdf"];
+                        const picked = fakeFiles[Math.floor(Math.random() * fakeFiles.length)];
+                        setAttachmentName(picked);
+                        showToast(`Attached file: ${picked}`, "info");
+                      }}
+                      className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-purple-500 text-purple-400 transition cursor-pointer"
+                      title="Attach Payment Receipt or PDF Statement"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+
                     <input
                       type="text"
                       className="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:border-purple-500 focus:outline-none"
@@ -652,9 +691,10 @@ export default function SupportHelpPage() {
                       onChange={(e) => setReplyText(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSendReply()}
                     />
+
                     <button
                       onClick={handleSendReply}
-                      disabled={chatLoading || !replyText.trim()}
+                      disabled={chatLoading || (!replyText.trim() && !attachmentName)}
                       className="px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs shadow-lg disabled:opacity-50 transition cursor-pointer flex items-center gap-2"
                     >
                       <span>Send</span>
