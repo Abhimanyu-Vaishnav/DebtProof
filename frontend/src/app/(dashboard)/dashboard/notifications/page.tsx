@@ -545,6 +545,8 @@ export default function NotificationsPage() {
             </div>
           </div>
         </div>
+      )}
+
       {/* WhatsApp EMI Reminder Preview Modal */}
       {showWhatsAppModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
